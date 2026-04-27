@@ -54,6 +54,7 @@ Follow standard pentest methodology:
 - Password cracking (requires approval)
 - Metasploit integration (requires approval)
 - Kali Linux Docker container for specialized tools (commands require approval)
+- ParrotOS Docker container for specialized tools (commands require approval)
 - Report generation (text, JSON, HTML, markdown)
 - Database queries for scan history
 - Runtime tool creation for custom workflows
@@ -108,6 +109,9 @@ def build_system_prompt(state: dict) -> str:
     container_id = state.get("kali_container_id")
     if container_id:
         context_parts.append(f"Kali container: {container_id[:12]}")
+    parrot_id = state.get("parrot_container_id")
+    if parrot_id:
+        context_parts.append(f"Parrot container: {parrot_id[:12]}")
 
     custom_tools = state.get("custom_tool_names", [])
     if custom_tools:

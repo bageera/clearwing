@@ -25,6 +25,8 @@ def _default_pentest_state_updater(tool_name: str, data: Any, state: dict) -> di
         return {"exploit_results": state.get("exploit_results", []) + [data]}
     if tool_name == "kali_setup" and isinstance(data, str):
         return {"kali_container_id": data}
+    if tool_name == "parrot_setup" and isinstance(data, str):
+        return {"parrot_container_id": data}
     return {}
 
 
@@ -37,7 +39,7 @@ _DEFAULT_PENTEST_GUARDRAIL_TOOLS = frozenset(
     }
 )
 
-_DEFAULT_OUTPUT_GUARDRAIL_TOOLS = frozenset({"kali_execute"})
+_DEFAULT_OUTPUT_GUARDRAIL_TOOLS = frozenset({"kali_execute", "parrot_execute"})
 
 
 def build_react_graph(

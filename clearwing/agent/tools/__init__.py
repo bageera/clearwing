@@ -198,6 +198,12 @@ def get_all_tools() -> list[Any]:
     from .meta.wargame_tools import get_wargame_tools
     from .ops.dynamic_tool_creator import create_custom_tool, list_custom_tools
     from .ops.kali_docker_tool import kali_cleanup, kali_execute, kali_install_tool, kali_setup
+    from .ops.parrot_docker_tool import (
+        parrot_cleanup,
+        parrot_execute,
+        parrot_install_tool,
+        parrot_setup,
+    )
     from .ops.mcp_tools import get_mcp_tools
     from .ops.skill_tools import load_skills
     from .recon.pivot_tools import get_pivot_tools
@@ -218,6 +224,10 @@ def get_all_tools() -> list[Any]:
         kali_execute,
         kali_install_tool,
         kali_cleanup,
+        parrot_setup,
+        parrot_execute,
+        parrot_install_tool,
+        parrot_cleanup,
         generate_report,
         save_report,
         query_scan_history,

@@ -155,6 +155,7 @@ class OperatorAgent:
             "exploit_results": [],
             "os_info": None,
             "kali_container_id": None,
+            "parrot_container_id": None,
             "custom_tool_names": [],
             "session_id": session_id,
             "flags_found": [],

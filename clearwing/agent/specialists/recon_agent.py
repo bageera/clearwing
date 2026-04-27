@@ -3,6 +3,11 @@ from __future__ import annotations
 from clearwing.agent.graph import _create_llm, build_react_graph
 from clearwing.agent.state import AgentState
 from clearwing.agent.tools.ops.kali_docker_tool import kali_execute, kali_install_tool, kali_setup
+from clearwing.agent.tools.ops.parrot_docker_tool import (
+    parrot_execute,
+    parrot_install_tool,
+    parrot_setup,
+)
 from clearwing.agent.tools.scan.scanner_tools import (
     detect_os,
     detect_services,
@@ -38,6 +43,9 @@ class ReconAgent:
             kali_setup,
             kali_execute,
             kali_install_tool,
+            parrot_setup,
+            parrot_execute,
+            parrot_install_tool,
         ]
         llm = _create_llm(self.model_name)
 
