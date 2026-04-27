@@ -255,6 +255,44 @@ every Ollama-served model handles it well. Known-good models as of
 `mistral-small3:24b`. Base Llama models without function-calling
 training will fail on the first tool dispatch.
 
+## Ollama Cloud
+
+Ollama Cloud provides hosted models at `https://ollama.com/api` using
+the same native Ollama adapter. Requires an API key.
+
+### Quick setup
+
+```bash
+clearwing setup --provider ollama-cloud
+```
+
+Or configure manually:
+
+ ```bash
+ export CLEARWING_BASE_URL=https://ollama.com
+ export CLEARWING_API_KEY=$OLLAMA_API_KEY
+ export CLEARWING_MODEL=deepseek-v4-flash
+
+ clearwing sourcehunt /path/to/repo --depth standard
+ ```
+
+### Persistent (config file)
+
+```yaml
+provider:
+  base_url: https://ollama.com/api
+  api_key: ${OLLAMA_API_KEY}
+  model: qwen2.5-coder:32b
+  adapter: ollama
+```
+
+The `adapter: ollama` line is required for cloud endpoints — without
+it, the URL heuristic may fall back to OpenAI-compatible mode. The
+wizard writes this automatically when you pick the `ollama-cloud` preset.
+
+**Tool calling caveat**: Same as local Ollama — pick a model with
+function-calling support. `qwen2.5-coder:32b` is the recommended default.
+
 ## LM Studio
 
 LM Studio exposes an OpenAI-compatible endpoint at

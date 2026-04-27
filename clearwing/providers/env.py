@@ -22,7 +22,6 @@ from __future__ import annotations
 import logging
 import os
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Any
 
 logger = logging.getLogger(__name__)
@@ -384,7 +383,7 @@ def _default_openai_compat_model(base_url: str) -> str:
     host = base_url.lower()
     if "openrouter.ai" in host:
         return "anthropic/claude-sonnet-4"
-    if "localhost:11434" in host or "127.0.0.1:11434" in host:
+    if "localhost:11434" in host or "127.0.0.1:11434" in host or "ollama.com" in host:
         # Ollama default — assume a recent coder model is pulled
         return "qwen2.5-coder:32b"
     if "localhost:1234" in host or "127.0.0.1:1234" in host:

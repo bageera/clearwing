@@ -124,6 +124,23 @@ PROVIDER_PRESETS: tuple[ProviderPreset, ...] = (
         provider_adapter="ollama",
     ),
     ProviderPreset(
+        # Ollama Cloud uses the same API protocol as local Ollama but
+        # requires an API key (OLLAMA_API_KEY) and sits on ollama.com.
+        # We use the native "ollama" adapter by default, but users who
+        # need OpenAI-compatible endpoints on cloud can override via
+        # `adapter: openai` and `base_url: https://ollama.com/v1`.
+        key="ollama-cloud",
+        display_name="Ollama Cloud",
+        description="Cloud-hosted Ollama models via ollama.com. Requires API key.",
+        docs_url="https://ollama.com/cloud",
+        default_base_url="https://ollama.com",
+        default_model="deepseek-v4-flash",
+        api_key_env_var="OLLAMA_API_KEY",
+        is_local=False,
+        alt_models=("qwen3-coder:480b", "minimax-m2.7", "kimi-k2.6"),
+        provider_adapter="ollama",
+    ),
+    ProviderPreset(
         key="lmstudio",
         display_name="LM Studio (local)",
         description="Local models with a GUI loader, free, no API key. "

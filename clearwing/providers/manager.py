@@ -62,6 +62,11 @@ PROVIDER_PRESETS = {
         "models": [],  # dynamic
         "default_base_url": "http://localhost:11434",
     },
+    "ollama-cloud": {
+        "env_key": "OLLAMA_API_KEY",
+        "models": [],  # dynamic
+        "default_base_url": "https://ollama.com",
+    },
 }
 
 DEFAULT_ROUTES = [
@@ -388,7 +393,7 @@ class ProviderManager:
                 provider_name="gemini",
             )
 
-        elif provider == "ollama":
+        elif provider in ("ollama", "ollama-cloud"):
             base_url = (
                 config.base_url
                 if config and config.base_url
@@ -398,7 +403,7 @@ class ProviderManager:
                 model_name=model,
                 base_url=base_url,
                 api_key=config.api_key if config else "",
-                provider_name="ollama",
+                provider_name=_adapter_for_provider_config(provider, config),
             )
 
         else:
@@ -441,7 +446,7 @@ class ProviderManager:
                 max_concurrency=_native_concurrency_for_task(task, "gemini"),
             )
 
-        if provider == "ollama":
+        if provider in ("ollama", "ollama-cloud"):
             base_url = (
                 config.base_url
                 if config and config.base_url
@@ -535,6 +540,10 @@ def _adapter_for_provider_config(provider: str, config: ProviderConfig | None) -
         return "openai_codex"
     if explicit == "google":
         return "gemini"
+    # If the user set `adapter:` in the preset, use it.
+    if config is not None and config.adapter:
+        return config.adapter.strip()
+    # Local Ollama without explicit adapter → use the native "ollama" adapter
     if explicit == "ollama":
         return "ollama"
     return _adapter_for_base_url(
@@ -550,6 +559,11 @@ def _adapter_for_base_url(base_url: str | None, model: str) -> str:
     set `adapter:` on their provider config (the `openai-responses`
     preset does this automatically).
     """
+    # IMPORTANT: When base_url points to ollama.com we intentionally
+    # let the caller provide an explicit adapter (e.g. `adapter: openai`)
+    # so the OpenAI-compatible /v1 endpoint can be used alongside the
+    # native Ollama endpoint. When no adapter is given and the port
+    # is 11434, the native "ollama" adapter is chosen automatically.
     host = (base_url or "").lower()
     if "11434" in host:
         return "ollama"
@@ -561,6 +575,10 @@ def _adapter_for_base_url(base_url: str | None, model: str) -> str:
         return "anthropic"
     if model.startswith("gemini-"):
         return "gemini"
+    if "ollama.com" in host:
+        # With the `ollama-cloud` preset, users may set `adapter: openai`
+        # explicitly. If they don't, the OllamaCloud adapter is the default.
+        return "ollama"
     return "openai"
 
 
