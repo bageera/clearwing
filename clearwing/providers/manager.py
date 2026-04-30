@@ -576,8 +576,11 @@ def _adapter_for_base_url(base_url: str | None, model: str) -> str:
     if model.startswith("gemini-"):
         return "gemini"
     if "ollama.com" in host:
-        # With the `ollama-cloud` preset, users may set `adapter: openai`
-        # explicitly. If they don't, the OllamaCloud adapter is the default.
+        # Users targeting OpenAI-compatible /v1 endpoints on Ollama Cloud
+        # should use `adapter: openai` in config. When base_url contains /v1
+        # and no explicit adapter is set, fall through to "openai".
+        if "/v1" in host:
+            return "openai"
         return "ollama"
     return "openai"
 
