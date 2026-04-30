@@ -15,11 +15,11 @@ Groq, DeepSeek, MiniMax, Gemini, any OpenAI-compatible endpoint).
 
 Clearwing is a dual-mode offensive-security tool:
 
-- **Network-pentest agent** — a ReAct-loop agent with 63 bind-tools
+- **Network-pentest agent** — a ReAct-loop agent with 77 bind-tools
   that scans live targets, detects services and vulnerabilities,
-  runs sandboxed Kali tools, attempts exploits (gated through a
-  human-approval guardrail), and writes reports to a persistent
-  knowledge graph.
+  runs sandboxed Kali/Parrot PentestContainer tools, attempts exploits
+  (gated through a human-approval guardrail), and writes reports to
+  a persistent knowledge graph.
 - **Source-code hunter** — a file-parallel agent-driven
   pipeline that ranks source files, fans out per-file hunter agents
   (full-shell or constrained), uses ASan/UBSan crashes as ground
@@ -111,6 +111,41 @@ Requirements: Python 3.10+ and optionally Docker for the Kali container
 and sanitizer-image sandbox features. `genai-pyo3` ships as prebuilt
 wheels on PyPI (linux x86_64/aarch64, macOS universal2, windows x86_64,
 Python 3.9–3.13), so no Rust toolchain is needed for installation.
+
+## PentestContainer Architecture
+
+Clearwing now ships with **dual-distro container support** for standardized penetration testing workflows. A shared `PentestContainerManager` orchestrates both Kali Linux (full-featured) and ParrotOS (slim) containers, executing external CLI tools without polluting the host operating system.
+
+### Supported Containers
+
+| Distro | Image | Size | Status |
+|--------|-------|------|--------|
+| Kali Linux | `kalilinux/kali-rolling` | ~2.5 GB | Production-ready |
+| ParrotOS (slim) | `parrotsec/core:latest` | ~265 MB | Development/testing |
+
+### Tool Categories
+
+**Phase 2: Linux/POSIX Enumeration** (`agent/tools/scan/enumeration_tools.py`)
+- `run_nmap_scan` — TCP/UDP port scanning (SYN, connect, NSE scripts)
+- `run_gobuster` — Directory/file brute-forcing
+- `run_sqlmap` — Automated SQL injection detection
+- `run_enum4linux` — SMB enumeration
+- `run_nikto` — Web vulnerability scanning
+- `run_hydra` — Multi-protocol brute-force
+- `run_snmpwalk` — SNMP enumeration
+- `run_whatweb` — Web technology fingerprinting
+
+**Phase 3: Windows Exploitation** (`agent/tools/ops/windows_tools.py`)
+- `run_mimikatz` — LSASS credential dumping via impacket-psexec
+- `run_powerup` — Privilege escalation enumeration with PowerUp.ps1
+- `run_winpeas` — Comprehensive Windows security audit with WinPEAS
+- `run_secretsdump` — SAM/NTDS hash extraction via impacket-secretsdump
+- `run_psexec` — Remote command execution via impacket-psexec
+- `run_smbexec` — Remote command execution via impacket-smbexec
+
+All tools support dual-distro execution (`distro="kali"` or `distro="parrot"`) and share the same container lifecycle (setup → execute → cleanup).
+
+---
 
 ## Quickstart
 
