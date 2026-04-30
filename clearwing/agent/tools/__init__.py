@@ -206,6 +206,14 @@ def get_all_tools() -> list[Any]:
         parrot_setup,
     )
     from .ops.skill_tools import load_skills
+    from .ops.windows_tools import (
+        run_mimikatz,
+        run_powerup,
+        run_psexec,
+        run_secretsdump,
+        run_smbexec,
+        run_winpeas,
+    )
     from .recon.pivot_tools import get_pivot_tools
     from .scan.enumeration_tools import (
         run_enum4linux,
@@ -258,6 +266,12 @@ def get_all_tools() -> list[Any]:
         store_knowledge,
         search_knowledge,
         load_skills,
+        run_mimikatz,
+        run_powerup,
+        run_psexec,
+        run_secretsdump,
+        run_smbexec,
+        run_winpeas,
         query_knowledge_graph,
     ]
 

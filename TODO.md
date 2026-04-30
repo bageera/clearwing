@@ -103,30 +103,53 @@
 | Service account key extraction | Not found | `private_key` not present in JS bundle |
 | GCP metadata exploitation | Not applicable | External IP, not compute engine metadata |
 
+##### Critical New Discoveries (April 30, 2026)
+6. **Domain Typo Squatting Risk (HIGH)**: Footer link on docs site points to `https://lazarusaie.com/contact-us` (missing 's' in 'lazarus'). The typo domain is **live** (Cloudflare, HTTP 200) and could be used for phishing. **Recommendation:** Register `lazarusaie.com` and redirect to `lazarusai.com` or purchase defensively.
+7. **Internal API Paths Exposed via Sitemap (HIGH)**: `docs.lazarusforms.com/sitemap.xml` contains URLs pointing to `http://localhost:5000/` revealing internal API endpoints:
+   - `/api/custom_rikai`, `/api/pii`, `/api/ocr`, `/api/forms`, `/api/extract`
+   - `/api/summarizer`, `/api/invoices`, `/api/vkg`, `/api/rikai2`, `/api/riky2`
+   - `/api/developer`, `/api/engine`, `/api/old_forms`, `/api/old_ocr`, `/api/old_other_forms`
+   - **Impact:** Full enumeration of backend microservices, PII endpoints, and deprecated API paths.
+8. **Atlassian Jira Portal Exposed (MEDIUM)**: `lazarus-ai.atlassian.net` linked from docs footer. Redirects to login but confirms internal ticketing system.
+9. **Docusaurus Misconfiguration (MEDIUM)**: All sitemap URLs use `http://localhost:5000/` instead of production domain — indicates staging/development build deployed to production.
+
 ##### Recommendations
 1. **Immediate**: Rotate leaked Firebase API key `AIzaSyBgs-HrkxUdKbLFVxPsN2JJfjB71c_Cn58`.
 2. **Immediate**: Remove Firebase project IDs and Cloud Run URLs from `Content-Security-Policy` headers (use nonces or restrict to production only).
-3. **Short-term**: Verify Firebase Security Rules are restrictive (Realtime DB returned `Permission denied` — good sign, but verify rules).
-4. **Short-term**: Remove or protect preview Cloud Run URL (`lazarus-forms-dashboard-preview-7owznqu3wq-uc.a.run.app`).
-5. **Medium-term**: Consider implementing Firebase App Check to restrict API key usage to your app only.
+3. **Immediate**: Fix or remove footer link to `lazarusaie.com` — register domain defensively.
+4. **Immediate**: Replace `localhost:5000` URLs in sitemap.xml with production domain.
+5. **Short-term**: Verify Firebase Security Rules are restrictive (Realtime DB returned `Permission denied` — good sign, but verify rules).
+6. **Short-term**: Remove or protect preview Cloud Run URL (`lazarus-forms-dashboard-preview-7owznqu3wq-uc.a.run.app`).
+7. **Medium-term**: Consider implementing Firebase App Check to restrict API key usage to your app only.
 
-### Deferred: Phase 2 Tools (Kali/Parrot containers)
-- [ ] `enum4linux_scan` — SMB enumeration
-- [ ] `sqlmap_scan` — SQL injection automated testing
-- [ ] `nikto_scan` — web vulnerability scanner
-- [ ] `whatweb_scan` — web technology fingerprinting
-- [ ] `wpscan_enum` — WordPress enumeration
-- [ ] `impacket_psexec` — remote Windows execution from Linux
-- [ ] `impacket_secretsdump` — credential extraction
-- [ ] `linpeas_run` / `linenum_run` — Linux privilege escalation enumeration
-- [ ] `hashcat_crack` — GPU/CPU hash cracking (Kali container)
-- [ ] `responder_capture` — Net-NTLMv2 hash capture (raw sockets)
+### Completed: Phase 2 Tools (Kali/Parrot containers)
+- [x] `run_nmap_scan` — Containerized nmap wrapper (SYN/UDP/NSE via Kali/Parrot)
+- [x] `run_gobuster` — Containerized directory brute-forcing
+- [x] `run_sqlmap` — Containerized SQL injection testing
+- [x] `run_enum4linux` — Containerized SMB enumeration
+- [x] `run_nikto` — Containerized web vulnerability scanner
+- [x] `run_hydra` — Containerized multi-protocol brute-forcing
+- [x] `run_snmpwalk` — Containerized SNMP enumeration
+- [x] `run_whatweb` — Containerized web technology fingerprinting
+- [x] Tool registration in `agent/tools/__init__.py` (exported in `get_all_tools()`)
+- [x] Tested via Colima Docker runtime with `kalilinux/kali-rolling` image
+- [x] Scans executed: nmap (fast top-20), gobuster, whatweb, sqlmap (parameter detection)
+- [x] Kali container base image: kalilinux/kali-rolling (Debian-based)
+- [x] Parrot container base image: parrotsec/core:latest (Debian-based, slim)
 
-### Deferred: Phase 3 Tools (Windows emulation)
-- [ ] `mimikatz` — credential dumping (Windows-only, needs Metasploit bridge or Windows container)
-- [ ] `powerup` / `winpeas` — Windows privilege escalation
-- [ ] `seatbelt` — Windows security assessment
-- [ ] UAC bypass / potato family exploits
+### Completed: Phase 3 Tools (Windows emulation)
+- [x] `run_mimikatz()` — Credential dumping via impacket-psexec or Metasploit Meterpreter
+- [x] `run_powerup()` — Windows privilege escalation enumeration with PowerUp.ps1
+- [x] `run_winpeas()` — Comprehensive Windows security audit with WinPEAS
+- [x] `run_secretsdump()` — SAM/NTDS hash extraction via impacket-secretsdump
+- [x] `run_psexec()` — Remote command execution via impacket-psexec
+- [x] `run_smbexec()` — Remote command execution via impacket-smbexec
+- [x] Tool registration in `agent/tools/__init__.py` (exported in `get_all_tools()`)
+- [x] Architecture: Kali/Parrot containers with impacket-* scripts
+- [x] Fallback: Metasploit Meterpreter session bridge
+- [x] Target tested: `18.208.179.1` (ec2-18-208-179-1.compute-1.amazonaws.com) — **UNREACHABLE** (AWS security groups block all inbound traffic)
+- [ ] Seatbelt (deferred)
+- [ ] UAC bypass / potato family exploits (deferred)
 
 ### Documentation
 - [ ] Update README.md: mention ParrotOS alongside Kali
