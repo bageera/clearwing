@@ -198,15 +198,25 @@ def get_all_tools() -> list[Any]:
     from .meta.wargame_tools import get_wargame_tools
     from .ops.dynamic_tool_creator import create_custom_tool, list_custom_tools
     from .ops.kali_docker_tool import kali_cleanup, kali_execute, kali_install_tool, kali_setup
+    from .ops.mcp_tools import get_mcp_tools
     from .ops.parrot_docker_tool import (
         parrot_cleanup,
         parrot_execute,
         parrot_install_tool,
         parrot_setup,
     )
-    from .ops.mcp_tools import get_mcp_tools
     from .ops.skill_tools import load_skills
     from .recon.pivot_tools import get_pivot_tools
+    from .scan.enumeration_tools import (
+        run_enum4linux,
+        run_gobuster,
+        run_hydra,
+        run_nikto,
+        run_nmap_scan,
+        run_snmpwalk,
+        run_sqlmap,
+        run_whatweb,
+    )
     from .scan.scanner_tools import detect_os, detect_services, scan_ports, scan_vulnerabilities
 
     tools = [
@@ -214,6 +224,14 @@ def get_all_tools() -> list[Any]:
         detect_services,
         scan_vulnerabilities,
         detect_os,
+        run_nmap_scan,
+        run_gobuster,
+        run_sqlmap,
+        run_enum4linux,
+        run_nikto,
+        run_hydra,
+        run_snmpwalk,
+        run_whatweb,
         exploit_vulnerability,
         enumerate_privesc,
         crack_password,
