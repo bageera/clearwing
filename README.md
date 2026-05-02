@@ -15,7 +15,7 @@ Groq, DeepSeek, MiniMax, Gemini, any OpenAI-compatible endpoint).
 
 Clearwing is a dual-mode offensive-security tool:
 
-- **Network-pentest agent** — a ReAct-loop agent with 77 bind-tools
+- **Network-pentest agent** — a ReAct-loop agent with 220 bind-tools
   that scans live targets, detects services and vulnerabilities,
   runs sandboxed Kali/Parrot PentestContainer tools, attempts exploits
   (gated through a human-approval guardrail), and writes reports to
@@ -142,6 +142,321 @@ Clearwing now ships with **dual-distro container support** for standardized pene
 - `run_secretsdump` — SAM/NTDS hash extraction via impacket-secretsdump
 - `run_psexec` — Remote command execution via impacket-psexec
 - `run_smbexec` — Remote command execution via impacket-smbexec
+
+**Phase 4: API & Database Pentesting** (`agent/tools/scan/enumeration_tools.py`)
+- `run_ffuf` — Fast web fuzzer for directories, parameters, and virtual hosts
+- `run_httpx` — Fast multi-purpose HTTP toolkit for probing and fingerprinting
+- `run_arjun` — HTTP parameter discovery suite
+- `run_dalfox` — Reflected and DOM XSS scanning and parameter mining
+- `run_jwt_tool` — JSON Web Token (JWT) security testing and cracking
+- `run_nosqlmap` — NoSQL injection and MongoDB enumeration
+- `run_oscanner` — Oracle database SID and password brute-forcing
+- `run_sqlninja` — Microsoft SQL Server injection and privilege escalation
+- `run_sqlsus` — MySQL injection with stacked queries
+- `run_sqlmate` — Automated SQL injection detection with batch and blind support
+
+**Phase 5: Red Team / Active Directory** (`agent/tools/scan/redteam_tools.py`)
+- `run_chisel` — TCP/UDP tunnel over HTTP for pivoting
+- `run_crackmapexec` — SMB/WinRM/SSH/LDAP/MSSQL enumeration and credential testing
+- `run_bloodhound` — Active Directory attack path enumeration and graph analysis
+
+**Phase 6: Cloud Pentesting** (`agent/tools/scan/cloud_tools.py`)
+
+*GCP Suite:*
+- `run_gcp_bucket_enum` — GCS bucket discovery and misconfiguration scanning
+- `run_gcp_metadata_exploit` — Service account token theft from metadata endpoint
+- `run_gcp_iam_audit` — IAM policy and service account enumeration
+- `run_gcp_secrets_enum` — Secret Manager / Cloud KMS secret discovery
+- `run_gcp_cloudfunction_enum` — Cloud Functions, triggers, and env var enumeration
+
+*AWS Suite:*
+- `run_aws_s3_enum` — S3 bucket discovery and ACL testing
+- `run_aws_ec2_enum` — EC2 instances, security groups, and IAM role enumeration
+- `run_aws_metadata_exploit` — IMDSv1/v2 token and credential theft
+- `run_aws_secrets_enum` — Secrets Manager / Parameter Store enumeration
+- `run_aws_lambda_enum` — Lambda functions, layers, and IAM execution roles
+- `run_aws_iam_escalation` — IAM privilege escalation path analysis
+
+All tools support dual-distro execution (`distro="kali"` or `distro="parrot"`) and share the same container lifecycle (setup → execute → cleanup).
+
+---
+
+**Phase 7: LLM Security Testing** (`agent/tools/scan/llm_security_tools.py`)
+- `run_prompt_injection_scanner` — Automated prompt-injection payload scanner
+- `run_jailbreak_tester` — Multi-turn jailbreak orchestration (Crescendo, DAN, many-shot)
+- `run_indirect_prompt_injection` — RAG / document-processing indirect prompt injection
+- `run_system_prompt_extraction` — Hidden system prompt extraction via encoding tricks
+- `run_training_data_extraction` — Membership-inference / training-data extraction
+- `run_pii_extraction_tester` — PII extraction via persona-based prompting
+- `run_model_consistency_tester` — Non-determinism and hallucination detection
+- `run_toxicity_regression_tester` — Automated red-teaming for harmful outputs
+- `run_bias_detector` — Demographic stereotype and bias testing
+- `run_agent_escape_tester` — LLM agent sandbox escape testing
+- `run_tool_poisoning_tester` — Malicious tool-description injection
+- `run_multi_turn_poisoning` — Gradual context-window poisoning
+- `run_token_smuggling_tester` — Content-filter bypass via encoding obfuscation
+- `run_adversarial_vision_tester` — Adversarial image perturbation for vision-language models
+
+**Phase 8: API Security Testing** (`agent/tools/scan/api_testing_tools.py`)
+- `run_graphqlmap` — GraphQL introspection abuse and field suggestion
+- `run_grpcurl` — gRPC / Protobuf service enumeration and method fuzzing
+- `run_wsprobe` — WebSocket message injection and frame manipulation
+- `run_idor_scanner` — Automated IDOR and privilege escalation detection
+- `run_race_condition_tester` — Turbo Intruder-style race condition exploitation
+- `run_swagger_abuse` — OpenAPI mass assignment and parameter pollution
+- `run_2fa_bypass_tester` — OTP brute-force and TOTP reuse testing
+- `run_cors_misconfig_tester` — Automated CORS bypass exploitation
+
+**Phase 9: CI/CD & Supply Chain Security** (`agent/tools/scan/cicd_tools.py`)
+- `run_gitleaks` — Git repository secret scanning
+- `run_trufflehog` — High-entropy secret scanning with live validation
+- `run_checkov` — Infrastructure-as-Code misconfiguration scanning
+- `run_trivy` — Container image and filesystem vulnerability scanning
+- `run_semgrep` — Static analysis rule-based security scanning
+- `run_dependency_audit` — Dependency confusion and known-CVE audit
+- `run_kube_hunter` — Kubernetes cluster security scanning
+
+**Phase 10: Proxy-Based Web/API Scanning** (`agent/tools/scan/proxy_tools.py`)
+- `run_burp` — Burp Suite spider, crawl, and active scan
+- `run_burp_intruder` — Automated payload fuzzing with sniper/battering ram/pitchfork/cluster bomb
+- `run_owaspzap` — OWASP ZAP spider, active scan, and AJAX spidering
+- `run_zap_api_scan` — OpenAPI/Swagger and GraphQL schema security scanning
+
+---
+
+## Tool Usage Examples
+
+### Phase 2–3: Network & Web Enumeration
+```python
+# Fast multi-purpose HTTP probe
+run_httpx("https://api.example.com", options="-status-code -title -tech-detect")
+
+# Directory brute-forcing
+run_ffuf("https://api.example.com/FUZZ", extensions="json,php,bak")
+
+# Parameter discovery
+run_arjun("https://api.example.com/search", method="GET")
+
+# XSS scanning
+run_dalfox("https://example.com?q=test", options="--mining-dom")
+
+# JWT cracking
+run_jwt_tool("eyJhbGciOiJIUzI1NiIs...", options="-C /usr/share/wordlists/rockyou.txt")
+```
+
+### Phase 4: Database Pentesting
+```python
+# Automated SQL injection
+run_sqlmap("http://target.com/page?id=1", options="--batch --level=3")
+
+# NoSQL injection
+run_nosqlmap("http://target.com/api/user", options="--attack")
+
+# Oracle SID brute-force
+run_oscanner("10.0.0.1", options="-P 1521")
+```
+
+### Phase 5: Red Team / Active Directory
+```python
+# Pivot through compromised host
+run_chisel("client", "10.0.0.5:8080", options="--reverse --socks5")
+
+# Enumerate AD shares and sessions
+run_crackmapexec("192.168.1.0/24", protocol="smb", options="-u admin -p Password123 --shares")
+
+# AD attack path graph
+run_bloodhound("corp.local", options="-c All")
+```
+
+### Phase 6: Cloud Pentesting
+```python
+# GCP metadata token theft (from compromised VM)
+run_gcp_metadata_exploit()
+
+# Enumerate S3 buckets
+run_aws_s3_enum("lazarus-forms", wordlist="/usr/share/wordlists/dirb/common.txt")
+
+# IAM privilege escalation analysis
+run_aws_iam_escalation("arn:aws:iam::123456789012:user/admin")
+
+# Cloud Functions enumeration
+run_gcp_cloudfunction_enum("lazarus-forms-api", region="us-central1")
+```
+
+### Phase 7: LLM Security Testing
+```python
+# Prompt injection scan
+run_prompt_injection_scanner("https://api.openai.com/v1/chat/completions", model_name="gpt-4", iterations=100)
+
+# Multi-turn jailbreak
+run_jailbreak_tester("https://api.anthropic.com/v1/messages", technique="crescendo", depth=10)
+
+# System prompt extraction
+run_system_prompt_extraction("https://api.openai.com/v1/chat/completions", encoding_tricks="base64,rot13")
+
+# Consistency / hallucination detection
+run_model_consistency_tester("https://api.openai.com/v1/chat/completions", prompt="What is the capital of France?", repetitions=20)
+
+# Bias testing
+run_bias_detector("https://api.openai.com/v1/chat/completions", dimensions="gender,race,age")
+```
+
+### Phase 8: API Security Testing
+```python
+# GraphQL introspection abuse
+run_graphqlmap("https://api.example.com/graphql", options="--dump")
+
+# gRPC service enumeration
+run_grpcurl("api.example.com:443", options="list")
+
+# IDOR detection
+run_idor_scanner("https://api.example.com/users/FUZZ", object_range="1-1000", header="Authorization: Bearer xxx")
+
+# Race condition testing
+run_race_condition_tester("https://api.example.com/redeem", request_file="/tmp/redeem.req", threads=50)
+
+# CORS bypass
+run_cors_misconfig_tester("https://api.example.com/data", origins="https://evil.com,null")
+```
+
+### Phase 9: CI/CD & Supply Chain
+```python
+run_gitleaks("/workspace/repo", options="--verbose")
+run_trufflehog("https://github.com/example/project")
+run_checkov("/workspace/terraform")
+run_trivy("my-image:latest", scan_type="image")
+run_semgrep("/workspace/src", config="p/owasp-top-ten")
+run_kube_hunter("https://k8s-api.example.com:443")
+```
+
+### Phase 10: Proxy-Based Web/API Scanning
+```python
+# Burp Suite spider + active scan
+run_burp("https://api.example.com", action="scan", report_format="xml")
+
+# Burp Intruder — fuzz API parameters
+run_burp_intruder(
+    "https://api.example.com",
+    request_template="GET /api/FUZZ HTTP/1.1\nHost: api.example.com\n\n",
+    payload_file="/usr/share/wordlists/dirb/common.txt",
+    attack_type="sniper",
+    threads=20
+)
+
+# OWASP ZAP spider + active scan
+run_owaspzap("https://api.example.com", action="ascan", report_format="json")
+
+# ZAP OpenAPI/GraphQL API scan
+run_zap_api_scan("https://api.example.com/openapi.json", options="-a")
+```
+
+### Phase 11: Network Discovery
+```python
+# ARP-based host discovery on internal subnet
+run_netdiscover("10.0.0.0/24", interface="eth0")
+
+# Ultra-fast async port scan (entire Internet in ~6 min at 10 Mpps)
+run_masscan("10.0.0.0/8", ports="1-65535", rate=10000)
+
+# ARP scanning with vendor fingerprinting
+run_arp_scan("192.168.1.0/24", options="-I eth0 -g")
+
+# Network path tracing (TCP, UDP, or ICMP)
+run_traceroute("api.example.com", protocol="tcp")
+```
+
+### Phase 12: Wireless Pentesting
+```python
+# WPA/WPA2-PSK handshake cracking
+run_aircrack_ng("/tmp/capture.cap", wordlist="/usr/share/wordlists/rockyou.txt")
+
+# AP and client discovery (monitor mode required)
+run_airodump_ng("wlan0mon", duration=60)
+
+# Automated WEP/WPA/WPS attacks
+run_wifite(options="--wps-only --pixie", duration=300)
+
+# WPS PIN brute-force (Pixie Dust)
+run_reaver("AA:BB:CC:DD:EE:FF", interface="wlan0mon", options="-K 1")
+```
+
+### Phase 13: Mobile Pentesting
+```python
+# Dynamic instrumentation with Frida
+run_frida("com.example.app", script="/tmp/bypass-ssl.js")
+
+# Runtime mobile exploration (SSL pinning bypass, root detection bypass)
+run_objection("com.example.app", command="explore")
+
+# Static analysis of APK/IPA with MobSF
+run_mobsf("/tmp/target.apk")
+
+# APK decompilation (smali + resources)
+run_apktool("/tmp/target.apk", output_dir="/tmp/target-out")
+
+# APK decompilation to Java source
+run_jadx("/tmp/target.apk", output_dir="/tmp/target-java")
+
+# Android security assessment framework
+run_drozer("com.example.app", command="app.package.info")
+```
+
+### Phase 14: Bluetooth & RF
+```python
+# BLE reconnaissance with bettercap
+run_bettercap_bluetooth(duration=60)
+
+# Bluetooth sniffing with Ubertooth (hardware required)
+run_ubertooth("scan", duration=60)
+```
+
+### Phase 15: IoT & Hardware
+```python
+# Firmware static analysis (hardcoded secrets, backdoors)
+run_firmwalker("/tmp/extracted-firmware/")
+
+# Firmware extraction and binary analysis
+run_binwalk("/tmp/firmware.bin", options="-e")
+```
+
+### Phase 16: ICS / SCADA Security
+```python
+# Modbus TCP device discovery and register reading
+run_modbus_scan("192.168.1.100", port=502, options="--function-code 3")
+
+# Siemens S7 PLC scanning
+run_s7_scan("192.168.1.101", port=102)
+
+# BACnet building automation scanning
+run_bacnet_scan("192.168.1.0/24", options="--enumerate-objects")
+
+# ICS protocol fuzzer (use with extreme care)
+run_ics_fuzzer("modbus", "192.168.1.100", port=502, options="--mutations 100")
+```
+
+### Phase 17: OSINT & Social Engineering
+```python
+# Email and subdomain enumeration via OSINT
+run_theharvester("lazarusai.com", sources="baidu,bing,google", options="--limit 500")
+
+# Social Engineer Toolkit (requires approval)
+run_social_engineer_toolkit("spear-phishing", "admin@lazarusai.com")
+
+# Phishing campaign management
+run_gophish("launch", campaign="security_awareness_q2")
+
+# OSINT framework aggregation
+run_osint_framework("john.doe@lazarusai.com", category="email")
+```
+
+### Phase 18: Hardware / Side-Channel
+```python
+# Power analysis side-channel attack (requires ChipWhisperer hardware)
+run_chipwhisperer("target_firmware.bin", attack_type="cpa")
+
+# JTAG/SWD interface enumeration
+run_jtag_enum("/dev/ttyUSB0", options="--interface jtag --speed 1000")
+```
 
 All tools support dual-distro execution (`distro="kali"` or `distro="parrot"`) and share the same container lifecycle (setup → execute → cleanup).
 
