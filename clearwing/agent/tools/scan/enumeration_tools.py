@@ -285,3 +285,386 @@ def run_whatweb(
     ) if distro == "kali" else PARROT.execute(
         container_id, cmd, requires_approval=False
     )
+
+
+# ─── Phase 4: API Pentest Tools ────────────────────────────────────────────
+
+@tool(requires_approval=False)
+def run_ffuf(
+    target: str,
+    wordlist_path: str = "/usr/share/wordlists/dirb/common.txt",
+    method: str = "GET",
+    extensions: str | None = None,
+    headers: str | None = None,
+    post_data: str | None = None,
+    container_id: str | None = None,
+    distro: str = "kali",
+) -> dict[str, Any]:
+    """Run ffuf (fast web fuzzer) from inside a Kali/Parrot container.
+
+    ffuf is excellent for API endpoint discovery, directory brute-forcing,
+    virtual host discovery, and parameter fuzzing. Supports POST body fuzzing
+    and custom headers for API testing.
+
+    Args:
+        target: Target URL with FUZZ keyword (e.g. https://api.example.com/FUZZ
+            or https://api.example.com/v1/FUZZ).
+        wordlist_path: Path to wordlist inside container.
+        method: HTTP method (GET, POST, PUT, DELETE, PATCH). Default: GET.
+        extensions: Comma-separated extensions (e.g. "json,php,bak,txt").
+        headers: Additional headers as semicolon-separated key:value pairs
+            (e.g. "Authorization: Bearer token;Content-Type: application/json").
+        post_data: POST body with FUZZ keyword for parameter fuzzing
+            (e.g. '{"username":"FUZZ","password":"test"}').
+        container_id: Docker container ID. If None auto-discovers one.
+        distro: "kali" or "parrot".
+
+    Returns:
+        Dict with exit_code, output, and error.
+    """
+    if container_id is None:
+        manager = KALI if distro == "kali" else PARROT
+        setup_result = manager.setup()
+        container_id = setup_result["container_id"]
+
+    ext_flag = f" -e {extensions}" if extensions else ""
+    method_flag = f" -X {method}" if method != "GET" else ""
+    header_flags = ""
+    if headers:
+        for h in headers.split(";"):
+            header_flags += f' -H "{h.strip()}"'
+    data_flag = f' -d "{post_data}"' if post_data else ""
+
+    cmd = f'ffuf -u "{target}" -w {wordlist_path}{ext_flag}{method_flag}{header_flags}{data_flag} -mc all -fc 404'
+    logger.info("Executing ffuf in %s container: %s", distro, cmd)
+    return KALI.execute(
+        container_id, cmd, requires_approval=False
+    ) if distro == "kali" else PARROT.execute(
+        container_id, cmd, requires_approval=False
+    )
+
+
+@tool(requires_approval=False)
+def run_httpx(
+    targets: str,
+    options: str = "-status-code -title -tech-detect -json",
+    container_id: str | None = None,
+    distro: str = "kali",
+) -> dict[str, Any]:
+    """Run httpx (fast HTTP prober) from inside a Kali/Parrot container.
+
+    httpx probes multiple targets concurrently to detect status codes,
+    page titles, technologies, server headers, and response bodies. Ideal
+    for rapid API reconnaissance and service enumeration.
+
+    Args:
+        targets: Single URL, file path, or comma-separated URLs.
+            Can also be a file inside the container (e.g. /tmp/targets.txt).
+        options: Additional httpx flags. Default: -status-code -title
+            -tech-detect -json.
+        container_id: Docker container ID. If None auto-discovers one.
+        distro: "kali" or "parrot".
+
+    Returns:
+        Dict with exit_code, output, and error.
+    """
+    if container_id is None:
+        manager = KALI if distro == "kali" else PARROT
+        setup_result = manager.setup()
+        container_id = setup_result["container_id"]
+
+    cmd = f'httpx -u "{targets}" {options}'
+    logger.info("Executing httpx in %s container: %s", distro, cmd)
+    return KALI.execute(
+        container_id, cmd, requires_approval=False
+    ) if distro == "kali" else PARROT.execute(
+        container_id, cmd, requires_approval=False
+    )
+
+
+@tool(requires_approval=False)
+def run_jwt_tool(
+    target_jwt: str,
+    options: str = "-t",
+    container_id: str | None = None,
+    distro: str = "kali",
+) -> dict[str, Any]:
+    """Run jwt_tool (JWT analysis & exploitation) from inside a pentest container.
+
+    jwt_tool automates JWT vulnerability testing: weak signatures, none alg,
+    key confusion, expired tokens, and secret brute-forcing. Essential for
+    API authentication assessment.
+
+    Args:
+        target_jwt: The JWT string to analyze.
+        options: jwt_tool flags. Default: -t (full test mode).
+            Common: -t (all tests), -C (crack with wordlist),
+            -X (exploit), -S (sign with key).
+        container_id: Docker container ID. If None auto-discovers one.
+        distro: "kali" or "parrot".
+
+    Returns:
+        Dict with exit_code, output, and error.
+    """
+    if container_id is None:
+        manager = KALI if distro == "kali" else PARROT
+        setup_result = manager.setup()
+        container_id = setup_result["container_id"]
+
+    cmd = f"jwt_tool.py '{target_jwt}' {options}"
+    logger.info("Executing jwt_tool in %s container: %s", distro, cmd)
+    return KALI.execute(
+        container_id, cmd, requires_approval=False
+    ) if distro == "kali" else PARROT.execute(
+        container_id, cmd, requires_approval=False
+    )
+
+
+@tool(requires_approval=False)
+def run_arjun(
+    target: str,
+    method: str = "GET",
+    container_id: str | None = None,
+    distro: str = "kali",
+) -> dict[str, Any]:
+    """Run Arjun (HTTP parameter discovery) from inside a Kali/Parrot container.
+
+    Arjun finds hidden HTTP parameters in GET/POST/JSON requests. Critical
+    for discovering API parameters that developers assumed were secret.
+
+    Args:
+        target: Target URL to probe for hidden parameters.
+        method: HTTP method (GET, POST, JSON). Default: GET.
+        container_id: Docker container ID. If None auto-discovers one.
+        distro: "kali" or "parrot".
+
+    Returns:
+        Dict with exit_code, output, and error.
+    """
+    if container_id is None:
+        manager = KALI if distro == "kali" else PARROT
+        setup_result = manager.setup()
+        container_id = setup_result["container_id"]
+
+    cmd = f"arjun -u '{target}' -m {method}"
+    logger.info("Executing arjun in %s container: %s", distro, cmd)
+    return KALI.execute(
+        container_id, cmd, requires_approval=False
+    ) if distro == "kali" else PARROT.execute(
+        container_id, cmd, requires_approval=False
+    )
+
+
+@tool(requires_approval=False)
+def run_dalfox(
+    target: str,
+    options: str = "--silence --only-poc 'vuln'",
+    container_id: str | None = None,
+    distro: str = "kali",
+) -> dict[str, Any]:
+    """Run DalFox (XSS scanner) from inside a Kali/Parrot container.
+
+    DalFox finds and verifies XSS vulnerabilities in URLs, forms, and API
+    parameters. Supports reflected, stored, and DOM-based XSS detection.
+
+    Args:
+        target: Target URL to scan for XSS (e.g. https://example.com?q=test).
+        options: DalFox flags. Default: --silence --only-poc 'vuln'.
+        container_id: Docker container ID. If None auto-discovers one.
+        distro: "kali" or "parrot".
+
+    Returns:
+        Dict with exit_code, output, and error.
+    """
+    if container_id is None:
+        manager = KALI if distro == "kali" else PARROT
+        setup_result = manager.setup()
+        container_id = setup_result["container_id"]
+
+    cmd = f"dalfox url '{target}' {options}"
+    logger.info("Executing dalfox in %s container: %s", distro, cmd)
+    return KALI.execute(
+        container_id, cmd, requires_approval=False
+    ) if distro == "kali" else PARROT.execute(
+        container_id, cmd, requires_approval=False
+    )
+
+
+# ─── Phase 4: Database Pentest Tools ───────────────────────────────────────
+
+@tool(requires_approval=False)
+def run_nosqlmap(
+    target: str,
+    options: str = "",
+    container_id: str | None = None,
+    distro: str = "kali",
+) -> dict[str, Any]:
+    """Run NoSQLMap (NoSQL injection scanner) from inside a pentest container.
+
+    NoSQLMap tests MongoDB, CouchDB, and Redis for injection vulnerabilities,
+    authentication bypasses, and data extraction. Complements sqlmap for
+    modern NoSQL-backed APIs.
+
+    Args:
+        target: Target URL or IP to test (e.g. http://target.com/api/user).
+        options: Additional NoSQLMap flags.
+        container_id: Docker container ID. If None auto-discovers one.
+        distro: "kali" or "parrot".
+
+    Returns:
+        Dict with exit_code, output, and error.
+    """
+    if container_id is None:
+        manager = KALI if distro == "kali" else PARROT
+        setup_result = manager.setup()
+        container_id = setup_result["container_id"]
+
+    cmd = f"nosqlmap.py {options} {target}"
+    logger.info("Executing nosqlmap in %s container: %s", distro, cmd)
+    return KALI.execute(
+        container_id, cmd, requires_approval=False
+    ) if distro == "kali" else PARROT.execute(
+        container_id, cmd, requires_approval=False
+    )
+
+
+@tool(requires_approval=False)
+def run_oscanner(
+    target: str,
+    options: str = "-s",
+    container_id: str | None = None,
+    distro: str = "kali",
+) -> dict[str, Any]:
+    """Run Oscanner (Oracle assessment tool) from inside a pentest container.
+
+    Oscanner scans Oracle databases for vulnerabilities, weak configurations,
+    and default credentials. Useful for enterprise environments with Oracle
+    backends.
+
+    Args:
+        target: Target IP or hostname running Oracle TNS listener.
+        options: Additional oscanner flags. Default: -s (sid enumeration).
+        container_id: Docker container ID. If None auto-discovers one.
+        distro: "kali" or "parrot".
+
+    Returns:
+        Dict with exit_code, output, and error.
+    """
+    if container_id is None:
+        manager = KALI if distro == "kali" else PARROT
+        setup_result = manager.setup()
+        container_id = setup_result["container_id"]
+
+    cmd = f"oscanner {options} {target}"
+    logger.info("Executing oscanner in %s container: %s", distro, cmd)
+    return KALI.execute(
+        container_id, cmd, requires_approval=False
+    ) if distro == "kali" else PARROT.execute(
+        container_id, cmd, requires_approval=False
+    )
+
+
+@tool(requires_approval=False)
+def run_sqlninja(
+    target: str,
+    options: str = "-m test",
+    container_id: str | None = None,
+    distro: str = "kali",
+) -> dict[str, Any]:
+    """Run SQLninja (MS SQL Server exploitation) from inside a pentest container.
+
+    SQLninja specializes in Microsoft SQL Server exploitation: fingerprinting,
+    data extraction, and privilege escalation via SQL injection.
+
+    Args:
+        target: Target URL with vulnerable SQL Server parameter.
+        options: SQLninja flags. Default: -m test (fingerprinting mode).
+        container_id: Docker container ID. If None auto-discovers one.
+        distro: "kali" or "parrot".
+
+    Returns:
+        Dict with exit_code, output, and error.
+    """
+    if container_id is None:
+        manager = KALI if distro == "kali" else PARROT
+        setup_result = manager.setup()
+        container_id = setup_result["container_id"]
+
+    cmd = f"sqlninja {options} -u '{target}'"
+    logger.info("Executing sqlninja in %s container: %s", distro, cmd)
+    return KALI.execute(
+        container_id, cmd, requires_approval=False
+    ) if distro == "kali" else PARROT.execute(
+        container_id, cmd, requires_approval=False
+    )
+
+
+@tool(requires_approval=False)
+def run_sqlsus(
+    target: str,
+    options: str = "--guess",
+    container_id: str | None = None,
+    distro: str = "kali",
+) -> dict[str, Any]:
+    """Run SQLsus (MySQL exploitation framework) from inside a pentest container.
+
+    SQLsus automates MySQL database takeover via SQL injection: fingerprinting,
+    data extraction, file read/write, and command execution.
+
+    Args:
+        target: Target URL with MySQL injection vulnerability.
+        options: SQLsus flags. Default: --guess (auto-detect injection point).
+        container_id: Docker container ID. If None auto-discovers one.
+        distro: "kali" or "parrot".
+
+    Returns:
+        Dict with exit_code, output, and error.
+    """
+    if container_id is None:
+        manager = KALI if distro == "kali" else PARROT
+        setup_result = manager.setup()
+        container_id = setup_result["container_id"]
+
+    cmd = f"sqlsus {options} '{target}'"
+    logger.info("Executing sqlsus in %s container: %s", distro, cmd)
+    return KALI.execute(
+        container_id, cmd, requires_approval=False
+    ) if distro == "kali" else PARROT.execute(
+        container_id, cmd, requires_approval=False
+    )
+
+
+@tool(requires_approval=False)
+def run_sqlmate(
+    target: str,
+    options: str = "--batch",
+    container_id: str | None = None,
+    distro: str = "kali",
+) -> dict[str, Any]:
+    """Run SQLMate (SQL injection companion) from inside a pentest container.
+
+    SQLMate assists sqlmap by providing intelligent payload generation,
+    tamper script suggestions, and blind SQL injection optimization.
+    Useful when sqlmap fails to detect a vulnerability.
+
+    Args:
+        target: Target URL with potential SQL injection parameter.
+        options: SQLMate flags. Default: --batch.
+        container_id: Docker container ID. If None auto-discovers one.
+        distro: "kali" or "parrot".
+
+    Returns:
+        Dict with exit_code, output, and error.
+    """
+    if container_id is None:
+        manager = KALI if distro == "kali" else PARROT
+        setup_result = manager.setup()
+        container_id = setup_result["container_id"]
+
+    cmd = f"sqlmate {options} -u '{target}'"
+    logger.info("Executing sqlmate in %s container: %s", distro, cmd)
+    return KALI.execute(
+        container_id, cmd, requires_approval=False
+    ) if distro == "kali" else PARROT.execute(
+        container_id, cmd, requires_approval=False
+    )
