@@ -204,3 +204,93 @@ Added **13 new tools** across Phase 16 (ICS/SCADA), Phase 17 (OSINT/Social Engin
 - All 188 tools registered and importable
 - Report generated: `/tmp/lazarusai_repentest_report.html`
 - Report stored only in `/tmp/` (never committed) per security policy
+
+---
+
+## Session: 2026-05-02 — Phase 11-18: Network, Wireless, Mobile, IoT, ICS, OSINT, Hardware
+
+### Summary
+Added **32 new tools** across Phases 11-18, expanding from 188 to 220 bind-tools.
+
+### New Tool Suites
+
+#### Phase 11: Network Discovery (4 tools)
+- `run_netdiscover`, `run_masscan`, `run_arp_scan`, `run_traceroute`
+
+#### Phase 12: Wireless Pentesting (5 tools)
+- `run_aircrack_ng`, `run_airodump_ng`, `run_wifite`, `run_reaver`, `run_bully`
+
+#### Phase 13: Mobile Pentesting (6 tools)
+- `run_frida`, `run_objection`, `run_mobsf`, `run_apktool`, `run_jadx`, `run_drozer`
+
+#### Phase 14: Bluetooth / RF (2 tools)
+- `run_bettercap_bluetooth`, `run_ubertooth`
+
+#### Phase 15: IoT / Hardware (2 tools)
+- `run_firmwalker`, `run_binwalk`
+
+#### Phase 16: ICS / SCADA (6 tools)
+- `run_modbus_scan`, `run_s7_scan`, `run_dnp3_scan`, `run_ethernet_ip_scan`, `run_bacnet_scan`, `run_ics_fuzzer`
+
+#### Phase 17: OSINT / Social Engineering (5 tools)
+- `run_theharvester`, `run_maltego`, `run_social_engineer_toolkit`, `run_gophish`, `run_osint_framework`
+
+#### Phase 18: Hardware / Side-Channel (2 tools)
+- `run_chipwhisperer`, `run_jtag_enum`
+
+### Key Changes
+- `agent/tools/scan/network_wireless_mobile_tools.py`: NEW (19 tools)
+- `agent/tools/scan/ics_osint_hw_tools.py`: NEW (13 tools)
+- `agent/tools/__init__.py`: Registered all 32 tools
+- `tests/test_enumeration_tools.py`: Added 7 new test classes
+- `README.md`: Updated to 220 tools, added Phases 11-18 examples
+
+---
+
+## Session: 2026-05-03 — Phase 19: Android Mobile Pentesting + Master LOA
+
+### Summary
+Added **18 new Android-specific tools**, expanding from 220 to **238 bind-tools**. Created Master Letter of Authorization consolidating ROE Amendments 01-05.
+
+### New Tool Suite: Android Pentesting (18 tools)
+
+**Static Analysis:**
+- `run_apk_info`, `run_apk_permissions`, `run_apk_components`, `run_apk_strings`, `run_apk_patch`, `run_apk_repack`
+
+**Dynamic Analysis:**
+- `run_frida_hook`, `run_objection_explore`, `run_frida_traffic_capture`
+
+**Network Interception:**
+- `run_burp_mobile_proxy`, `run_mitmproxy_android`
+
+**Security Bypass:**
+- `run_ssl_pinning_bypass` (Frida/objection/patch/Magisk), `run_root_detection_bypass` (4 methods)
+
+**ADB / Emulator:**
+- `run_adb_shell`, `run_android_emulator`
+
+**Forensics:**
+- `run_android_backup_extract`, `run_android_screenshot`, `run_safetynet_check`
+
+### Key Changes
+- `agent/tools/scan/android_tools.py`: NEW (722 lines, 18 tools)
+- `agent/tools/__init__.py`: Registered all 18 Android tools
+- `tests/test_enumeration_tools.py`: Added 4 Android test classes
+- `README.md`: Updated to 238 tools, added Phase 19 with full usage examples
+- `LETTER_OF_AUTHORIZATION_LAZARUS_AI_MASTER.md`: NEW — Master LOA consolidating Amendments 01-05
+
+### Pentest Findings (Authorized Under Master LOA)
+- **OPS-001 (CRITICAL):** Shared EC2 instance — `litellm.ml.ops.lzrops.com` and `riky-vibe.ops.lzrops.com` both resolve to `3.21.238.165`
+- **RDE-004 (MEDIUM):** Rundeck API error messages leak first 5 characters of submitted tokens
+- **POS-008:** Cross-project JWT isolation confirmed — prod JWT rejected by preview RTDB (401)
+- **POS-009:** `secops@lazarus.enterprises` has separate localIds across prod/preview Firebase (confirmed separate DBs)
+- **ML-001:** All `*.ml.lzrops.com` hosts NXDOMAIN externally; `litellm.ml.ops.lzrops.com` found via DNS only, returns 403 to all external IPs
+
+### Reports
+- All reports stored exclusively in `/tmp/` per security policy:
+  - `/tmp/roe_v3_final_consolidated_report_2026-05-02.html`
+  - `/tmp/ops_infrastructure_map.md`
+  - `/tmp/clearwing_tool_matrix.md`
+  - `/tmp/detailed_findings.html`
+  - `/tmp/executive_summary.html`
+- **NOT committed to repository**

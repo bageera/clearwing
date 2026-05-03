@@ -15,7 +15,7 @@ Groq, DeepSeek, MiniMax, Gemini, any OpenAI-compatible endpoint).
 
 Clearwing is a dual-mode offensive-security tool:
 
-- **Network-pentest agent** — a ReAct-loop agent with 220 bind-tools
+- **Network-pentest agent** — a ReAct-loop agent with 238 bind-tools
   that scans live targets, detects services and vulnerabilities,
   runs sandboxed Kali/Parrot PentestContainer tools, attempts exploits
   (gated through a human-approval guardrail), and writes reports to
@@ -456,6 +456,43 @@ run_chipwhisperer("target_firmware.bin", attack_type="cpa")
 
 # JTAG/SWD interface enumeration
 run_jtag_enum("/dev/ttyUSB0", options="--interface jtag --speed 1000")
+```
+
+### Phase 19: Android Mobile Pentesting
+```python
+# APK static analysis — metadata, permissions, components
+run_apk_info("/tmp/target.apk")
+run_apk_permissions("/tmp/target.apk")
+run_apk_components("/tmp/target.apk")
+run_apk_strings("/tmp/target.apk", min_length=8)
+
+# Dynamic instrumentation with Frida
+run_frida_hook("com.example.app", hook_script="/tmp/ssl-bypass.js", spawn=True)
+run_objection_explore("com.example.app", command="explore")
+run_frida_traffic_capture("com.example.app", output_pcap="/tmp/capture.pcap", duration=60)
+
+# Network interception
+run_burp_mobile_proxy("com.example.app", proxy_host="127.0.0.1", proxy_port=8080)
+run_mitmproxy_android("com.example.app", port=8080)
+
+# Security bypass testing
+run_ssl_pinning_bypass("com.example.app", method="frida")
+run_root_detection_bypass("com.example.app", method="objection")
+
+# ADB and emulator management
+run_adb_shell(command="shell pm list packages")
+run_android_emulator(avd_name="Pixel_4_API_30", options="-no-window -gpu off")
+
+# Forensics and data extraction
+run_android_backup_extract("com.example.app", output_dir="/tmp/backup")
+run_android_screenshot(output_file="/tmp/screenshot.png")
+
+# APK modification
+run_apk_patch("/tmp/target.apk", patch_type="debuggable")
+run_apk_repack("/tmp/target-out", output_apk="/tmp/target-patched.apk", sign=True)
+
+# SafetyNet / Play Integrity validation
+run_safetynet_check("com.example.app")
 ```
 
 All tools support dual-distro execution (`distro="kali"` or `distro="parrot"`) and share the same container lifecycle (setup → execute → cleanup).

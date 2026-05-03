@@ -551,3 +551,73 @@ class TestICSOSINTHWToolsRegistered:
 
         missing = expected - tool_names
         assert not missing, f"Hardware tools not registered: {missing}"
+
+
+class TestAndroidToolsRegistered:
+    """Verify Android mobile pentest tools are registered."""
+
+    def test_android_static_tools_in_get_all_tools(self):
+        from clearwing.agent.tools import get_all_tools
+
+        tools = get_all_tools()
+        tool_names = {t.name for t in tools}
+
+        expected = {
+            "run_apk_info",
+            "run_apk_permissions",
+            "run_apk_components",
+            "run_apk_strings",
+            "run_apk_patch",
+            "run_apk_repack",
+        }
+
+        missing = expected - tool_names
+        assert not missing, f"Android static tools not registered: {missing}"
+
+    def test_android_dynamic_tools_in_get_all_tools(self):
+        from clearwing.agent.tools import get_all_tools
+
+        tools = get_all_tools()
+        tool_names = {t.name for t in tools}
+
+        expected = {
+            "run_frida_hook",
+            "run_objection_explore",
+            "run_frida_traffic_capture",
+            "run_adb_shell",
+            "run_android_emulator",
+        }
+
+        missing = expected - tool_names
+        assert not missing, f"Android dynamic tools not registered: {missing}"
+
+    def test_android_network_tools_in_get_all_tools(self):
+        from clearwing.agent.tools import get_all_tools
+
+        tools = get_all_tools()
+        tool_names = {t.name for t in tools}
+
+        expected = {
+            "run_burp_mobile_proxy",
+            "run_mitmproxy_android",
+            "run_ssl_pinning_bypass",
+            "run_root_detection_bypass",
+        }
+
+        missing = expected - tool_names
+        assert not missing, f"Android network tools not registered: {missing}"
+
+    def test_android_forensics_tools_in_get_all_tools(self):
+        from clearwing.agent.tools import get_all_tools
+
+        tools = get_all_tools()
+        tool_names = {t.name for t in tools}
+
+        expected = {
+            "run_android_backup_extract",
+            "run_android_screenshot",
+            "run_safetynet_check",
+        }
+
+        missing = expected - tool_names
+        assert not missing, f"Android forensics tools not registered: {missing}"
