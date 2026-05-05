@@ -143,7 +143,7 @@ def probe_directory_enum(base_url: str, authkey: str, orgid: str) -> list[ProbeR
 def probe_method_switch(endpoint: str, authkey: str, orgid: str) -> list[ProbeResult]:
     """Switch HTTP methods on the main processing endpoint."""
     results: list[ProbeResult] = []
-    methods = ["GET", "PUT", "PATCH", "DELETE", "OPTIONS", "TRACE", "HEAD"]
+    methods = ["GET", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"]
 
     base_body = build_request_body(
         file_data="https://example.com/sample.pdf",

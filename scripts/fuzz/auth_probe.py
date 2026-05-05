@@ -72,12 +72,12 @@ def probe_auth_weaknesses(endpoint: str, orgid: str, base_body: dict[str, Any]) 
     results: list[ProbeResult] = []
     test_cases = [
         ("missing_authkey", {"apiversion": API_VERSION, "orgid": orgid, "content-type": "application/json"}),
-        ("missing_orgid", {"apiversion": API_VERSION, "authkey": "02f3fe59c03542d5b289", "content-type": "application/json"}),
+        ("missing_orgid", {"apiversion": API_VERSION, "authkey": "DUMMY_AUTHKEY", "content-type": "application/json"}),
         ("missing_both", {"apiversion": API_VERSION, "content-type": "application/json"}),
         ("empty_authkey", {"apiversion": API_VERSION, "authkey": "", "orgid": orgid, "content-type": "application/json"}),
-        ("empty_orgid", {"apiversion": API_VERSION, "authkey": "02f3fe59c03542d5b289", "orgid": "", "content-type": "application/json"}),
-        ("wrong_apiversion", {"apiversion": "1970-01-01", "authkey": "02f3fe59c03542d5b289", "orgid": orgid, "content-type": "application/json"}),
-        ("no_apiversion", {"authkey": "02f3fe59c03542d5b289", "orgid": orgid, "content-type": "application/json"}),
+        ("empty_orgid", {"apiversion": API_VERSION, "authkey": "DUMMY_AUTHKEY", "orgid": "", "content-type": "application/json"}),
+        ("wrong_apiversion", {"apiversion": "1970-01-01", "authkey": "DUMMY_AUTHKEY", "orgid": orgid, "content-type": "application/json"}),
+        ("no_apiversion", {"authkey": "DUMMY_AUTHKEY", "orgid": orgid, "content-type": "application/json"}),
     ]
 
     for name, headers in test_cases:
@@ -229,7 +229,7 @@ def probe_endpoint_enum(base_endpoint: str, orgid: str, authkey: str) -> list[Pr
 def probe_method_switch(endpoint: str, orgid: str, authkey: str, base_body: dict[str, Any]) -> list[ProbeResult]:
     """Switch HTTP methods on the document processing endpoint."""
     results: list[ProbeResult] = []
-    methods = ["GET", "PUT", "PATCH", "DELETE", "OPTIONS", "TRACE"]
+    methods = ["POST", "GET", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"]
     headers = {
         "apiversion": API_VERSION,
         "authkey": authkey,

@@ -6,11 +6,11 @@ Scope:   ROE Amendment 04, Section 3.4 — LLM fuzzing on dev API only
          Section 3.2 — Active scanning (no pre-approval required)
 
 Usage:
-    python scripts/fuzz/llm_doc_fuzz.py \
-        --payload scripts/fuzz/payloads/Sample_Form.pdf \
-        --endpoint https://api-dev.gcp.lzrops.com/api/engine/internal \
-        --authkey 02f3fe59c03542d5b289 \
-        --orgid -ackji3v1kc5nl58iaoq
+    python scripts/fuzz/llm_doc_fuzz.py \\
+        --payload scripts/fuzz/payloads/Sample_Form.pdf \\
+        --endpoint https://api-dev.gcp.lzrops.com/api/engine/internal \\
+        --authkey [REDACTED] \\
+        --orgid [REDACTED]
 """
 
 from __future__ import annotations
