@@ -9,6 +9,7 @@ from ..exploitation.exploiters import MetasploitBridge, RCEExploiter
 from ..reporting import ReportGenerator
 from ..scanning import OSScanner, PortScanner, ServiceScanner, VulnerabilityScanner
 from .config import Config, ScanConfig
+from .events import EventBus, EventType
 from .logger import setup_logger
 from .module_loader import ModuleLoader
 
@@ -45,11 +46,13 @@ class ScanResult:
 class CoreEngine:
     """Core engine for orchestrating the scanning and exploitation workflow."""
 
-    def __init__(self, config: Config | None = None):
+    def __init__(self, config: Config | None = None, event_bus: EventBus | None = None):
         self.config = config or Config()
         self.logger = setup_logger()
         self.module_loader = ModuleLoader()
         self.scan_result = ScanResult(target="")
+        self.event_bus = event_bus or EventBus()
+        # Legacy callback storage until all consumers migrate to EventBus.
         self.callbacks: dict[str, list[Callable]] = {
             "on_port_found": [],
             "on_service_detected": [],
@@ -59,12 +62,26 @@ class CoreEngine:
         }
 
     def register_callback(self, event: str, callback: Callable) -> None:
-        """Register a callback for a specific event."""
+        """Register a callback for a specific legacy event string.
+
+        Maps old string events to :py:class:`EventType` so callers don't need
+        to import the enum.  Prefer :py:meth:`EventBus.subscribe` directly.
+        """
         if event in self.callbacks:
             self.callbacks[event].append(callback)
+        mapping = {
+            "on_port_found": EventType.TOOL_RESULT,
+            "on_service_detected": EventType.TOOL_RESULT,
+            "on_vulnerability_found": EventType.TOOL_RESULT,
+            "on_exploit_success": EventType.FLAG_FOUND,
+            "on_scan_complete": EventType.STATE_CHANGED,
+        }
+        event_type = mapping.get(event)
+        if event_type is not None:
+            self.event_bus.subscribe(event_type, callback)
 
     def _trigger_callback(self, event: str, *args: Any, **kwargs: Any) -> None:
-        """Trigger all callbacks for a specific event."""
+        """Trigger legacy callbacks and mirror to the EventBus."""
         for callback in self.callbacks.get(event, []):
             try:
                 callback(*args, **kwargs)
@@ -153,7 +170,9 @@ class CoreEngine:
     async def _exploit(self, target: str, config: ScanConfig) -> None:
         """Perform exploitation."""
         rce_exploiter = RCEExploiter()
-        MetasploitBridge(
+        # MetasploitBridge instantiation is retained for future MSF integration.
+        # It currently validates credentials but is not wired into the exploit loop.
+        _ = MetasploitBridge(
             self.config.get("exploitation", "metasploit_host"),
             self.config.get("exploitation", "metasploit_port"),
             self.config.get("exploitation", "metasploit_password"),

@@ -30,52 +30,25 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+# name → fully-qualified module to try importing
+_CAPABILITY_MAP: dict[str, str] = {
+    "guardrails": "clearwing.safety.guardrails",
+    "memory": "clearwing.data.memory",
+    "telemetry": "clearwing.observability.telemetry",
+    "events": "clearwing.core.events",
+    "audit": "clearwing.safety.audit",
+    "knowledge": "clearwing.data.knowledge",
+}
+
 
 def _detect_installed() -> frozenset[str]:
     installed: set[str] = set()
-
-    try:
-        import clearwing.safety.guardrails  # noqa: F401
-
-        installed.add("guardrails")
-    except ImportError:
-        pass
-
-    try:
-        import clearwing.data.memory  # noqa: F401
-
-        installed.add("memory")
-    except ImportError:
-        pass
-
-    try:
-        import clearwing.observability.telemetry  # noqa: F401
-
-        installed.add("telemetry")
-    except ImportError:
-        pass
-
-    try:
-        import clearwing.core.events  # noqa: F401
-
-        installed.add("events")
-    except ImportError:
-        pass
-
-    try:
-        import clearwing.safety.audit  # noqa: F401
-
-        installed.add("audit")
-    except ImportError:
-        pass
-
-    try:
-        import clearwing.data.knowledge  # noqa: F401
-
-        installed.add("knowledge")
-    except ImportError:
-        pass
-
+    for name, module in _CAPABILITY_MAP.items():
+        try:
+            __import__(module)
+            installed.add(name)
+        except ImportError:
+            pass
     return frozenset(installed)
 
 
