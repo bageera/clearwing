@@ -13,6 +13,62 @@ The hand-curated pre-1.0 history has been archived to
 
 ---
 
+## Session: 2026-05-18 — Repository Cleanup & OSINT Integration
+
+### Summary
+Codebase hygiene pass: removed stale artifacts, synced versions, wired
+orphaned modules into the package, and registered 14 new tools in the
+agent registry. Total bind-tools now **255** (up from 238).
+
+### Added
+- **CT Log Reconnaissance** (`agent/tools/scan/ct_log_tools.py`)
+  - `query_crt_sh` — Query crt.sh for subdomains and certificate history
+  - `query_certspotter` — Query CertSpotter for certificate transparency logs
+- **GitHub Leak Reconnaissance** (`agent/tools/scan/github_leak_tools.py`)
+  - `search_github_code` — Search GitHub code for leaked secrets/credentials
+  - `search_github_commits` — Search GitHub commits for sensitive data
+- **OSINT Domain Enumeration** (`agent/tools/scan/osint_recon_tools.py`)
+  - `run_amass` — Active/passive subdomain enumeration
+  - `run_subfinder` — Passive subdomain discovery
+  - `run_recon_ng` — Multi-source OSINT framework
+  - `run_assetfinder` — Asset discovery from multiple sources
+  - `run_findomain` — Certificate transparency subdomain enumeration
+  - `run_dnsx` — DNS toolkit for resolution and verification
+  - `run_gau` — Gather URLs from Wayback/Common Crawl/URLScan
+  - `run_waybackurls` — Fetch URLs from Wayback Machine
+  - `run_gowitness` — Website screenshot and tech fingerprinting
+- **Intelligence correlation** (`intel/correlation.py`)
+  - `IntelCorrelator` class for cross-source OSINT correlation
+  - Subdomain/IP, domain/URL, and infrastructure pattern correlation
+- **Shodan native tools** (`native/shodan_tools.py`)
+  - `query_shodan`, `get_host_info`, `get_shodan_facets`
+- **OSINT workflow orchestration** (`workflows/osint_workflow.py`)
+  - `run_complete_domain_recon`, `run_passive_subdomain_recon`, `aggregate_and_correlate_findings`
+- **Output parsers** (`utils/output_parsers.py`)
+  - Parsers for nmap XML, theHarvester XML, amass JSON, subfinder JSON,
+    GitHub JSON, Wayback JSON, assetfinder output, findomain output,
+    and HTML tech detection
+- **Recon data store** (`data/database/recon_store.py`)
+  - SQLite + JSONL persistence for reconnaissance results
+  - `ReconResult` dataclass, aggregation, and reporting
+
+### Changed
+- `clearwing/__init__.py`: Version synced from `"0.1.0"` to `"1.0.0"` (matching `pyproject.toml`)
+- `clearwing/agent/tools/__init__.py`: Registered all 14 new scan tools in `get_all_tools()`
+- `.gitignore`: Added `results/figma/`, `scripts/figma/`, `figma_repos/` patterns
+- Figma engagement scripts moved to `scripts/figma/`
+- Figma scan results/databases moved to `results/figma/`
+- ROE documents moved to `docs/`
+- `figma_repos/` moved to `.reference/figma_repos/` (gitignored, 30MB)
+
+### Removed
+- `clearwing/venv/` — nested venv (top-level `venv/` is canonical)
+- `clearwing/clearwing.egg-info/` — stale build artifact
+- `clearwing/pyproject.toml` — duplicate of root-level file
+- `clearwing/ruff.toml` — duplicate of root-level config
+
+---
+
 ## Session: 2026-04-27 — Ollama Cloud + Dual Container Support
 
 ### Added

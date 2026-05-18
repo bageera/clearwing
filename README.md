@@ -15,7 +15,7 @@ Groq, DeepSeek, MiniMax, Gemini, any OpenAI-compatible endpoint).
 
 Clearwing is a dual-mode offensive-security tool:
 
-- **Network-pentest agent** — a ReAct-loop agent with 238 bind-tools
+- **Network-pentest agent** — a ReAct-loop agent with 255 bind-tools
   that scans live targets, detects services and vulnerabilities,
   runs sandboxed Kali/Parrot PentestContainer tools, attempts exploits
   (gated through a human-approval guardrail), and writes reports to
@@ -495,6 +495,43 @@ run_apk_repack("/tmp/target-out", output_apk="/tmp/target-patched.apk", sign=Tru
 run_safetynet_check("com.example.app")
 ```
 
+**Phase 20: CT Log & OSINT Reconnaissance** (`agent/tools/scan/ct_log_tools.py`, `agent/tools/scan/osint_recon_tools.py`, `agent/tools/scan/github_leak_tools.py`)
+- `query_crt_sh` — Certificate Transparency log subdomain and certificate history discovery via crt.sh
+- `query_certspotter` — Certificate Transparency log enumeration via CertSpotter
+- `search_github_code` — GitHub code search for leaked secrets and credentials
+- `search_github_commits` — GitHub commit search for sensitive data exposure
+- `run_amass` — Active/passive subdomain enumeration (Kali/Parrot)
+- `run_subfinder` — Passive subdomain discovery (Kali/Parrot)
+- `run_recon_ng` — Multi-source OSINT framework (Kali/Parrot)
+- `run_assetfinder` — Asset discovery from multiple sources (Kali/Parrot)
+- `run_findomain` — Certificate transparency subdomain enumeration (Kali/Parrot)
+- `run_dnsx` — DNS resolution and verification toolkit (Kali/Parrot)
+- `run_gau` — Gather URLs from Wayback, Common Crawl, and URLScan (Kali/Parrot)
+- `run_waybackurls` — Fetch historical URLs from the Wayback Machine (Kali/Parrot)
+- `run_gowitness` — Website screenshot and technology fingerprinting (Kali/Parrot)
+
+### Phase 20: CT Log & OSINT Reconnaissance
+```python
+# Certificate Transparency subdomain discovery
+query_crt_sh("example.com")
+query_certspotter("example.com")
+
+# GitHub leak reconnaissance
+search_github_code("example.com password", language="yaml")
+search_github_commits("example.com secret", author="admin")
+
+# Containerized OSINT (Kali/Parrot)
+run_amass("example.com", options="--passive")
+run_subfinder("example.com", options="-all")
+run_recon_ng("example.com", workspace="recon")
+run_assetfinder("example.com")
+run_findomain("example.com", output_format="json")
+run_dnsx("example.com", options="-a -aaaa -cname -txt")
+run_gau("example.com", providers="wayback,commoncrawl,urlscan")
+run_waybackurls("example.com")
+run_gowitness("https://example.com", options="--screenshot")
+```
+
 All tools support dual-distro execution (`distro="kali"` or `distro="parrot"`) and share the same container lifecycle (setup → execute → cleanup).
 
 ---
@@ -609,7 +646,7 @@ runner's own artifacts are only written at the end.
 ┌──────────────────────┐      ┌────────────────────────────────┐
 │ Network-pentest agent│      │ Source-code hunter             │
 │ clearwing.agent.graph│      │ clearwing.sourcehunt.runner    │
-│  (63 tools, ReAct)   │      │                                │
+│  (255 tools, ReAct)  │      │                                │
 │                      │      │ preprocess → rank → pool →     │
 │                      │      │   hunter → verify → exploit →  │
 │                      │      │   variant loop → auto-patch →  │
