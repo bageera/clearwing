@@ -346,6 +346,19 @@ def get_all_tools() -> list[Any]:
         run_apk_repack,
         run_safetynet_check,
     )
+    from .scan.ct_log_tools import query_crt_sh, query_certspotter
+    from .scan.github_leak_tools import search_github_code, search_github_commits
+    from .scan.osint_recon_tools import (
+        run_amass,
+        run_subfinder,
+        run_recon_ng,
+        run_assetfinder,
+        run_findomain,
+        run_dnsx,
+        run_gau,
+        run_waybackurls,
+        run_gowitness,
+    )
     from .scan.scanner_tools import detect_os, detect_services, scan_ports, scan_vulnerabilities
 
     tools = [
@@ -474,6 +487,20 @@ def get_all_tools() -> list[Any]:
         run_apk_patch,
         run_apk_repack,
         run_safetynet_check,
+        # CT log & OSINT recon (new scan tools)
+        query_crt_sh,
+        query_certspotter,
+        search_github_code,
+        search_github_commits,
+        run_amass,
+        run_subfinder,
+        run_recon_ng,
+        run_assetfinder,
+        run_findomain,
+        run_dnsx,
+        run_gau,
+        run_waybackurls,
+        run_gowitness,
         kali_setup,
         kali_execute,
         kali_install_tool,

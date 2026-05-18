@@ -107,6 +107,11 @@ yarn-error.log*
 # Pipeline results output
 results/
 
+# Engagement artifacts (scans, dumps, reports – one-shot, not source)
+results/figma/
+scripts/figma/
+figma_repos/
+
 # Local research checkouts. Originally started as submodules but never
 # wired up with .gitmodules or .git/modules/; the 5 dangling gitlinks
 # were dropped from the index in the Phase 5 "gitlink cleanup" commit.
