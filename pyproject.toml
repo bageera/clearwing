@@ -75,6 +75,13 @@ vector = [
 dev = [
     "pytest>=7.0.0",
     "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.0.0",
+    "pytest-xdist>=3.0.0",
+    "pytest-httpx>=0.28.0",
+    "pytest-randomly>=3.12.0",
+    "coverage>=7.0.0",
+    "hypothesis>=6.0.0",
+    "dirty-equals>=0.7.0",
     "black>=23.0.0",
     "flake8>=6.0.0",
     "mypy>=1.0.0",
@@ -113,6 +120,30 @@ clearwing = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "strict"
+addopts = "--hypothesis-show-statistics"
+
+[tool.coverage.run]
+branch = true
+source = ["clearwing"]
+omit = [
+    "*/tests/*",
+    "*/__pycache__/*",
+    "*/.venv/*",
+    "*/.reference/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+]
+show_missing = true
+fail_under = 50
+
+[tool.coverage.html]
+directory = "htmlcov"
 
 [tool.black]
 line-length = 100

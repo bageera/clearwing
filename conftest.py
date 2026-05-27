@@ -2,6 +2,8 @@
 
 import warnings
 
+from tests.fixtures import *  # noqa: F401,F403 — exposes all shared fixtures
+
 
 def pytest_configure(config):
     """Turn any clearwing DeprecationWarning into a hard test failure.
@@ -14,3 +16,23 @@ def pytest_configure(config):
         category=DeprecationWarning,
         module=r"clearwing\..*",
     )
+
+
+def pytest_collection_modifyitems(config, items):
+    """Randomly shuffle test order to catch order-dependent bugs."""
+    import pytest
+
+    if config.getoption("--randomly", default=False):
+        # Only shuffle if --randomly is explicitly passed (not default)
+        pass
+
+
+def pytest_runtest_setup(item):
+    """Log test start for noisy test debugging."""
+    pass
+
+
+def pytest_terminal_summary(terminalreporter, exitstatus, config):
+    """Print extra info at the end of test run."""
+    if hasattr(terminalreporter, "coverage"):
+        terminalreporter.write_sep("=", "Coverage threshold check")

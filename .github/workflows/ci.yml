@@ -55,6 +55,12 @@ jobs:
       - name: Run pytest
         run: python -m pytest -q --strict-markers --strict-config
 
+      - name: Coverage
+        run: coverage run -m pytest -q --strict-markers --strict-config
+
+      - name: Coverage report
+        run: coverage report --fail-under=50
+
       - name: Build wheel + sdist
         run: python -m build
 

@@ -1,29 +1,34 @@
 # Clearwing developer commands. Mirror the CI gate so `make lint type test`
 # gives you the same pass/fail signal as a PR.
 
-.PHONY: help install-dev lint format fmt type test test-strict build clean gate all docs docs-serve security-lint
+.PHONY: help install-dev lint format fmt type test test-strict test-parallel test-coverage build clean gate all docs docs-serve security-lint
 
 PY       := venv/bin/python
 PYTEST   := $(PY) -m pytest
 RUFF     := $(PY) -m ruff
 MYPY     := $(PY) -m mypy
+COVERAGE := $(PY) -m coverage
 
 MYPY_SCOPE := clearwing/findings clearwing/sourcehunt clearwing/capabilities.py clearwing/agent/tools clearwing/core
 
 help:
 	@echo "Clearwing developer commands:"
-	@echo "  install-dev  uv pip install -e '.[dev]' (requires venv)"
-	@echo "  lint         ruff check + ruff format --check"
-	@echo "  format       ruff format (writes changes)"
-	@echo "  type         mypy on the scoped gate modules"
-	@echo "  test         pytest -q"
-	@echo "  test-strict  pytest -q --strict-markers --strict-config (CI mode)"
-	@echo "  build        python -m build + twine check"
-	@echo "  clean        remove dist/, build/, *.egg-info/, __pycache__/, .pytest_cache/"
-	@echo "  gate         lint + type + test-strict + build (full CI gate, local)"
-	@echo "  all          alias for gate"
-	@echo "  docs         mkdocs build --strict (writes site/)"
-	@echo "  docs-serve   mkdocs serve on http://127.0.0.1:8000"
+	@echo "  install-dev     uv pip install -e '.[dev]' (requires venv)"
+	@echo "  lint            ruff check + ruff format --check"
+	@echo "  format          ruff format (writes changes)"
+	@echo "  type            mypy on the scoped gate modules"
+	@echo "  test            pytest -q"
+	@echo "  test-strict     pytest -q --strict-markers --strict-config (CI mode)"
+	@echo "  test-parallel   pytest -q -n auto (parallel, requires pytest-xdist)"
+	@echo "  test-coverage   pytest --cov=clearwing --cov-report=term-missing --cov-report=html"
+	@echo "  build           python -m build + twine check"
+	@echo "  clean           remove dist/, build/, *.egg-info/, __pycache__/, .pytest_cache/, htmlcov/"
+	@echo "  gate            lint + type + test-strict + build (full CI gate, local)"
+	@echo "  all             alias for gate"
+	@echo "  docs            mkdocs build --strict (writes site/)"
+	@echo "  docs-serve      mkdocs serve on http://127.0.0.1:8000"
+	@echo "  coverage        coverage report + fail-under check"
+	@echo "  coverage-html   coverage html report (opens htmlcov/index.html)"
 
 install-dev:
 	uv pip install --python $(PY) -e '.[dev]'
@@ -45,12 +50,25 @@ test:
 test-strict:
 	$(PYTEST) -q --strict-markers --strict-config
 
+test-parallel:
+	$(PYTEST) -q -n auto
+
+test-coverage:
+	$(PYTEST) --cov=clearwing --cov-report=term-missing --cov-report=html
+
+coverage:
+	$(COVERAGE) report --fail-under=50
+
+coverage-html:
+	$(COVERAGE) html
+	@echo "HTML report: htmlcov/index.html"
+
 build: clean
 	$(PY) -m build
 	$(PY) -m twine check dist/*
 
 clean:
-	rm -rf dist/ build/ *.egg-info/
+	rm -rf dist/ build/ *.egg-info/ htmlcov/
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
 	find . -type d -name .pytest_cache -exec rm -rf {} + 2>/dev/null || true
 	find . -type d -name .ruff_cache -exec rm -rf {} + 2>/dev/null || true

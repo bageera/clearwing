@@ -13,6 +13,43 @@ The hand-curated pre-1.0 history has been archived to
 
 ---
 
+## Session: 2026-05-26 — Test Infrastructure Upgrades
+
+### Summary
+Added coverage measurement, parallel test execution, HTTP mocking, property-based
+testing support, and updated CI/Makefile to use them.
+
+### Added
+- **Test tooling** (`pyproject.toml`)
+  - `pytest-cov>=4.0.0` — coverage plugin
+  - `pytest-xdist>=3.0.0` — parallel test execution (`-n auto`)
+  - `pytest-httpx>=0.28.0` — HTTP mocking for API tool tests
+  - `pytest-randomly>=3.12.0` — test order shuffling to catch order dependencies
+  - `coverage>=7.0.0` — coverage measurement
+  - `hypothesis>=6.0.0` — property-based testing
+  - `dirty-equals>=0.7.0` — type-safe fixture comparisons
+- **Coverage config** (`pyproject.toml` `[tool.coverage]`)
+  - Branch coverage enabled, source=clearwing, omit test/venv paths
+  - `fail_under = 50` threshold
+  - HTML report to `htmlcov/`
+- **Fixture imports** (`conftest.py`)
+  - Imports all `tests.fixtures` for shared fixture availability
+  - Added `pytest_collection_modifyitems` and `pytest_terminal_summary` hooks
+
+### Changed
+- **CI pipeline** (`.github/workflows/ci.yml`)
+  - Added `coverage run` step after pytest
+  - Added `coverage report --fail-under=50` step
+- **Makefile**
+  - Added `test-parallel` (`-n auto`)
+  - Added `test-coverage` (`--cov=clearwing --cov-report=term-missing --cov-report=html`)
+  - Added `coverage` (report + fail-under)
+  - Added `coverage-html` (html generation)
+  - Updated `clean` to remove `htmlcov/`
+- **`tests/README.md`** — full rewrite with tooling docs, coverage/hypothesis instructions
+
+---
+
 ## Session: 2026-05-18 — Repository Cleanup & OSINT Integration
 
 ### Summary
