@@ -2,8 +2,8 @@
 
 **Document Classification:** CONFIDENTIAL — Authorized Personnel Only  
 **Document ID:** LAZ-ROE-MASTER-2026  
-**Effective Date:** May 1, 2026  
-**Expiration Date:** June 1, 2026  
+**Effective Date:** June 1, 2026  
+**Expiration Date:** July 1, 2026  
 **Total Authorization Period:** 31 days
 
 ---
@@ -38,10 +38,50 @@ This Letter of Authorization (LOA) supersedes all prior individual amendments an
 | **Amendment 04** | May 2, 2026 | **Superseded by LOA** | Added internal VPN, Cloud Run, Firebase, GCP/AWS infrastructure, container testing |
 | **Amendment 05** | May 3, 2026 | **Superseded by LOA** | Added `secops@lazarus.enterprises` account authorization |
 | **This LOA** | May 3, 00:25 | **MASTER** | Consolidates all above; adds comprehensive Letter of Authorization provisions |
+| **Amendment 06** | June 5, 2026 | **Active** | Retest authorization: re-validation of all prior findings against current environment state; scope unchanged (Tiers 1-7); focused re-verification of 8 critical + 8 high findings from May 2026 assessment |
 
 ### 2.2 Incorporation by Reference
 
 All provisions, constraints, and authorizations from Amendments 01-05 are **hereby incorporated** into this LOA and remain enforceable. In case of conflict, this LOA governs.
+
+### 2.3 Amendment 06 — Retest Authorization (June 5, 2026)
+
+**Purpose:** Re-validation of all findings from the May 2026 assessment against current environment state.
+
+**Scope:** Full scope (Tiers 1-7) unchanged. Retest is not limited to previously identified findings — new findings encountered during re-verification are authorized under the same terms as the original assessment.
+
+**Retest Focus Areas:**
+
+| Finding ID | Severity | Description | Re-verification Target |
+|------------|----------|-------------|----------------------|
+| LAZ-001 | CRITICAL | Firebase API key leaked in production JS bundle | Verify key rotation or removal |
+| LAZ-002 | CRITICAL | Backend infra URLs leaked in client JS | Verify CSP/header hardening |
+| LAZ-003 | CRITICAL | `/status` auth bypass — returns SUCCESS for all tokens | Verify auth gate implementation |
+| LAZ-004 | CRITICAL | Firebase Identity Toolkit account enumeration | Verify `createAuthUri`/`sendOobCode` regression |
+| LAZ-005 | CRITICAL | Missing security headers + open CORS `*` | Verify header/cors policy changes |
+| LFR-001 | CRITICAL | LLM model name not validated → 500 crash (DoS) | Verify input validation on `lazarus-rikai-routing` |
+| LZ-001 | CRITICAL | Rundeck login zero CSRF tokens | Verify CSRF token implementation |
+| ALL-001 | CRITICAL | Firebase Auth eventual consistency enumeration | Verify timing-oracle mitigation |
+| LAZ-NEW-001 | HIGH | Testing project embeds production Firebase API key | Verify cross-environment credential isolation |
+| LAZ-NEW-002 | HIGH | Preview dashboard uses different Firebase project | Verify environment separation |
+| ADMIN-CRIT-001 | CRITICAL | Admin API `/status` auth bypass (identical to LAZ-003) | Verify admin-specific auth enforcement |
+| SALES-001 | HIGH | Sales-admin JS bundle — complete service inventory | Verify bundle minification/config removal |
+| LZ-002 | HIGH | Rundeck session fixation | Verify JSESSIONID regeneration |
+| LAZ-006 | HIGH | Password change without re-auth | Verify `accounts:update` requires recent auth |
+| LAZ-007 | HIGH | Account deletion without re-auth | Verify `accounts:delete` requires recent auth |
+| LAZ-008 | HIGH | Unlimited concurrent sessions | Verify session limiting |
+
+**Retest Methodology:**
+1. **Regression testing** — Re-execute each finding's reproduction steps to confirm remediation
+2. **Delta discovery** — Full probe suite re-run to identify new attack surface since May 2026
+3. **Environment drift** — Compare JS bundles, API response schemas, security headers, TLS configurations against May 2026 baselines
+4. **New test vectors** — Execute previously untested attack classes (XSS, IDOR, WebSocket, JWT crypto, subdomain takeover) per the gap analysis from the May assessment
+
+**Constraints:**
+- All constraints from the Master LOA (Sections 3.4, 5.1-5.4) remain in full effect
+- Same pre-approval requirements for exploitation (4-hour notice production, 8-hour notice destructive)
+- Same data handling, evidence storage, and communication protocols
+- Retest results will be documented in a dedicated retest findings report separate from the original assessment
 
 ---
 
@@ -364,6 +404,7 @@ By signing below, all parties acknowledge:
 - [ ] authorization_roe_amendment_5.pdf (Amendment 05)
 - [ ] authorization_roe_consolidated.pdf (Consolidated 04+05)
 - [ ] authorization_roe_final.pdf (Amendment 05 Final)
+- [ ] amendment_06_retest_authorization.md (Amendment 06 — Retest)
 
 ### Appendix B: Pentest Findings Summary
 - [ ] /tmp/roe_v3_final_consolidated_report_2026-05-02.html
@@ -404,10 +445,11 @@ By signing below, all parties acknowledge:
 
 ---
 
-*This Letter of Authorization is effective upon final signature and remains valid through June 1, 2026. Any modifications require written amendment signed by all parties. This document, together with all referenced Amendments 01-05, constitutes the complete and exclusive statement of the parties' agreement.*
+*This Letter of Authorization is effective upon final signature and remains valid through July 1, 2026, including Amendment 06 retest authorization. Any modifications require written amendment signed by all parties. This document, together with all referenced Amendments 01-06, constitutes the complete and exclusive statement of the parties' agreement.*
 
 **Document Control:**
-- Version: 1.0
+- Version: 1.1
 - Created: 2026-05-03 00:25 PST
-- Review Date: 2026-05-15
-- Next Amendment Window: 2026-06-01 (30-day renewal option)
+- Amended: 2026-06-05 (Amendment 06 — Retest Authorization)
+- Review Date: 2026-06-15
+- Next Amendment Window: 2026-07-01 (30-day renewal option)

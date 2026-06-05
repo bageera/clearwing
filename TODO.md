@@ -3,9 +3,10 @@
 ## Current Session: Retest Readiness (June 2026)
 
 ### LOA Status
-- **LOA expired**: June 1, 2026 — **RENEWAL REQUIRED** before any live testing
-- Master LOA: `LETTER_OF_AUTHORIZATION_LAZARUS_AI_MASTER.md`
-- All amendments (01-05) incorporated; scope covers 4 domains + all subdomains
+- **LOA Amendment 06** (June 5, 2026): Retest authorization — re-validation of all prior findings + delta discovery
+- **Expiration**: July 1, 2026
+- Master LOA: `LETTER_OF_AUTHORIZATION_LAZARUS_AI_MASTER.md` (v1.1)
+- All amendments (01-06) incorporated; scope covers 4 domains + all subdomains (Tiers 1-7)
 
 ### Code Fixes Applied (June 5, 2026)
 - [x] Fix `\u003c`/`\u003e` byte-string escapes in 4 fuzz probes (Python 3.12+ compat)
