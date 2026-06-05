@@ -1,0 +1,165 @@
+{
+  "target": "192.168.1.1",
+  "scan_time": "2026-05-20T19:22:33.514844Z",
+  "findings": [
+    {
+      "severity": "medium",
+      "category": "TLS",
+      "title": "Insecure TLS version enabled: TLSv1.1",
+      "detail": "The router accepts TLSv1.1 connections, which is deprecated and vulnerable to downgrade attacks.",
+      "evidence": "TLSv1.1",
+      "recommendation": "Disable TLSv1.1 in router TLS configuration. Only TLS 1.2+ should be accepted."
+    },
+    {
+      "severity": "info",
+      "category": "TLS",
+      "title": "TLS 1.3 supported",
+      "detail": "Good \u2014 the router supports the latest TLS version.",
+      "evidence": "Protocol  : TLSv1.3",
+      "recommendation": "Keep TLS 1.3 enabled."
+    },
+    {
+      "severity": "medium",
+      "category": "SSL/TLS",
+      "title": "Vendor default SSL certificate",
+      "detail": "The router uses a default ASKEY self-signed certificate (CN=askey.com, O=ASKEY, C=CN). This enables MITM attacks as the cert cannot be verified against a trusted CA.",
+      "evidence": "Issuer: C=CN, ST=TW, O=ASKEY, CN=askey.com",
+      "recommendation": "Replace the default certificate with a unique cert. Consider DNS-based ACME cert provisioning for home routers."
+    },
+    {
+      "severity": "low",
+      "category": "SSL/TLS",
+      "title": "2048-bit RSA key (minimum)",
+      "detail": "The certificate uses a 2048-bit RSA key, which is the minimum acceptable size. 4096-bit or EC keys are preferred.",
+      "evidence": "RSA Public-Key: (2048 bit)",
+      "recommendation": "Consider upgrading to 4096-bit RSA or ECDSA P-384 for long-term security."
+    },
+    {
+      "severity": "low",
+      "category": "SSL/TLS",
+      "title": "No Subject Alternative Name (SAN) in certificate",
+      "detail": "The certificate lacks SAN extensions, which may cause warnings in modern browsers.",
+      "evidence": "No SAN found in cert output",
+      "recommendation": "Regenerate certificate with SAN including the hostname/IP."
+    },
+    {
+      "severity": "high",
+      "category": "HTTP Headers",
+      "title": "Multiple security headers missing",
+      "detail": "The following security headers are not set: X-Frame-Options (clickjacking protection), X-Content-Type-Options (MIME-type sniffing prevention), Content-Security-Policy (XSS/content injection protection), Strict-Transport-Security (HSTS \u2014 forces HTTPS), X-XSS-Protection (browser XSS filter). This exposes the router UI to clickjacking, XSS, MIME confusion, and protocol downgrade attacks.",
+      "evidence": "X-Frame-Options (clickjacking protection)\nX-Content-Type-Options (MIME-type sniffing prevention)\nContent-Security-Policy (XSS/content injection protection)\nStrict-Transport-Security (HSTS \u2014 forces HTTPS)\nX-XSS-Protection (browser XSS filter)",
+      "recommendation": "Configure lighttpd to send: X-Frame-Options: DENY, X-Content-Type-Options: nosniff, Content-Security-Policy: default-src 'self', Strict-Transport-Security: max-age=63072000, X-XSS-Protection: 1; mode=block."
+    },
+    {
+      "severity": "medium",
+      "category": "Information Disclosure",
+      "title": "Server version disclosed in HTTP headers",
+      "detail": "lighttpd/1.4.59 is disclosed via the Server header. Attackers can target known vulnerabilities for this exact version.",
+      "evidence": "Server: lighttpd/1.4.59",
+      "recommendation": "Set server.tag = '' in lighttpd.conf or use server.tag to show a generic string."
+    },
+    {
+      "severity": "high",
+      "category": "Information Disclosure",
+      "title": "Sensitive device info exposed without authentication",
+      "detail": "The router's unauthenticated info page exposes: WAN IPv4 address: exposed on unauthenticated info page, MAC address: exposed on unauthenticated info page. This aids reconnaissance for targeted attacks including firmware-specific exploits, MAC-based tracking, and WAN IP profiling.",
+      "evidence": "WAN IP, IPv6, MAC, Serial Number, Model, Firmware Version all visible on /cgi-bin/index.cgi without auth",
+      "recommendation": "Require authentication to view device information. At minimum, redact WAN IP, MAC, and serial number from unauthenticated pages."
+    },
+    {
+      "severity": "medium",
+      "category": "Auth Bypass",
+      "title": "connectivity_api accessible without authentication",
+      "detail": "The /cgi-bin/connectivity_api endpoint returns 'Connected' without requiring authentication. Attackers can determine internet connectivity status.",
+      "evidence": "GET /cgi-bin/connectivity_api -> 'Connected'",
+      "recommendation": "Require authentication for all CGI API endpoints."
+    },
+    {
+      "severity": "medium",
+      "category": "Auth Bypass",
+      "title": "pods_api accessible without authentication",
+      "detail": "The /cgi-bin/pods_api endpoint returns data without requiring authentication. Pod serial numbers can be enumerated.",
+      "evidence": "GET /cgi-bin/pods_api -> 'N/A'",
+      "recommendation": "Require authentication for all CGI API endpoints."
+    },
+    {
+      "severity": "low",
+      "category": "API",
+      "title": "POST /cgi-bin/connectivity_api accepts JSON body",
+      "detail": "POST to /cgi-bin/connectivity_api with JSON body returned a response (not 411/403/404). May indicate input processing without auth.",
+      "evidence": "Connected\n\nHTTP_CODE: 200",
+      "recommendation": "Validate that POST endpoints require authentication and reject unexpected content types."
+    },
+    {
+      "severity": "low",
+      "category": "API",
+      "title": "POST /cgi-bin/pods_api accepts JSON body",
+      "detail": "POST to /cgi-bin/pods_api with JSON body returned a response (not 411/403/404). May indicate input processing without auth.",
+      "evidence": "N/A\n\nHTTP_CODE: 200",
+      "recommendation": "Validate that POST endpoints require authentication and reject unexpected content types."
+    },
+    {
+      "severity": "info",
+      "category": "Path Traversal",
+      "title": "Path traversal: not exploitable (false positive)",
+      "detail": "Initial scan flagged path traversal with HTTP 200. Verification shows the response is the router's default info page (index.cgi) or lighttpd 411 error page, not /etc/passwd content. The `/cgi-bin/..;/` path resolves to index.cgi due to lighttpd path normalization, not directory traversal. Non-existent CGI paths return 404 correctly.",
+      "evidence": "All traversal payloads return generic HTML pages (index.cgi or 411 error), not /etc/passwd content. Non-existent paths return 404.",
+      "recommendation": "Ensure CGI paths are properly sanitized. Apply input validation on all path components."
+    },
+    {
+      "severity": "info",
+      "category": "DNS",
+      "title": "DNS resolver responds to queries",
+      "detail": "The router's DNS service resolves external queries. Output: 142.250.176.78",
+      "evidence": "142.250.176.78",
+      "recommendation": "If this router is not intended to serve DNS to LAN clients, restrict DNS to internal interfaces only. If serving LAN, ensure it is not accessible from WAN."
+    },
+    {
+      "severity": "medium",
+      "category": "Known Vulnerability",
+      "title": "lighttpd 1.4.59 \u2014 potential CVEs applicable",
+      "detail": "lighttpd 1.4.59 (released ~Dec 2020) may be affected by CVE-2022-37796 (HTTP request smuggling via chunked TE+CL) and other vulnerabilities patched in later versions. The firmware appears to be from Feb 2026 (prod build), but lighttpd version suggests the binary itself may be outdated.",
+      "evidence": "Server: lighttpd/1.4.59, FW: 1.4.1-13-888155-g202602200357-SBE1V1K-prod",
+      "recommendation": "Verify if lighttpd patches are included in the firmware build. If not, update to lighttpd 1.4.68+ which addresses known CVEs. Configure server.tag to suppress version disclosure."
+    },
+    {
+      "severity": "info",
+      "category": "HTTP/2",
+      "title": "HTTP/2 enabled",
+      "detail": "The router supports HTTP/2 (h2 ALPN was seen in nmap results). HTTP/2 multiplexing could be abused for request smuggling if lighttpd's h2 implementation has parsing bugs.",
+      "evidence": "",
+      "recommendation": "Monitor for HTTP/2-specific CVEs in lighttpd."
+    },
+    {
+      "severity": "medium",
+      "category": "Authentication",
+      "title": "Verify default/weak credentials",
+      "detail": "Spectrum routers commonly ship with default admin credentials (admin/admin, admin/password, or printed on label). The router uses a CGI-based management interface that requires authentication for changes but exposes info without it.",
+      "evidence": "Router model SBE1V1K, ASKEY vendor. Common defaults: admin/admin, admin/(serial#), admin/(MAC).",
+      "recommendation": "1) Change default admin password. 2) Use a strong, unique password. 3) Disable remote admin access if not needed. 4) Verify no default backdoor accounts exist."
+    },
+    {
+      "severity": "low",
+      "category": "HTTP Methods",
+      "title": "Non-standard HTTP methods accepted",
+      "detail": "The following methods returned non-rejection codes: OPTIONS: 200, CONNECT: 400",
+      "evidence": "OPTIONS: 200, CONNECT: 400",
+      "recommendation": "Disable unnecessary HTTP methods (PUT, DELETE, PATCH) on the router web server."
+    },
+    {
+      "severity": "info",
+      "category": "CORS",
+      "title": "No CORS headers detected",
+      "detail": "The router does not send CORS headers, which prevents cross-origin JavaScript from interacting with it.",
+      "evidence": "No Access-Control-Allow-Origin in responses",
+      "recommendation": "Current configuration is acceptable. Maintain absence of permissive CORS headers."
+    }
+  ],
+  "summary": {
+    "medium": 7,
+    "info": 5,
+    "low": 5,
+    "high": 2,
+    "total": 19
+  }
+}

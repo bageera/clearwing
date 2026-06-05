@@ -111,7 +111,7 @@ def probe_resource_exhaustion(endpoint: str, authkey: str, orgid: str) -> list[P
     # Extreme max_tokens
     for max_tokens in [32000, 64000, 128000]:
         body = build_request_body(
-            file_data=b"%PDF-1.4\n1 0 obj\n\u003c\u003c/Type /Catalog /Pages 2 0 R\u003e\u003e\nendobj\n2 0 obj\n\u003c\u003c/Type /Pages /Kids [] /Count 0\u003e\u003e\nendobj\nxref\n0 3\n0000000000 65535 f\n0000000009 00000 n\n0000000052 00000 n\ntrailer\n\u003c\u003c/Size 3 /Root 1 0 R\u003e\u003e\nstartxref\n101\n%%EOF",
+            file_data=b"%PDF-1.4\n1 0 obj\n\x3c\x3c/Type /Catalog /Pages 2 0 R\x3e\x3e\nendobj\n2 0 obj\n\x3c\x3c/Type /Pages /Kids [] /Count 0\x3e\x3e\nendobj\nxref\n0 3\n0000000000 65535 f\n0000000009 00000 n\n0000000052 00000 n\ntrailer\n\x3c\x3c/Size 3 /Root 1 0 R\x3e\x3e\nstartxref\n101\n%%EOF",
             prompt="Summarize this document.",
             extra_settings={
                 "modelSettings": {"modelName": "gpt-4o", "max_tokens": str(max_tokens)},
@@ -143,7 +143,7 @@ def probe_resource_exhaustion(endpoint: str, authkey: str, orgid: str) -> list[P
     # Extreme context size
     for max_ctx in [50, 100, 200]:
         body = build_request_body(
-            file_data=b"%PDF-1.4\n1 0 obj\n\u003c\u003c/Type /Catalog /Pages 2 0 R\u003e\u003e\nendobj\n2 0 obj\n\u003c\u003c/Type /Pages /Kids [] /Count 0\u003e\u003e\nendobj\nxref\n0 3\n0000000000 65535 f\n0000000009 00000 n\n0000000052 00000 n\ntrailer\n\u003c\u003c/Size 3 /Root 1 0 R\u003e\u003e\nstartxref\n101\n%%EOF",
+            file_data=b"%PDF-1.4\n1 0 obj\n\x3c\x3c/Type /Catalog /Pages 2 0 R\x3e\x3e\nendobj\n2 0 obj\n\x3c\x3c/Type /Pages /Kids [] /Count 0\x3e\x3e\nendobj\nxref\n0 3\n0000000000 65535 f\n0000000009 00000 n\n0000000052 00000 n\ntrailer\n\x3c\x3c/Size 3 /Root 1 0 R\x3e\x3e\nstartxref\n101\n%%EOF",
             prompt="Summarize this document.",
             extra_settings={
                 "modelSettings": {"modelName": "gpt-4o", "max_tokens": "16384"},
@@ -185,7 +185,7 @@ def main():
     args = parser.parse_args()
 
     base_body = build_request_body(
-        file_data=b"%PDF-1.4\n1 0 obj\n\u003c\u003c/Type /Catalog /Pages 2 0 R\u003e\u003e\nendobj\n2 0 obj\n\u003c\u003c/Type /Pages /Kids [] /Count 0\u003e\u003e\nendobj\nxref\n0 3\n0000000000 65535 f\n0000000009 00000 n\n0000000052 00000 n\ntrailer\n\u003c\u003c/Size 3 /Root 1 0 R\u003e\u003e\nstartxref\n101\n%%EOF",
+        file_data=b"%PDF-1.4\n1 0 obj\n\x3c\x3c/Type /Catalog /Pages 2 0 R\x3e\x3e\nendobj\n2 0 obj\n\x3c\x3c/Type /Pages /Kids [] /Count 0\x3e\x3e\nendobj\nxref\n0 3\n0000000000 65535 f\n0000000009 00000 n\n0000000052 00000 n\ntrailer\n\x3c\x3c/Size 3 /Root 1 0 R\x3e\x3e\nstartxref\n101\n%%EOF",
         prompt="Summarize this document.",
     )
 

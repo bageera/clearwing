@@ -30,16 +30,16 @@ def _make_pdf_polyglot_html() -> bytes:
     """PDF that is also a valid HTML file (polyglot)."""
     # PDF readers start at %PDF, browsers start at <html>
     content = (
-        b"%PDF-1.4\n1 0 obj\n\u003c\u003c/Type /Catalog /Pages 2 0 R\u003e\u003e\nendobj\n"
-        b"2 0 obj\n\u003c\u003c/Type /Pages /Kids [3 0 R] /Count 1\u003e\u003e\nendobj\n"
-        b"3 0 obj\n\u003c\u003c/Type /Page /Parent 2 0 R /MediaBox [0 0 612 792]\n"
-        b"/Contents 4 0 R\u003e\u003e\nendobj\n"
-        b"4 0 obj\n\u003c\u003c/Length 0\u003e\u003e\nstream\nendstream\nendobj\n"
+        b"%PDF-1.4\n1 0 obj\n\x3c\x3c/Type /Catalog /Pages 2 0 R\x3e\x3e\nendobj\n"
+        b"2 0 obj\n\x3c\x3c/Type /Pages /Kids [3 0 R] /Count 1\x3e\x3e\nendobj\n"
+        b"3 0 obj\n\x3c\x3c/Type /Page /Parent 2 0 R /MediaBox [0 0 612 792]\n"
+        b"/Contents 4 0 R\x3e\x3e\nendobj\n"
+        b"4 0 obj\n\x3c\x3c/Length 0\x3e\x3e\nstream\nendstream\nendobj\n"
         b"xref\n0 5\n0000000000 65535 f\n0000000009 00000 n\n"
         b"0000000052 00000 n\n0000000101 00000 n\n0000000201 00000 n\n"
-        b"trailer\n\u003c\u003c/Size 5 /Root 1 0 R\u003e\u003e\nstartxref\n250\n%%EOF\n"
-        b"\u003c!-- HTML portion starts here --\u003e\n"
-        b"\u003chtml\u003e\u003cbody\u003e\u003cscript\u003ealert('polyglot')\u003c/script\u003e\u003c/body\u003e\u003c/html\u003e"
+        b"trailer\n\x3c\x3c/Size 5 /Root 1 0 R\x3e\x3e\nstartxref\n250\n%%EOF\n"
+        b"\x3c!-- HTML portion starts here --\x3e\n"
+        b"\x3chtml\x3e\x3cbody\x3e\x3cscript\x3ealert('polyglot')\x3c/script\x3e\x3c/body\x3e\x3c/html\x3e"
     )
     return content
 
@@ -47,45 +47,45 @@ def _make_pdf_polyglot_html() -> bytes:
 def _make_pdf_malformed_xref() -> bytes:
     """PDF with a deliberately corrupted xref table."""
     return (
-        b"%PDF-1.4\n1 0 obj\n\u003c\u003c/Type /Catalog /Pages 2 0 R\u003e\u003e\nendobj\n"
-        b"2 0 obj\n\u003c\u003c/Type /Pages /Kids [] /Count 0\u003e\u003e\nendobj\n"
+        b"%PDF-1.4\n1 0 obj\n\x3c\x3c/Type /Catalog /Pages 2 0 R\x3e\x3e\nendobj\n"
+        b"2 0 obj\n\x3c\x3c/Type /Pages /Kids [] /Count 0\x3e\x3e\nendobj\n"
         b"xref\n0 3\n0000000000 65535 f\n0000000009 00000 n\n"
         b"0000000052 99999 n\n"  # invalid generation number
-        b"trailer\n\u003c\u003c/Size 3 /Root 1 0 R\u003e\u003e\nstartxref\n101\n%%EOF"
+        b"trailer\n\x3c\x3c/Size 3 /Root 1 0 R\x3e\x3e\nstartxref\n101\n%%EOF"
     )
 
 
 def _make_pdf_recursive_objects() -> bytes:
     """PDF with self-referencing object causing infinite loop if naively traversed."""
     return (
-        b"%PDF-1.4\n1 0 obj\n\u003c\u003c/Type /Catalog /Pages 1 0 R\u003e\u003e\nendobj\n"
+        b"%PDF-1.4\n1 0 obj\n\x3c\x3c/Type /Catalog /Pages 1 0 R\x3e\x3e\nendobj\n"
         b"xref\n0 2\n0000000000 65535 f\n0000000009 00000 n\n"
-        b"trailer\n\u003c\u003c/Size 2 /Root 1 0 R\u003e\u003e\nstartxref\n50\n%%EOF"
+        b"trailer\n\x3c\x3c/Size 2 /Root 1 0 R\x3e\x3e\nstartxref\n50\n%%EOF"
     )
 
 
 def _make_pdf_stream_overflow_hint() -> bytes:
     """PDF declaring a huge stream length (parser may attempt large allocation)."""
     return (
-        b"%PDF-1.4\n1 0 obj\n\u003c\u003c/Type /Catalog /Pages 2 0 R\u003e\u003e\nendobj\n"
-        b"2 0 obj\n\u003c\u003c/Type /Pages /Kids [3 0 R] /Count 1\u003e\u003e\nendobj\n"
-        b"3 0 obj\n\u003c\u003c/Type /Page /Parent 2 0 R /MediaBox [0 0 612 792]"
-        b"/Contents 4 0 R\u003e\u003e\nendobj\n"
-        b"4 0 obj\n\u003c\u003c/Length 4294967295\u003e\u003e\nstream\n"  # 4GB stream length
+        b"%PDF-1.4\n1 0 obj\n\x3c\x3c/Type /Catalog /Pages 2 0 R\x3e\x3e\nendobj\n"
+        b"2 0 obj\n\x3c\x3c/Type /Pages /Kids [3 0 R] /Count 1\x3e\x3e\nendobj\n"
+        b"3 0 obj\n\x3c\x3c/Type /Page /Parent 2 0 R /MediaBox [0 0 612 792]"
+        b"/Contents 4 0 R\x3e\x3e\nendobj\n"
+        b"4 0 obj\n\x3c\x3c/Length 4294967295\x3e\x3e\nstream\n"  # 4GB stream length
         b"X\nendstream\nendobj\n"
         b"xref\n0 5\n0000000000 65535 f\n0000000009 00000 n\n"
         b"0000000052 00000 n\n0000000101 00000 n\n0000000201 00000 n\n"
-        b"trailer\n\u003c\u003c/Size 5 /Root 1 0 R\u003e\u003e\nstartxref\n250\n%%EOF"
+        b"trailer\n\x3c\x3c/Size 5 /Root 1 0 R\x3e\x3e\nstartxref\n250\n%%EOF"
     )
 
 
 def _make_pdf_infinite_page_array() -> bytes:
     """PDF with circular page array (Kids self-reference)."""
     return (
-        b"%PDF-1.4\n1 0 obj\n\u003c\u003c/Type /Catalog /Pages 2 0 R\u003e\u003e\nendobj\n"
-        b"2 0 obj\n\u003c\u003c/Type /Pages /Kids [2 0 R] /Count 1\u003e\u003e\nendobj\n"
+        b"%PDF-1.4\n1 0 obj\n\x3c\x3c/Type /Catalog /Pages 2 0 R\x3e\x3e\nendobj\n"
+        b"2 0 obj\n\x3c\x3c/Type /Pages /Kids [2 0 R] /Count 1\x3e\x3e\nendobj\n"
         b"xref\n0 3\n0000000000 65535 f\n0000000009 00000 n\n0000000052 00000 n\n"
-        b"trailer\n\u003c\u003c/Size 3 /Root 1 0 R\u003e\u003e\nstartxref\n101\n%%EOF"
+        b"trailer\n\x3c\x3c/Size 3 /Root 1 0 R\x3e\x3e\nstartxref\n101\n%%EOF"
     )
 
 
@@ -101,7 +101,7 @@ def _make_docx_with_dde() -> bytes:
         # [Content_Types].xml
         zf.writestr(
             "[Content_Types].xml",
-            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?\u003e'
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?\x3e'
             '&lt;Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"&gt;'
             '&lt;Default Extension="xml" ContentType="application/xml"/&gt;'
             '&lt;Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/&gt;'
@@ -111,7 +111,7 @@ def _make_docx_with_dde() -> bytes:
         # _rels/.rels
         zf.writestr(
             "_rels/.rels",
-            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?\u003e'
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?\x3e'
             '&lt;Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"&gt;'
             '&lt;Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/&gt;'
             "&lt;/Relationships&gt;",
@@ -119,7 +119,7 @@ def _make_docx_with_dde() -> bytes:
         # word/_rels/document.xml.rels
         zf.writestr(
             "word/_rels/document.xml.rels",
-            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?\u003e'
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?\x3e'
             '&lt;Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"&gt;'
             '&lt;Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/&gt;'
             "&lt;/Relationships&gt;",
@@ -127,7 +127,7 @@ def _make_docx_with_dde() -> bytes:
         # word/document.xml with DDE field
         zf.writestr(
             "word/document.xml",
-            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?\u003e'
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?\x3e'
             '&lt;w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"&gt;'
             '&lt;w:body&gt;'
             '&lt;w:p&gt;'
@@ -148,7 +148,7 @@ def _make_docx_with_dde() -> bytes:
         # word/styles.xml (minimal)
         zf.writestr(
             "word/styles.xml",
-            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?\u003e'
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?\x3e'
             '&lt;w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"/&gt;',
         )
     return buf.getvalue()
@@ -160,7 +160,7 @@ def _make_pptx_with_macro_hint() -> bytes:
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
         zf.writestr(
             "[Content_Types].xml",
-            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?\u003e'
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?\x3e'
             '&lt;Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"&gt;'
             '&lt;Default Extension="xml" ContentType="application/xml"/&gt;'
             '&lt;Override PartName="/ppt/presentation.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"/&gt;'
@@ -168,14 +168,14 @@ def _make_pptx_with_macro_hint() -> bytes:
         )
         zf.writestr(
             "_rels/.rels",
-            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?\u003e'
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?\x3e'
             '&lt;Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"&gt;'
             '&lt;Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="ppt/presentation.xml"/&gt;'
             "&lt;/Relationships&gt;",
         )
         zf.writestr(
             "ppt/presentation.xml",
-            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?\u003e'
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?\x3e'
             '&lt;p:presentation xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"/&gt;',
         )
     return buf.getvalue()
@@ -187,7 +187,7 @@ def _make_xlsx_with_formula() -> bytes:
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
         zf.writestr(
             "[Content_Types].xml",
-            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?\u003e'
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?\x3e'
             '&lt;Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"&gt;'
             '&lt;Default Extension="xml" ContentType="application/xml"/&gt;'
             '&lt;Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/&gt;'
@@ -195,21 +195,21 @@ def _make_xlsx_with_formula() -> bytes:
         )
         zf.writestr(
             "_rels/.rels",
-            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?\u003e'
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?\x3e'
             '&lt;Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"&gt;'
             '&lt;Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/&gt;'
             "&lt;/Relationships&gt;",
         )
         zf.writestr(
             "xl/workbook.xml",
-            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?\u003e'
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?\x3e'
             '&lt;workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"&gt;'
             '&lt;sheets&gt;&lt;sheet name="Sheet1" sheetId="1" r:id="rId1"/&gt;&lt;/sheets&gt;'
             "&lt;/workbook&gt;",
         )
         zf.writestr(
             "xl/worksheets/sheet1.xml",
-            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?\u003e'
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?\x3e'
             '&lt;worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"&gt;'
             '&lt;sheetData&gt;'
             '&lt;row r="1"&gt;&lt;c r="A1"&gt;&lt;f&gt;=cmd|&#39; /C calc&#39;!A0&lt;/f&gt;&lt;/c&gt;&lt;/row&gt;'
@@ -222,7 +222,7 @@ def _make_xlsx_with_formula() -> bytes:
 def _make_large_pdf() -> bytes:
     """PDF with many pages to test processing limits (not a real parser stressor)."""
     # Just a valid minimal PDF — the real DoS is in settings, not file size here
-    return b"%PDF-1.4\n1 0 obj\n\u003c\u003c/Type /Catalog /Pages 2 0 R\u003e\u003e\nendobj\n2 0 obj\n\u003c\u003c/Type /Pages /Kids [] /Count 0\u003e\u003e\nendobj\nxref\n0 3\n0000000000 65535 f\n0000000009 00000 n\n0000000052 00000 n\ntrailer\n\u003c\u003c/Size 3 /Root 1 0 R\u003e\u003e\nstartxref\n101\n%%EOF"
+    return b"%PDF-1.4\n1 0 obj\n\x3c\x3c/Type /Catalog /Pages 2 0 R\x3e\x3e\nendobj\n2 0 obj\n\x3c\x3c/Type /Pages /Kids [] /Count 0\x3e\x3e\nendobj\nxref\n0 3\n0000000000 65535 f\n0000000009 00000 n\n0000000052 00000 n\ntrailer\n\x3c\x3c/Size 3 /Root 1 0 R\x3e\x3e\nstartxref\n101\n%%EOF"
 
 
 def build_file_abuse_payloads() -> list[tuple[str, bytes | str, dict[str, Any] | None]]:

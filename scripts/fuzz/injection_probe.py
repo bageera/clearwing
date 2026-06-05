@@ -29,7 +29,7 @@ def build_injection_payloads() -> list[tuple[str, bytes | str, dict[str, Any] | 
     file_data is base64-encoded bytes (a minimal PDF) for most probes.
     """
     # Minimal valid PDF header as bytes for inline base64 upload
-    minimal_pdf = b"%PDF-1.4\n1 0 obj\n\u003c\u003c/Type /Catalog /Pages 2 0 R\u003e\u003e\nendobj\n2 0 obj\n\u003c\u003c/Type /Pages /Kids [] /Count 0\u003e\u003e\nendobj\nxref\n0 3\n0000000000 65535 f\n0000000009 00000 n\n0000000052 00000 n\ntrailer\n\u003c\u003c/Size 3 /Root 1 0 R\u003e\u003e\nstartxref\n101\n%%EOF"
+    minimal_pdf = b"%PDF-1.4\n1 0 obj\n\x3c\x3c/Type /Catalog /Pages 2 0 R\x3e\x3e\nendobj\n2 0 obj\n\x3c\x3c/Type /Pages /Kids [] /Count 0\x3e\x3e\nendobj\nxref\n0 3\n0000000000 65535 f\n0000000009 00000 n\n0000000052 00000 n\ntrailer\n\x3c\x3c/Size 3 /Root 1 0 R\x3e\x3e\nstartxref\n101\n%%EOF"
 
     sql_payloads = [
         "What is this document? ' OR '1'='1",
@@ -64,7 +64,7 @@ def build_injection_payloads() -> list[tuple[str, bytes | str, dict[str, Any] | 
         "What is this document? {{config}}",
         "What is this document? {% import os %}{{os.system('id')}}",
         "What is this document? ${{7*7}}",
-        "What is this document? <%= 7 * 7 %\u003e",
+        "What is this document? <%= 7 * 7 %\x3e",
     ]
 
     xxe_payloads = [

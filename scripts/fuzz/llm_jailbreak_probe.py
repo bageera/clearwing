@@ -140,7 +140,7 @@ def build_jailbreak_payloads() -> list[tuple[str, str | bytes, dict[str, Any] | 
     ]
 
     # Minimal PDF for base64 uploads where None is used
-    minimal_pdf = b"%PDF-1.4\n1 0 obj\n\u003c\u003c/Type /Catalog /Pages 2 0 R\u003e\u003e\nendobj\n2 0 obj\n\u003c\u003c/Type /Pages /Kids [] /Count 0\u003e\u003e\nendobj\nxref\n0 3\n0000000000 65535 f\n0000000009 00000 n\n0000000052 00000 n\ntrailer\n\u003c\u003c/Size 3 /Root 1 0 R\u003e\u003e\nstartxref\n101\n%%EOF"
+    minimal_pdf = b"%PDF-1.4\n1 0 obj\n\x3c\x3c/Type /Catalog /Pages 2 0 R\x3e\x3e\nendobj\n2 0 obj\n\x3c\x3c/Type /Pages /Kids [] /Count 0\x3e\x3e\nendobj\nxref\n0 3\n0000000000 65535 f\n0000000009 00000 n\n0000000052 00000 n\ntrailer\n\x3c\x3c/Size 3 /Root 1 0 R\x3e\x3e\nstartxref\n101\n%%EOF"
 
     payloads: list[tuple[str, str | bytes, dict[str, Any] | None]] = []
     for prompt, file_data in prompts:

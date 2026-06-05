@@ -23,11 +23,12 @@ class FakeUsage:
 
 
 class FakeResponse:
-    def __init__(self, text="", tool_calls_list=None, usage=None):
+    def __init__(self, text="", tool_calls_list=None, usage=None, reasoning_content=None):
         self._text = text
         self._tool_calls = tool_calls_list or []
         self.usage = usage or FakeUsage()
         self.provider_model_name = "test-model"
+        self.reasoning_content = reasoning_content
 
     def first_text(self):
         return self._text
