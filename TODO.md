@@ -1,6 +1,41 @@
 # Clearwing Development TODO
 
-## Current Session: Ollama Cloud + Dual Container Support
+## Current Session: Retest Readiness (June 2026)
+
+### LOA Status
+- **LOA expired**: June 1, 2026 — **RENEWAL REQUIRED** before any live testing
+- Master LOA: `LETTER_OF_AUTHORIZATION_LAZARUS_AI_MASTER.md`
+- All amendments (01-05) incorporated; scope covers 4 domains + all subdomains
+
+### Code Fixes Applied (June 5, 2026)
+- [x] Fix `\u003c`/`\u003e` byte-string escapes in 4 fuzz probes (Python 3.12+ compat)
+- [x] Add `from __future__ import annotations` to `database/models.py`
+- [x] Fix stale test fixtures: `AgentTool.fn` -> `.func`, `FakeResponse.reasoning_content`
+- [x] Update `EXPECTED_TOOL_COUNT` 117 -> 255 in `test_tool_registry.py`
+- [x] Test suite: 2537 passed, 9 failed (3 CVE DB + 1 webcrypto + 5 CVE search — pre-existing, not our changes)
+
+### Probe Scripts Status (Ready for Retest)
+All 11 fuzz probe scripts parse cleanly:
+- `auth_probe.py` — 37 iterations (auth bypass, JWT manipulation, header enumeration)
+- `endpoint_enum.py` — 60 iterations (path discovery, method switching)
+- `file_abuse_probe.py` — 12 iterations (polyglot, malformed, alternate formats)
+- `injection_probe.py` — 39 iterations (SQLi, NoSQLi, cmd, SSTI, XXE, LDAP, XPath, CSV)
+- `llm_doc_fuzz.py` — document processing fuzz (PDF payloads)
+- `llm_jailbreak_probe.py` — 19 iterations (DAN, Grandma, AntiGPT, system prompt extraction)
+- `rate_limit_probe.py` — 42 iterations (burst, concurrent, resource exhaustion)
+- `ssrf_probe.py` — 25 iterations (internal IPs, protocol smuggling, metadata)
+- `timing_oracle.py` — URL fetchability timing analysis
+- `generate_payload.py` — malicious PDF payload generator
+- `fuzz_utils.py` — shared utilities
+
+### Last Test Results (May 5, 2026)
+- Target: `api-dev.gcp.lzrops.com/api/engine/internal`
+- 172 iterations across 6 probes, 15 findings (3 medium, 12 low/info)
+- Full findings: `results/fuzz_production/FINDINGS_SUMMARY.md`
+
+---
+
+## Backlog: Ollama Cloud + Dual Container Support
 
 ### Completed
 - [x] Fix Ollama Cloud adapter routing (`manager.py`)
