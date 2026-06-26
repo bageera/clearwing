@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import logging
 from dataclasses import asdict
 from typing import Any
 
 from rich.text import Text
 from textual.reactive import reactive
 from textual.widgets import Static
+
+logger = logging.getLogger(__name__)
 
 
 class ProgressPanel(Static):
@@ -38,6 +41,7 @@ class ProgressPanel(Static):
         try:
             return asdict(payload)
         except Exception:
+            logger.debug("Silent exception in progress_panel", exc_info=True)
             return {}
 
     def update_campaign(self, payload: Any) -> None:
@@ -74,7 +78,7 @@ class ProgressPanel(Static):
         if self._campaign:
             c = self._campaign
             lines.append(
-                f"Campaign \"{c.get('campaign_name', '?')}\" "
+                f'Campaign "{c.get("campaign_name", "?")}" '
                 f"── {c.get('projects_completed', 0)}/{c.get('projects_total', 0)} projects "
                 f"── ${c.get('cost_usd', 0):.2f} "
                 f"── {c.get('findings_total', 0)} findings ({c.get('verified_total', 0)} verified) "
@@ -90,8 +94,7 @@ class ProgressPanel(Static):
             lines.append(
                 f"{prefix}sourcehunt [{stage}:{status}] "
                 f"── {s.get('findings_so_far', 0)} findings "
-                f"── ${s.get('cost_usd', 0):.2f}"
-                + (f" ── {detail}" if detail else "")
+                f"── ${s.get('cost_usd', 0):.2f}" + (f" ── {detail}" if detail else "")
             )
 
         if self._hunt:
@@ -109,16 +112,15 @@ class ProgressPanel(Static):
             dist = b.get("tier_distribution", {})
             dist_str = " ".join(f"T{k}:{v}" for k, v in sorted(dist.items()) if v)
             lines.append(
-                f"Benchmark \"{b.get('mode', '?')}\" "
+                f'Benchmark "{b.get("mode", "?")}" '
                 f"── {b.get('targets_completed', 0)}/{b.get('targets_total', 0)} targets "
-                f"── ${b.get('cost_usd', 0):.2f}"
-                + (f" ── {dist_str}" if dist_str else "")
+                f"── ${b.get('cost_usd', 0):.2f}" + (f" ── {dist_str}" if dist_str else "")
             )
 
         if self._eval:
             e = self._eval
             lines.append(
-                f"Eval \"{e.get('config_name', '?')}\" "
+                f'Eval "{e.get("config_name", "?")}" '
                 f"── run {e.get('run_index', 0) + 1}/{e.get('runs_total', 0)} "
                 f"── config {e.get('configs_completed', 0) + 1}/{e.get('configs_total', 0)} "
                 f"── [{e.get('status', '?')}] "

@@ -264,9 +264,7 @@ class TestCryptoFields:
         assert not f.is_crypto_finding
 
     def test_crypto_evidence_dict(self):
-        f = Finding(
-            crypto_evidence={"mean_ns": 1500, "std_ns": 50, "p_value": 0.001}
-        )
+        f = Finding(crypto_evidence={"mean_ns": 1500, "std_ns": 50, "p_value": 0.001})
         assert f.crypto_evidence["p_value"] == 0.001
         assert f.crypto_evidence["mean_ns"] == 1500
 

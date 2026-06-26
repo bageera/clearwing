@@ -44,7 +44,9 @@ def _http_request(
         resp_body = e.read().decode("utf-8", errors="replace")
     except Exception as e:
         duration_ms = (time.time() - start) * 1000
-        _proxy_history.add(method=method, url=url, request_headers=req_headers, duration_ms=int(duration_ms))
+        _proxy_history.add(
+            method=method, url=url, request_headers=req_headers, duration_ms=int(duration_ms)
+        )
         return 0, {}, str(e), duration_ms
 
     duration_ms = (time.time() - start) * 1000
@@ -238,7 +240,9 @@ def mycelium_fuzz_auth(
     if initiator_auth:
         put_url = f"{target.rstrip('/')}{api_path}/{channel_type}/{channel_uuid}/1"
         _http_request(
-            put_url, "PUT", b'{"init": true}',
+            put_url,
+            "PUT",
+            b'{"init": true}',
             {"OP-User-Agent": _DEFAULT_OP_UA, "ChannelAuth": initiator_auth},
         )
 
@@ -266,13 +270,15 @@ def mycelium_fuzz_auth(
             results.append(entry)
 
             if status in (200, 201, 204) and label not in ("seed_as_channel_auth",):
-                bypasses.append({
-                    "vector": label,
-                    "method": seg_method,
-                    "segment": seg_num,
-                    "severity": "CRITICAL",
-                    "description": f"Server accepted {seg_method} with {label} auth pattern",
-                })
+                bypasses.append(
+                    {
+                        "vector": label,
+                        "method": seg_method,
+                        "segment": seg_num,
+                        "severity": "CRITICAL",
+                        "description": f"Server accepted {seg_method} with {label} auth pattern",
+                    }
+                )
 
     return {
         "target": target,
@@ -337,7 +343,9 @@ def mycelium_test_race(
 
     put_url = f"{target.rstrip('/')}{api_path}/{channel_type}/{channel_uuid}/1"
     _http_request(
-        put_url, "PUT", b'{"hello": "initiator"}',
+        put_url,
+        "PUT",
+        b'{"hello": "initiator"}',
         {"OP-User-Agent": _DEFAULT_OP_UA, "ChannelAuth": initiator_auth},
     )
 
@@ -345,13 +353,16 @@ def mycelium_test_race(
         fake_join_auth = os.urandom(32).hex()
         join_url = f"{target.rstrip('/')}{api_path}/{channel_type}/{channel_uuid}/2"
         s, _, b, d = _http_request(
-            join_url, "PUT",
+            join_url,
+            "PUT",
             json.dumps({"join_attempt": attempt_id}).encode(),
             {"OP-User-Agent": _DEFAULT_OP_UA, "ChannelJoinAuth": fake_join_auth},
         )
         read_url = f"{target.rstrip('/')}{api_path}/{channel_type}/{channel_uuid}/1"
         rs, _, rb, rd = _http_request(
-            read_url, "GET", None,
+            read_url,
+            "GET",
+            None,
             {"OP-User-Agent": _DEFAULT_OP_UA, "ChannelJoinAuth": fake_join_auth},
         )
         return {
@@ -384,7 +395,9 @@ def mycelium_test_race(
             "join auth succeeded — segment data may be readable without proper auth."
         )
     if not findings:
-        findings.append("No race condition detected — all concurrent join attempts properly rejected.")
+        findings.append(
+            "No race condition detected — all concurrent join attempts properly rejected."
+        )
 
     return {
         "target": target,

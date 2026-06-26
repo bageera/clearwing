@@ -29,9 +29,7 @@ class SystemPromptFactory(Protocol):
 class StateUpdater(Protocol):
     """Callable that returns extra state keys after a tool runs."""
 
-    def __call__(
-        self, tool_name: str, data: Any, state: dict[str, Any]
-    ) -> dict[str, Any]: ...
+    def __call__(self, tool_name: str, data: Any, state: dict[str, Any]) -> dict[str, Any]: ...
 
 
 class KnowledgeGraphPopulator(Protocol):

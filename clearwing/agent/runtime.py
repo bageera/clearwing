@@ -412,6 +412,463 @@ class NativeAgentGraph:
         raise KeyError("state not registered")
 
 
+def _kg_scan_ports(kg: Any, data: Any, target: str) -> None:
+    if not isinstance(data, list):
+        return
+    for port_info in data:
+        port = port_info.get("port")
+        proto = port_info.get("protocol", "tcp")
+        if port:
+            kg.add_port(target, port, proto)
+
+
+def _kg_detect_services(kg: Any, data: Any, target: str) -> None:
+    if not isinstance(data, list):
+        return
+    for svc_info in data:
+        port = svc_info.get("port")
+        proto = svc_info.get("protocol", "tcp")
+        service = svc_info.get("service", "unknown")
+        version = svc_info.get("version", "")
+        if port and service:
+            port_id = f"{target}:{port}/{proto}"
+            kg.add_port(target, port, proto)
+            kg.add_service(port_id, service, version)
+
+
+def _kg_scan_vulnerabilities(kg: Any, data: Any, target: str) -> None:
+    if not isinstance(data, list):
+        return
+    for vuln in data:
+        cve = vuln.get("cve", "")
+        cvss = vuln.get("cvss", 0.0)
+        port = vuln.get("port")
+        service = vuln.get("service", "unknown")
+        if cve:
+            service_id = f"{target}:{port}/tcp:{service}" if port else service
+            kg.add_vulnerability(service_id, cve, cvss)
+
+
+def _kg_detect_os(kg: Any, data: Any, target: str) -> None:
+    if isinstance(data, str):
+        kg.add_target(target, os=data)
+
+
+def _kg_exploit_vulnerability(kg: Any, data: Any, target: str) -> None:
+    if not isinstance(data, dict):
+        return
+    cve = data.get("cve", "unknown")
+    success = data.get("success", False)
+    exploit = data.get("exploit", "unknown")
+    kg.add_exploit_result(cve, exploit, success=success)
+
+
+# v0.4: SRP tools
+def _kg_srp_handshake(kg: Any, data: Any, target: str) -> None:
+    if not isinstance(data, dict):
+        return
+    kg.add_protocol("SRP-6a")
+    server_params = data.get("server_params", {})
+    algo = server_params.get("algorithm", "")
+    iterations = server_params.get("iterations", 0)
+    if algo:
+        kg.add_algorithm(algo)
+        kg.add_relationship("protocol:SRP-6a", f"algorithm:{algo}", "USES_ALGORITHM")
+    if iterations and target:
+        kg.add_kdf_config(algo or "PBKDF2-HMAC-SHA256", iterations, target)
+    skd = data.get("2skd")
+    if isinstance(skd, dict):
+        kg.add_key_material("auk", target)
+        kg.add_key_material("srp_x", target)
+        kg.add_relationship("protocol:SRP-6a", "key:srp_x:" + target, "AUTHENTICATES_WITH")
+        if iterations:
+            kdf_id = f"kdf:{algo or 'PBKDF2-HMAC-SHA256'}:{iterations}:{target}"
+            kg.add_relationship(kdf_id, "key:auk:" + target, "DERIVES_KEY")
+            kg.add_relationship(kdf_id, "key:srp_x:" + target, "DERIVES_KEY")
+
+
+def _kg_srp_extract_verifier_info(kg: Any, data: Any, target: str) -> None:
+    if not isinstance(data, dict):
+        return
+    kg.add_protocol("SRP-6a")
+    valid_user = data.get("valid_user", {})
+    algo = valid_user.get("algorithm", "")
+    iterations = valid_user.get("iterations", 0)
+    if algo:
+        kg.add_algorithm(algo)
+        kg.add_relationship("protocol:SRP-6a", f"algorithm:{algo}", "USES_ALGORITHM")
+    if iterations and algo and target:
+        kg.add_kdf_config(algo, iterations, target)
+
+
+def _kg_srp_fuzz_parameters(kg: Any, data: Any, target: str) -> None:
+    if not isinstance(data, dict):
+        return
+    kg.add_protocol("SRP-6a")
+    for vuln in data.get("vulnerabilities", []):
+        desc = vuln.get("description", "SRP parameter validation bypass")
+        eid = f"vuln:srp_fuzz:{vuln.get('vector', 'unknown')}"
+        kg.add_entity("exploit", eid, description=desc)
+        kg.add_relationship("protocol:SRP-6a", eid, "VULNERABLE_TO")
+
+
+def _kg_srp_timing_attack(kg: Any, data: Any, target: str) -> None:
+    if not isinstance(data, dict):
+        return
+    kg.add_protocol("SRP-6a")
+    if data.get("significant"):
+        desc = data.get("conclusion", "Timing side-channel in SRP authentication")
+        eid = f"vuln:srp_timing:{data.get('test_type', 'unknown')}"
+        kg.add_entity("exploit", eid, description=desc)
+        kg.add_relationship("protocol:SRP-6a", eid, "VULNERABLE_TO")
+
+
+# v0.4: KDF tools
+def _kg_analyze_kdf_parameters(kg: Any, data: Any, target: str) -> None:
+    if not isinstance(data, dict):
+        return
+    algo = data.get("algorithm", "")
+    iterations = data.get("iterations", 0)
+    if algo:
+        kg.add_algorithm(algo)
+    if algo and iterations and target:
+        kg.add_kdf_config(
+            algo,
+            iterations,
+            target,
+            risk_level=data.get("risk_level", ""),
+            iterations_compliant=data.get("iterations_compliant"),
+        )
+
+
+def _kg_benchmark_kdf_cracking(kg: Any, data: Any, target: str) -> None:
+    if not isinstance(data, dict):
+        return
+    algo = data.get("algorithm", "")
+    iterations = data.get("iterations", 0)
+    if algo and iterations and target:
+        entity = kg.add_kdf_config(algo, iterations, target)
+        assessment = data.get("assessment", "")
+        if assessment:
+            entity.properties["cracking_assessment"] = assessment
+
+
+def _kg_test_2skd_implementation(kg: Any, data: Any, target: str) -> None:
+    if not isinstance(data, dict):
+        return
+    server_params = data.get("server_params", {})
+    algo = server_params.get("algorithm", "PBKDF2-HMAC-SHA256")
+    iterations = server_params.get("iterations", 0)
+    if target:
+        kg.add_key_material("auk", target)
+        kg.add_key_material("srp_x", target)
+    if algo and iterations and target:
+        kdf_id = f"kdf:{algo}:{iterations}:{target}"
+        kg.add_kdf_config(algo, iterations, target)
+        kg.add_relationship(kdf_id, "key:auk:" + target, "DERIVES_KEY")
+        kg.add_relationship(kdf_id, "key:srp_x:" + target, "DERIVES_KEY")
+
+
+def _kg_kdf_oracle_test(kg: Any, data: Any, target: str) -> None:
+    if not isinstance(data, dict):
+        return
+    if data.get("oracle_detected"):
+        oracle_types = data.get("oracle_type", [])
+        desc = data.get("conclusion", "KDF oracle detected")
+        eid = f"vuln:kdf_oracle:{':'.join(oracle_types)}"
+        kg.add_entity("exploit", eid, description=desc)
+        if target:
+            kg.add_relationship(target, eid, "VULNERABLE_TO")
+
+
+# v0.4: Vault tools
+def _kg_parse_vault_blob(kg: Any, data: Any, target: str) -> None:
+    if not isinstance(data, dict):
+        return
+    algo = data.get("algorithm", "")
+    enc = data.get("encryption", "")
+    km = data.get("key_management", "")
+    if enc:
+        kg.add_algorithm(enc)
+    if km:
+        kg.add_algorithm(km)
+    if algo and algo != "unknown":
+        kg.add_algorithm(algo)
+
+
+def _kg_analyze_key_hierarchy(kg: Any, data: Any, target: str) -> None:
+    if not isinstance(data, dict):
+        return
+    for step in data.get("key_chain", []):
+        algo = step.get("algorithm", "")
+        if algo:
+            kg.add_algorithm(algo)
+    for algo in data.get("wrapping_algorithms", []):
+        if algo:
+            kg.add_algorithm(algo)
+    for algo in data.get("derivation_algorithms", []):
+        if algo:
+            kg.add_algorithm(algo)
+    if data.get("extractable_keys") and target:
+        for ek in data["extractable_keys"]:
+            algo = ek.get("algorithm", "unknown")
+            kg.add_key_material(f"extractable_{ek.get('step', 0)}", target, extractable=True)
+            if algo:
+                kg.add_algorithm(algo)
+
+
+def _kg_test_aead_integrity(kg: Any, data: Any, target: str) -> None:
+    if not isinstance(data, dict):
+        return
+    for vuln in data.get("vulnerabilities", []):
+        mod = vuln.get("modification", "unknown")
+        desc = vuln.get("description", f"AEAD {mod} bypass")
+        eid = f"vuln:aead:{mod}"
+        kg.add_entity("exploit", eid, description=desc)
+        enc_algo = data.get("original_blob_format", "")
+        if enc_algo:
+            kg.add_relationship(f"algorithm:{enc_algo}", eid, "VULNERABLE_TO")
+
+
+def _kg_key_wrap_analysis(kg: Any, data: Any, target: str) -> None:
+    if not isinstance(data, dict):
+        return
+    for algo_info in data.get("algorithm_analysis", []):
+        algo = algo_info.get("algorithm", "")
+        if algo:
+            kg.add_algorithm(algo)
+
+
+# v0.4: Credential tools
+def _kg_analyze_2skd_entropy(kg: Any, data: Any, target: str) -> None:
+    if not isinstance(data, dict):
+        return
+    algo = data.get("algorithm", "")
+    iterations = data.get("iterations", 0)
+    if algo:
+        kg.add_algorithm(algo)
+    if algo and iterations and target:
+        entity = kg.add_kdf_config(algo, iterations, target)
+        assessment = data.get("assessment", "")
+        if assessment:
+            entity.properties["2skd_assessment"] = assessment
+        entity.properties["combined_entropy_bits"] = data.get("combined_entropy_bits", 0)
+
+
+def _kg_test_secret_key_validation(kg: Any, data: Any, target: str) -> None:
+    if not isinstance(data, dict):
+        return
+    if data.get("factor_separation"):
+        signals = data.get("separation_signals", [])
+        desc = data.get("conclusion", "2SKD factor separation detected")
+        eid = f"vuln:2skd_factor_separation:{':'.join(signals)}"
+        kg.add_entity("exploit", eid, description=desc)
+        if target:
+            kg.add_relationship(target, eid, "VULNERABLE_TO")
+
+
+def _kg_enumerate_secret_key_format(kg: Any, data: Any, target: str) -> None:
+    if not isinstance(data, dict):
+        return
+    fmt = data.get("format_analysis", {})
+    entropy = fmt.get("total_entropy_bits", 0)
+    if target and entropy:
+        km = kg.add_key_material("secret_key", target, entropy_bits=entropy)
+        risks = data.get("predictability_risks", [])
+        if risks:
+            km.properties["predictability_risks"] = risks
+
+
+def _kg_offline_crack_setup(kg: Any, data: Any, target: str) -> None:
+    if not isinstance(data, dict):
+        return
+    algo = data.get("algorithm", "")
+    iterations = data.get("iterations", 0)
+    if algo and iterations and target:
+        entity = kg.add_kdf_config(algo, iterations, target)
+        feasibility = data.get("feasibility", "")
+        if feasibility:
+            entity.properties["cracking_feasibility"] = feasibility
+
+
+# v0.4: Mycelium tools
+def _kg_mycelium_create_channel(kg: Any, data: Any, target: str) -> None:
+    if not isinstance(data, dict):
+        return
+    kg.add_protocol("Mycelium")
+    ch_type = data.get("channel_type", "u")
+    ch_uuid = data.get("channel_uuid", "")
+    if ch_uuid and target:
+        eid = f"channel:{ch_type}:{ch_uuid[:8]}"
+        kg.add_entity("channel", eid, channel_type=ch_type, target=target)
+        kg.add_relationship(target, eid, "HAS_CHANNEL")
+
+
+def _kg_mycelium_fuzz_auth(kg: Any, data: Any, target: str) -> None:
+    if not isinstance(data, dict):
+        return
+    kg.add_protocol("Mycelium")
+    for bypass in data.get("bypasses", []):
+        desc = bypass.get("description", "Mycelium auth bypass")
+        eid = f"vuln:mycelium_auth:{bypass.get('vector', 'unknown')}"
+        kg.add_entity("exploit", eid, description=desc)
+        if target:
+            kg.add_relationship(target, eid, "VULNERABLE_TO")
+
+
+def _kg_mycelium_test_race(kg: Any, data: Any, target: str) -> None:
+    if not isinstance(data, dict):
+        return
+    kg.add_protocol("Mycelium")
+    if data.get("successful_writes", 0) > 1 or data.get("successful_reads", 0) > 0:
+        eid = "vuln:mycelium_race_condition"
+        desc = "; ".join(data.get("findings", []))
+        kg.add_entity("exploit", eid, description=desc)
+        if target:
+            kg.add_relationship(target, eid, "VULNERABLE_TO")
+
+
+# v0.4: Recovery tools
+def _kg_test_recovery_acceptance(kg: Any, data: Any, target: str) -> None:
+    if not isinstance(data, dict):
+        return
+    if data.get("accepted_count", 0) > 0:
+        eid = "vuln:recovery_code_acceptance"
+        desc = f"{data['accepted_count']} recovery code(s) accepted"
+        kg.add_entity("exploit", eid, description=desc)
+        if target:
+            kg.add_relationship(target, eid, "VULNERABLE_TO")
+
+
+def _kg_analyze_recovery_entropy(kg: Any, data: Any, target: str) -> None:
+    if not isinstance(data, dict):
+        return
+    bits = data.get("total_entropy_bits", 0)
+    if bits and target:
+        km = kg.add_key_material("recovery_code", target, entropy_bits=bits)
+        km.properties["assessment"] = data.get("assessment", "")
+
+
+# v0.4: Session tools
+def _kg_replay_with_mutations(kg: Any, data: Any, target: str) -> None:
+    if not isinstance(data, dict):
+        return
+    for finding in data.get("findings", []):
+        if "WARNING" in finding:
+            eid = "vuln:weak_token_validation"
+            kg.add_entity("exploit", eid, description=finding)
+            if target:
+                kg.add_relationship(target, eid, "VULNERABLE_TO")
+
+
+def _kg_test_session_fixation(kg: Any, data: Any, target: str) -> None:
+    if not isinstance(data, dict):
+        return
+    if data.get("fixation_risk"):
+        eid = "vuln:session_fixation"
+        cookies = data.get("session_like_unchanged", [])
+        desc = f"Session fixation risk: cookies unchanged after auth: {', '.join(cookies)}"
+        kg.add_entity("exploit", eid, description=desc)
+        if target:
+            kg.add_relationship(target, eid, "VULNERABLE_TO")
+
+
+# v0.4: Bundle tools
+def _kg_search_bundle_patterns(kg: Any, data: Any, target: str) -> None:
+    if not isinstance(data, dict):
+        return
+    for match in data.get("matches", []):
+        pat = match.get("pattern", "")
+        if pat in ("hardcoded_secret", "private_key", "aws_key", "flag_format"):
+            eid = f"vuln:bundle_leak:{pat}"
+            kg.add_entity(
+                "exploit",
+                eid,
+                description=f"JS bundle contains {pat}: {match.get('match', '')[:100]}",
+            )
+            if target:
+                kg.add_relationship(target, eid, "VULNERABLE_TO")
+
+
+def _kg_extract_api_routes(kg: Any, data: Any, target: str) -> None:
+    if not isinstance(data, dict):
+        return
+    for route in data.get("routes", []):
+        path = route.get("path", "")
+        if path and target:
+            eid = f"endpoint:{target}:{path}"
+            kg.add_entity("endpoint", eid, path=path, methods=route.get("methods", []))
+
+
+# v0.4: CC tools
+def _kg_cc_discover_schema(kg: Any, data: Any, target: str) -> None:
+    if not isinstance(data, dict):
+        return
+    if data.get("schema_complete"):
+        eid = f"endpoint:{target}:{data.get('endpoint', '/cc')}"
+        kg.add_entity("endpoint", eid, schema=data.get("discovered_fields", {}))
+    for field_info in data.get("discovered_fields", {}).values():
+        if field_info.get("type") == "uuid":
+            kg.add_entity("parameter", f"param:{field_info.get('value', '')}", type="uuid")
+
+
+def _kg_cc_fuzz_fields(kg: Any, data: Any, target: str) -> None:
+    if not isinstance(data, dict):
+        return
+    for finding in data.get("interesting_findings", []):
+        if finding.get("severity") == "HIGH":
+            eid = f"vuln:cc_field:{finding.get('field', 'unknown')}"
+            kg.add_entity("exploit", eid, description=finding.get("description", ""))
+            if target:
+                kg.add_relationship(target, eid, "VULNERABLE_TO")
+
+
+# Registry mapping tool names to their knowledge-graph population handlers.
+_KG_POPULATORS: dict[str, Callable[[Any, Any, str], None]] = {
+    "scan_ports": _kg_scan_ports,
+    "detect_services": _kg_detect_services,
+    "scan_vulnerabilities": _kg_scan_vulnerabilities,
+    "detect_os": _kg_detect_os,
+    "exploit_vulnerability": _kg_exploit_vulnerability,
+    # v0.4: SRP tools
+    "srp_handshake": _kg_srp_handshake,
+    "srp_extract_verifier_info": _kg_srp_extract_verifier_info,
+    "srp_fuzz_parameters": _kg_srp_fuzz_parameters,
+    "srp_timing_attack": _kg_srp_timing_attack,
+    # v0.4: KDF tools
+    "analyze_kdf_parameters": _kg_analyze_kdf_parameters,
+    "benchmark_kdf_cracking": _kg_benchmark_kdf_cracking,
+    "test_2skd_implementation": _kg_test_2skd_implementation,
+    "kdf_oracle_test": _kg_kdf_oracle_test,
+    # v0.4: Vault tools
+    "parse_vault_blob": _kg_parse_vault_blob,
+    "analyze_key_hierarchy": _kg_analyze_key_hierarchy,
+    "test_aead_integrity": _kg_test_aead_integrity,
+    "key_wrap_analysis": _kg_key_wrap_analysis,
+    # v0.4: Credential tools
+    "analyze_2skd_entropy": _kg_analyze_2skd_entropy,
+    "test_secret_key_validation": _kg_test_secret_key_validation,
+    "enumerate_secret_key_format": _kg_enumerate_secret_key_format,
+    "offline_crack_setup": _kg_offline_crack_setup,
+    # v0.4: Mycelium tools
+    "mycelium_create_channel": _kg_mycelium_create_channel,
+    "mycelium_fuzz_auth": _kg_mycelium_fuzz_auth,
+    "mycelium_test_race": _kg_mycelium_test_race,
+    # v0.4: Recovery tools
+    "test_recovery_acceptance": _kg_test_recovery_acceptance,
+    "analyze_recovery_entropy": _kg_analyze_recovery_entropy,
+    # v0.4: Session tools
+    "replay_with_mutations": _kg_replay_with_mutations,
+    "test_session_fixation": _kg_test_session_fixation,
+    # v0.4: Bundle tools
+    "search_bundle_patterns": _kg_search_bundle_patterns,
+    "extract_api_routes": _kg_extract_api_routes,
+    # v0.4: CC tools
+    "cc_discover_schema": _kg_cc_discover_schema,
+    "cc_fuzz_fields": _kg_cc_fuzz_fields,
+}
+
+
 def populate_knowledge_graph(
     kg: Any, tool_name: str, content: str, state: dict[str, Any]
 ) -> dict[str, Any]:
@@ -423,315 +880,9 @@ def populate_knowledge_graph(
         kg.add_target(target)
         data = _parse_tool_output(content)
 
-        if tool_name == "scan_ports" and isinstance(data, list):
-            for port_info in data:
-                port = port_info.get("port")
-                proto = port_info.get("protocol", "tcp")
-                if port:
-                    kg.add_port(target, port, proto)
-
-        elif tool_name == "detect_services" and isinstance(data, list):
-            for svc_info in data:
-                port = svc_info.get("port")
-                proto = svc_info.get("protocol", "tcp")
-                service = svc_info.get("service", "unknown")
-                version = svc_info.get("version", "")
-                if port and service:
-                    port_id = f"{target}:{port}/{proto}"
-                    kg.add_port(target, port, proto)
-                    kg.add_service(port_id, service, version)
-
-        elif tool_name == "scan_vulnerabilities" and isinstance(data, list):
-            for vuln in data:
-                cve = vuln.get("cve", "")
-                cvss = vuln.get("cvss", 0.0)
-                port = vuln.get("port")
-                service = vuln.get("service", "unknown")
-                if cve:
-                    service_id = f"{target}:{port}/tcp:{service}" if port else service
-                    kg.add_vulnerability(service_id, cve, cvss)
-
-        elif tool_name == "detect_os" and isinstance(data, str):
-            kg.add_target(target, os=data)
-
-        elif tool_name == "exploit_vulnerability" and isinstance(data, dict):
-            cve = data.get("cve", "unknown")
-            success = data.get("success", False)
-            exploit = data.get("exploit", "unknown")
-            kg.add_exploit_result(cve, exploit, success=success)
-
-        # v0.4: SRP tools
-        elif tool_name == "srp_handshake" and isinstance(data, dict):
-            kg.add_protocol("SRP-6a")
-            server_params = data.get("server_params", {})
-            algo = server_params.get("algorithm", "")
-            iterations = server_params.get("iterations", 0)
-            if algo:
-                kg.add_algorithm(algo)
-                kg.add_relationship("protocol:SRP-6a", f"algorithm:{algo}", "USES_ALGORITHM")
-            if iterations and target:
-                kg.add_kdf_config(algo or "PBKDF2-HMAC-SHA256", iterations, target)
-            skd = data.get("2skd")
-            if isinstance(skd, dict):
-                kg.add_key_material("auk", target)
-                kg.add_key_material("srp_x", target)
-                kg.add_relationship("protocol:SRP-6a", "key:srp_x:" + target, "AUTHENTICATES_WITH")
-                if iterations:
-                    kdf_id = f"kdf:{algo or 'PBKDF2-HMAC-SHA256'}:{iterations}:{target}"
-                    kg.add_relationship(kdf_id, "key:auk:" + target, "DERIVES_KEY")
-                    kg.add_relationship(kdf_id, "key:srp_x:" + target, "DERIVES_KEY")
-
-        elif tool_name == "srp_extract_verifier_info" and isinstance(data, dict):
-            kg.add_protocol("SRP-6a")
-            valid_user = data.get("valid_user", {})
-            algo = valid_user.get("algorithm", "")
-            iterations = valid_user.get("iterations", 0)
-            if algo:
-                kg.add_algorithm(algo)
-                kg.add_relationship("protocol:SRP-6a", f"algorithm:{algo}", "USES_ALGORITHM")
-            if iterations and algo and target:
-                kg.add_kdf_config(algo, iterations, target)
-
-        elif tool_name == "srp_fuzz_parameters" and isinstance(data, dict):
-            kg.add_protocol("SRP-6a")
-            for vuln in data.get("vulnerabilities", []):
-                desc = vuln.get("description", "SRP parameter validation bypass")
-                eid = f"vuln:srp_fuzz:{vuln.get('vector', 'unknown')}"
-                kg.add_entity("exploit", eid, description=desc)
-                kg.add_relationship("protocol:SRP-6a", eid, "VULNERABLE_TO")
-
-        elif tool_name == "srp_timing_attack" and isinstance(data, dict):
-            kg.add_protocol("SRP-6a")
-            if data.get("significant"):
-                desc = data.get("conclusion", "Timing side-channel in SRP authentication")
-                eid = f"vuln:srp_timing:{data.get('test_type', 'unknown')}"
-                kg.add_entity("exploit", eid, description=desc)
-                kg.add_relationship("protocol:SRP-6a", eid, "VULNERABLE_TO")
-
-        # v0.4: KDF tools
-        elif tool_name == "analyze_kdf_parameters" and isinstance(data, dict):
-            algo = data.get("algorithm", "")
-            iterations = data.get("iterations", 0)
-            if algo:
-                kg.add_algorithm(algo)
-            if algo and iterations and target:
-                kg.add_kdf_config(
-                    algo, iterations, target,
-                    risk_level=data.get("risk_level", ""),
-                    iterations_compliant=data.get("iterations_compliant"),
-                )
-
-        elif tool_name == "benchmark_kdf_cracking" and isinstance(data, dict):
-            algo = data.get("algorithm", "")
-            iterations = data.get("iterations", 0)
-            if algo and iterations and target:
-                entity = kg.add_kdf_config(algo, iterations, target)
-                assessment = data.get("assessment", "")
-                if assessment:
-                    entity.properties["cracking_assessment"] = assessment
-
-        elif tool_name == "test_2skd_implementation" and isinstance(data, dict):
-            server_params = data.get("server_params", {})
-            algo = server_params.get("algorithm", "PBKDF2-HMAC-SHA256")
-            iterations = server_params.get("iterations", 0)
-            if target:
-                kg.add_key_material("auk", target)
-                kg.add_key_material("srp_x", target)
-            if algo and iterations and target:
-                kdf_id = f"kdf:{algo}:{iterations}:{target}"
-                kg.add_kdf_config(algo, iterations, target)
-                kg.add_relationship(kdf_id, "key:auk:" + target, "DERIVES_KEY")
-                kg.add_relationship(kdf_id, "key:srp_x:" + target, "DERIVES_KEY")
-
-        elif tool_name == "kdf_oracle_test" and isinstance(data, dict):
-            if data.get("oracle_detected"):
-                oracle_types = data.get("oracle_type", [])
-                desc = data.get("conclusion", "KDF oracle detected")
-                eid = f"vuln:kdf_oracle:{':'.join(oracle_types)}"
-                kg.add_entity("exploit", eid, description=desc)
-                if target:
-                    kg.add_relationship(target, eid, "VULNERABLE_TO")
-
-        # v0.4: Vault tools
-        elif tool_name == "parse_vault_blob" and isinstance(data, dict):
-            algo = data.get("algorithm", "")
-            enc = data.get("encryption", "")
-            km = data.get("key_management", "")
-            if enc:
-                kg.add_algorithm(enc)
-            if km:
-                kg.add_algorithm(km)
-            if algo and algo != "unknown":
-                kg.add_algorithm(algo)
-
-        elif tool_name == "analyze_key_hierarchy" and isinstance(data, dict):
-            for step in data.get("key_chain", []):
-                algo = step.get("algorithm", "")
-                if algo:
-                    kg.add_algorithm(algo)
-            for algo in data.get("wrapping_algorithms", []):
-                if algo:
-                    kg.add_algorithm(algo)
-            for algo in data.get("derivation_algorithms", []):
-                if algo:
-                    kg.add_algorithm(algo)
-            if data.get("extractable_keys") and target:
-                for ek in data["extractable_keys"]:
-                    algo = ek.get("algorithm", "unknown")
-                    km = kg.add_key_material(f"extractable_{ek.get('step', 0)}", target, extractable=True)
-                    if algo:
-                        kg.add_algorithm(algo)
-
-        elif tool_name == "test_aead_integrity" and isinstance(data, dict):
-            for vuln in data.get("vulnerabilities", []):
-                mod = vuln.get("modification", "unknown")
-                desc = vuln.get("description", f"AEAD {mod} bypass")
-                eid = f"vuln:aead:{mod}"
-                kg.add_entity("exploit", eid, description=desc)
-                enc_algo = data.get("original_blob_format", "")
-                if enc_algo:
-                    kg.add_relationship(f"algorithm:{enc_algo}", eid, "VULNERABLE_TO")
-
-        elif tool_name == "key_wrap_analysis" and isinstance(data, dict):
-            for algo_info in data.get("algorithm_analysis", []):
-                algo = algo_info.get("algorithm", "")
-                if algo:
-                    kg.add_algorithm(algo)
-
-        # v0.4: Credential tools
-        elif tool_name == "analyze_2skd_entropy" and isinstance(data, dict):
-            algo = data.get("algorithm", "")
-            iterations = data.get("iterations", 0)
-            if algo:
-                kg.add_algorithm(algo)
-            if algo and iterations and target:
-                entity = kg.add_kdf_config(algo, iterations, target)
-                assessment = data.get("assessment", "")
-                if assessment:
-                    entity.properties["2skd_assessment"] = assessment
-                entity.properties["combined_entropy_bits"] = data.get("combined_entropy_bits", 0)
-
-        elif tool_name == "test_secret_key_validation" and isinstance(data, dict):
-            if data.get("factor_separation"):
-                signals = data.get("separation_signals", [])
-                desc = data.get("conclusion", "2SKD factor separation detected")
-                eid = f"vuln:2skd_factor_separation:{':'.join(signals)}"
-                kg.add_entity("exploit", eid, description=desc)
-                if target:
-                    kg.add_relationship(target, eid, "VULNERABLE_TO")
-
-        elif tool_name == "enumerate_secret_key_format" and isinstance(data, dict):
-            fmt = data.get("format_analysis", {})
-            entropy = fmt.get("total_entropy_bits", 0)
-            if target and entropy:
-                km = kg.add_key_material("secret_key", target, entropy_bits=entropy)
-                risks = data.get("predictability_risks", [])
-                if risks:
-                    km.properties["predictability_risks"] = risks
-
-        elif tool_name == "offline_crack_setup" and isinstance(data, dict):
-            algo = data.get("algorithm", "")
-            iterations = data.get("iterations", 0)
-            if algo and iterations and target:
-                entity = kg.add_kdf_config(algo, iterations, target)
-                feasibility = data.get("feasibility", "")
-                if feasibility:
-                    entity.properties["cracking_feasibility"] = feasibility
-
-        # v0.4: Mycelium tools
-        elif tool_name == "mycelium_create_channel" and isinstance(data, dict):
-            kg.add_protocol("Mycelium")
-            ch_type = data.get("channel_type", "u")
-            ch_uuid = data.get("channel_uuid", "")
-            if ch_uuid and target:
-                eid = f"channel:{ch_type}:{ch_uuid[:8]}"
-                kg.add_entity("channel", eid, channel_type=ch_type, target=target)
-                kg.add_relationship(target, eid, "HAS_CHANNEL")
-
-        elif tool_name == "mycelium_fuzz_auth" and isinstance(data, dict):
-            kg.add_protocol("Mycelium")
-            for bypass in data.get("bypasses", []):
-                desc = bypass.get("description", "Mycelium auth bypass")
-                eid = f"vuln:mycelium_auth:{bypass.get('vector', 'unknown')}"
-                kg.add_entity("exploit", eid, description=desc)
-                if target:
-                    kg.add_relationship(target, eid, "VULNERABLE_TO")
-
-        elif tool_name == "mycelium_test_race" and isinstance(data, dict):
-            kg.add_protocol("Mycelium")
-            if data.get("successful_writes", 0) > 1 or data.get("successful_reads", 0) > 0:
-                eid = "vuln:mycelium_race_condition"
-                desc = "; ".join(data.get("findings", []))
-                kg.add_entity("exploit", eid, description=desc)
-                if target:
-                    kg.add_relationship(target, eid, "VULNERABLE_TO")
-
-        # v0.4: Recovery tools
-        elif tool_name == "test_recovery_acceptance" and isinstance(data, dict):
-            if data.get("accepted_count", 0) > 0:
-                eid = "vuln:recovery_code_acceptance"
-                desc = f"{data['accepted_count']} recovery code(s) accepted"
-                kg.add_entity("exploit", eid, description=desc)
-                if target:
-                    kg.add_relationship(target, eid, "VULNERABLE_TO")
-
-        elif tool_name == "analyze_recovery_entropy" and isinstance(data, dict):
-            bits = data.get("total_entropy_bits", 0)
-            if bits and target:
-                km = kg.add_key_material("recovery_code", target, entropy_bits=bits)
-                km.properties["assessment"] = data.get("assessment", "")
-
-        # v0.4: Session tools
-        elif tool_name == "replay_with_mutations" and isinstance(data, dict):
-            for finding in data.get("findings", []):
-                if "WARNING" in finding:
-                    eid = "vuln:weak_token_validation"
-                    kg.add_entity("exploit", eid, description=finding)
-                    if target:
-                        kg.add_relationship(target, eid, "VULNERABLE_TO")
-
-        elif tool_name == "test_session_fixation" and isinstance(data, dict):
-            if data.get("fixation_risk"):
-                eid = "vuln:session_fixation"
-                cookies = data.get("session_like_unchanged", [])
-                desc = f"Session fixation risk: cookies unchanged after auth: {', '.join(cookies)}"
-                kg.add_entity("exploit", eid, description=desc)
-                if target:
-                    kg.add_relationship(target, eid, "VULNERABLE_TO")
-
-        # v0.4: Bundle tools
-        elif tool_name == "search_bundle_patterns" and isinstance(data, dict):
-            for match in data.get("matches", []):
-                pat = match.get("pattern", "")
-                if pat in ("hardcoded_secret", "private_key", "aws_key", "flag_format"):
-                    eid = f"vuln:bundle_leak:{pat}"
-                    kg.add_entity("exploit", eid, description=f"JS bundle contains {pat}: {match.get('match', '')[:100]}")
-                    if target:
-                        kg.add_relationship(target, eid, "VULNERABLE_TO")
-
-        elif tool_name == "extract_api_routes" and isinstance(data, dict):
-            for route in data.get("routes", []):
-                path = route.get("path", "")
-                if path and target:
-                    eid = f"endpoint:{target}:{path}"
-                    kg.add_entity("endpoint", eid, path=path, methods=route.get("methods", []))
-
-        # v0.4: CC tools
-        elif tool_name == "cc_discover_schema" and isinstance(data, dict):
-            if data.get("schema_complete"):
-                eid = f"endpoint:{target}:{data.get('endpoint', '/cc')}"
-                kg.add_entity("endpoint", eid, schema=data.get("discovered_fields", {}))
-            for field_info in data.get("discovered_fields", {}).values():
-                if field_info.get("type") == "uuid":
-                    kg.add_entity("parameter", f"param:{field_info.get('value', '')}", type="uuid")
-
-        elif tool_name == "cc_fuzz_fields" and isinstance(data, dict):
-            for finding in data.get("interesting_findings", []):
-                if finding.get("severity") == "HIGH":
-                    eid = f"vuln:cc_field:{finding.get('field', 'unknown')}"
-                    kg.add_entity("exploit", eid, description=finding.get("description", ""))
-                    if target:
-                        kg.add_relationship(target, eid, "VULNERABLE_TO")
+        populator = _KG_POPULATORS.get(tool_name)
+        if populator is not None:
+            populator(kg, data, target)
 
         kg.save()
         return nx.node_link_data(kg._graph)

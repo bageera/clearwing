@@ -2,12 +2,9 @@
 
 from __future__ import annotations
 
-import asyncio
 from unittest.mock import MagicMock, patch
 
-import pytest
-
-from clearwing.sourcehunt.callgraph import CallGraph, CallGraphBuilder, FunctionInfo
+from clearwing.sourcehunt.callgraph import CallGraph, FunctionInfo
 from clearwing.sourcehunt.entry_points import (
     MAX_ENTRY_POINTS_PER_FILE,
     EntryPoint,
@@ -18,20 +15,17 @@ from clearwing.sourcehunt.entry_points import (
 from clearwing.sourcehunt.pool import (
     HunterPool,
     HuntPoolConfig,
-    WorkItem,
     _file_rank,
     _redundancy_for_rank,
 )
 from clearwing.sourcehunt.seed_corpus import (
     MAX_ENTRIES_PER_FILE,
     SeedCorpusEntry,
-    SeedCorpusResult,
     _extract_git_cve_history,
     format_seed_context,
     ingest_seed_corpus,
 )
 from clearwing.sourcehunt.state import FileTarget
-
 
 # --- Helpers ------------------------------------------------------------------
 
@@ -70,9 +64,13 @@ def _make_callgraph(
     for name, start, end in functions:
         cg.functions[file_path].add(name)
         cg.defined_in[name].add(file_path)
-        cg.function_info[file_path].append(FunctionInfo(
-            name=name, start_line=start, end_line=end,
-        ))
+        cg.function_info[file_path].append(
+            FunctionInfo(
+                name=name,
+                start_line=start,
+                end_line=end,
+            )
+        )
     return cg
 
 
@@ -90,10 +88,15 @@ class TestClassifyFunction:
         assert _classify_function("my_compat_ioctl", "drivers/foo.c", [], "c") == "syscall_handler"
 
     def test_syscall_entry_tag(self):
-        assert _classify_function("some_func", "kernel/entry.c", ["syscall_entry"], "c") == "syscall_handler"
+        assert (
+            _classify_function("some_func", "kernel/entry.c", ["syscall_entry"], "c")
+            == "syscall_handler"
+        )
 
     def test_fuzz_target_llvm(self):
-        assert _classify_function("LLVMFuzzerTestOneInput", "fuzz/target.c", [], "c") == "fuzz_target"
+        assert (
+            _classify_function("LLVMFuzzerTestOneInput", "fuzz/target.c", [], "c") == "fuzz_target"
+        )
 
     def test_fuzz_target_pattern(self):
         assert _classify_function("my_fuzz_parser", "fuzz/test.c", [], "c") == "fuzz_target"
@@ -102,13 +105,21 @@ class TestClassifyFunction:
         assert _classify_function("fuzz_header", "src/parser.c", ["fuzzable"], "c") == "fuzz_target"
 
     def test_protocol_parser(self):
-        assert _classify_function("parse_header", "src/proto.c", ["parser"], "c") == "protocol_parser"
+        assert (
+            _classify_function("parse_header", "src/proto.c", ["parser"], "c") == "protocol_parser"
+        )
 
     def test_decode_parser(self):
-        assert _classify_function("decode_frame", "src/proto.c", ["protocol_parser"], "c") == "protocol_parser"
+        assert (
+            _classify_function("decode_frame", "src/proto.c", ["protocol_parser"], "c")
+            == "protocol_parser"
+        )
 
     def test_network_callback(self):
-        assert _classify_function("handle_request", "src/net.c", ["network_callback"], "c") == "network_callback"
+        assert (
+            _classify_function("handle_request", "src/net.c", ["network_callback"], "c")
+            == "network_callback"
+        )
 
     def test_callback_suffix(self):
         assert _classify_function("data_callback", "src/net.c", [], "c") == "network_callback"
@@ -129,7 +140,9 @@ class TestClassifyFunction:
         assert _classify_function("irq_timer", "kernel/irq.c", [], "c") == "interrupt_handler"
 
     def test_irq_handler_suffix(self):
-        assert _classify_function("uart_irq_handler", "drivers/uart.c", [], "c") == "interrupt_handler"
+        assert (
+            _classify_function("uart_irq_handler", "drivers/uart.c", [], "c") == "interrupt_handler"
+        )
 
     def test_unmatched_returns_none(self):
         assert _classify_function("my_helper_func", "src/utils.c", [], "c") is None
@@ -149,10 +162,13 @@ class TestClassifyFunction:
 class TestExtractEntryPoints:
     def test_basic_extraction(self):
         ft = _make_file_target(path="src/main.c")
-        cg = _make_callgraph("src/main.c", [
-            ("parse_header", 10, 50),
-            ("helper", 55, 70),
-        ])
+        cg = _make_callgraph(
+            "src/main.c",
+            [
+                ("parse_header", 10, 50),
+                ("helper", 55, 70),
+            ],
+        )
         ft["tags"] = ["parser"]
         eps = extract_entry_points(ft, cg, "/repo")
         assert len(eps) == 2
@@ -195,8 +211,11 @@ class TestExtractEntryPointsBatch:
 
     def test_skips_low_rank_files(self):
         ft = _make_file_target(
-            path="src/utils.c", priority=1.0,
-            surface=1, influence=1, reachability=1,
+            path="src/utils.c",
+            priority=1.0,
+            surface=1,
+            influence=1,
+            reachability=1,
         )
         cg = _make_callgraph("src/utils.c", [("func", 1, 10)])
         fts = [_make_file_target(loc=60_000)]  # pad LOC
@@ -206,13 +225,21 @@ class TestExtractEntryPointsBatch:
 
     def test_extracts_from_high_rank_files(self):
         ft = _make_file_target(
-            path="src/critical.c", priority=5.0,
-            surface=5, influence=5, reachability=5, loc=60_000,
+            path="src/critical.c",
+            priority=5.0,
+            surface=5,
+            influence=5,
+            reachability=5,
+            loc=60_000,
             tags=["attacker_reachable"],
         )
         cg = _make_callgraph("src/critical.c", [("parse_input", 1, 50)])
         result = extract_entry_points_batch(
-            [ft], cg, "/repo", min_rank=4, min_project_loc=50_000,
+            [ft],
+            cg,
+            "/repo",
+            min_rank=4,
+            min_project_loc=50_000,
         )
         assert "src/critical.c" in result
         assert len(result["src/critical.c"]) == 1
@@ -248,7 +275,7 @@ class TestSeedCorpus:
         lines = []
         for i in range(15):
             sha = f"{i:040d}"
-            lines.append(f"{sha} Fix CVE-2023-{10000+i} issue {i}")
+            lines.append(f"{sha} Fix CVE-2023-{10000 + i} issue {i}")
             lines.append("src/target.c")
             lines.append("")
         git_output = "\n".join(lines)
@@ -288,7 +315,7 @@ class TestSeedCorpus:
                 file_path="src/parser.c",
                 function_name=None,
                 source="git_cve",
-                cve_id=f"CVE-2023-{10000+i}",
+                cve_id=f"CVE-2023-{10000 + i}",
                 commit_sha="a" * 12,
                 summary="x" * 500,
             )
@@ -312,7 +339,9 @@ class TestSeedCorpus:
 class TestWorkItemExpansion:
     def test_file_level_sharding_unchanged(self):
         """shard_entry_points=False produces standard file-level WorkItems."""
-        ft = _make_file_target(path="src/main.c", priority=5.0, surface=5, influence=5, reachability=5)
+        ft = _make_file_target(
+            path="src/main.c", priority=5.0, surface=5, influence=5, reachability=5
+        )
         config = HuntPoolConfig(
             files=[ft],
             repo_path="/repo",
@@ -326,8 +355,11 @@ class TestWorkItemExpansion:
 
     def test_entry_point_sharding_creates_per_function_items(self):
         ft = _make_file_target(
-            path="src/critical.c", priority=5.0,
-            surface=5, influence=5, reachability=5,
+            path="src/critical.c",
+            priority=5.0,
+            surface=5,
+            influence=5,
+            reachability=5,
         )
         ep1 = EntryPoint("src/critical.c", "parse_header", 10, 50, "protocol_parser", "parses")
         ep2 = EntryPoint("src/critical.c", "handle_request", 55, 100, "network_callback", "handles")
@@ -348,8 +380,11 @@ class TestWorkItemExpansion:
 
     def test_entry_point_sharding_skips_low_rank(self):
         ft = _make_file_target(
-            path="src/utils.c", priority=1.0,
-            surface=1, influence=1, reachability=1,
+            path="src/utils.c",
+            priority=1.0,
+            surface=1,
+            influence=1,
+            reachability=1,
         )
         ep = EntryPoint("src/utils.c", "helper", 1, 10, "exported_api", "helper")
         config = HuntPoolConfig(
@@ -365,8 +400,11 @@ class TestWorkItemExpansion:
 
     def test_redundancy_applies_per_entry_point(self):
         ft = _make_file_target(
-            path="src/critical.c", priority=5.0,
-            surface=5, influence=5, reachability=5,
+            path="src/critical.c",
+            priority=5.0,
+            surface=5,
+            influence=5,
+            reachability=5,
         )
         ep1 = EntryPoint("src/critical.c", "parse_a", 10, 50, "protocol_parser", "parses")
         ep2 = EntryPoint("src/critical.c", "parse_b", 55, 100, "protocol_parser", "parses")
@@ -385,7 +423,9 @@ class TestWorkItemExpansion:
         assert len(items) == 3 * n
 
     def test_seed_context_set_on_work_item(self):
-        ft = _make_file_target(path="src/parser.c", priority=5.0, surface=5, influence=5, reachability=5)
+        ft = _make_file_target(
+            path="src/parser.c", priority=5.0, surface=5, influence=5, reachability=5
+        )
         seed_entries = [
             SeedCorpusEntry(
                 file_path="src/parser.c",
@@ -417,7 +457,10 @@ class TestPromptBlocks:
         ft = _make_file_target(path="src/parser.c")
         ep = EntryPoint("src/parser.c", "parse_header", 10, 50, "protocol_parser", "parses")
         prompt = _build_unconstrained_prompt(
-            ft, "testproject", None, None,
+            ft,
+            "testproject",
+            None,
+            None,
             entry_point=ep,
         )
         assert "parse_header" in prompt
@@ -436,7 +479,10 @@ class TestPromptBlocks:
 
         ft = _make_file_target(path="src/parser.c")
         prompt = _build_unconstrained_prompt(
-            ft, "testproject", None, None,
+            ft,
+            "testproject",
+            None,
+            None,
             seed_context="- [git_cve] CVE-2023-12345: overflow in parse_header",
         )
         assert "CVE-2023-12345" in prompt
@@ -455,7 +501,10 @@ class TestPromptBlocks:
         ft = _make_file_target(path="src/parser.c", tags=["parser"])
         ep = EntryPoint("src/parser.c", "decode_frame", 20, 80, "protocol_parser", "parses")
         prompt = _build_deep_agent_prompt(
-            ft, "testproject", None, None,
+            ft,
+            "testproject",
+            None,
+            None,
             entry_point=ep,
             seed_context="- [git_cve] CVE-2024-99999: null deref",
         )

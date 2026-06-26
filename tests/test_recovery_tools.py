@@ -60,10 +60,12 @@ class TestTestRecoveryAcceptance:
             patch.object(rec_mod, "interrupt", return_value=True),
             patch.object(rec_mod, "_http_post", mock_post),
         ):
-            result = test_recovery_acceptance.invoke({
-                "target": "http://example.com",
-                "count": 2,
-            })
+            result = test_recovery_acceptance.invoke(
+                {
+                    "target": "http://example.com",
+                    "count": 2,
+                }
+            )
         assert result["accepted_count"] == 0
         assert all(v == "not_found" for v in result["endpoint_summary"].values())
 
@@ -75,10 +77,12 @@ class TestTestRecoveryAcceptance:
             patch.object(rec_mod, "interrupt", return_value=True),
             patch.object(rec_mod, "_http_post", mock_post),
         ):
-            result = test_recovery_acceptance.invoke({
-                "target": "http://example.com",
-                "count": 1,
-            })
+            result = test_recovery_acceptance.invoke(
+                {
+                    "target": "http://example.com",
+                    "count": 1,
+                }
+            )
         assert result["accepted_count"] == 0
 
     def test_code_accepted(self):
@@ -91,10 +95,12 @@ class TestTestRecoveryAcceptance:
             patch.object(rec_mod, "interrupt", return_value=True),
             patch.object(rec_mod, "_http_post", mock_post),
         ):
-            result = test_recovery_acceptance.invoke({
-                "target": "http://example.com",
-                "count": 2,
-            })
+            result = test_recovery_acceptance.invoke(
+                {
+                    "target": "http://example.com",
+                    "count": 2,
+                }
+            )
         assert result["accepted_count"] > 0
         assert any("CRITICAL" in f for f in result["findings"])
 
@@ -103,7 +109,10 @@ class TestAnalyzeRecoveryEntropy:
     def test_default_entropy(self):
         result = analyze_recovery_entropy.invoke({})
         assert result["total_entropy_bits"] > 200
-        assert "impossible" in result["assessment"].lower() or "infeasible" in result["assessment"].lower()
+        assert (
+            "impossible" in result["assessment"].lower()
+            or "infeasible" in result["assessment"].lower()
+        )
 
     def test_custom_charset(self):
         result = analyze_recovery_entropy.invoke({"charset_size": 10, "random_chars": 20})

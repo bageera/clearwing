@@ -15,7 +15,7 @@ import urllib.request
 from typing import Any
 
 from clearwing.agent.tooling import tool
-from clearwing.agent.tools.ops.pentest_container import KALI, PARROT
+from clearwing.agent.tools.ops.pentest_container import run_in_pentest_container
 
 logger = logging.getLogger(__name__)
 
@@ -76,7 +76,10 @@ def search_github_code(
                 data = json.loads(resp.read().decode("utf-8", errors="replace"))
         except urllib.error.HTTPError as e:
             if e.code == 403:
-                return {"error": "GitHub API rate limit exceeded. Set GITHUB_TOKEN env var.", "results": results}
+                return {
+                    "error": "GitHub API rate limit exceeded. Set GITHUB_TOKEN env var.",
+                    "results": results,
+                }
             return {"error": f"GitHub API error {e.code}: {e.reason}", "results": results}
         except Exception as e:
             return {"error": f"Request failed: {e}", "results": results}
@@ -86,13 +89,15 @@ def search_github_code(
             break
 
         for item in items:
-            results.append({
-                "repo": item.get("repository", {}).get("full_name"),
-                "repo_url": item.get("repository", {}).get("html_url"),
-                "path": item.get("path"),
-                "url": item.get("html_url"),
-                "score": item.get("score"),
-            })
+            results.append(
+                {
+                    "repo": item.get("repository", {}).get("full_name"),
+                    "repo_url": item.get("repository", {}).get("html_url"),
+                    "path": item.get("path"),
+                    "url": item.get("html_url"),
+                    "score": item.get("score"),
+                }
+            )
 
         if len(items) < per_page:
             break
@@ -147,7 +152,10 @@ def search_github_commits(
                 data = json.loads(resp.read().decode("utf-8", errors="replace"))
         except urllib.error.HTTPError as e:
             if e.code == 403:
-                return {"error": "GitHub API rate limit exceeded. Set GITHUB_TOKEN env var.", "results": results}
+                return {
+                    "error": "GitHub API rate limit exceeded. Set GITHUB_TOKEN env var.",
+                    "results": results,
+                }
             return {"error": f"GitHub API error {e.code}: {e.reason}", "results": results}
         except Exception as e:
             return {"error": f"Request failed: {e}", "results": results}
@@ -158,14 +166,16 @@ def search_github_commits(
 
         for item in items:
             commit = item.get("commit", {})
-            results.append({
-                "repo": item.get("repository", {}).get("full_name"),
-                "author": commit.get("author", {}).get("name"),
-                "email": commit.get("author", {}).get("email"),
-                "date": commit.get("author", {}).get("date"),
-                "message": commit.get("message", "")[:500],
-                "url": item.get("html_url"),
-            })
+            results.append(
+                {
+                    "repo": item.get("repository", {}).get("full_name"),
+                    "author": commit.get("author", {}).get("name"),
+                    "email": commit.get("author", {}).get("email"),
+                    "date": commit.get("author", {}).get("date"),
+                    "message": commit.get("message", "")[:500],
+                    "url": item.get("html_url"),
+                }
+            )
 
         if len(items) < per_page:
             break
@@ -201,14 +211,15 @@ def run_gitleaks(
     Returns:
         Dict with exit_code, output (leak report), and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     cmd = f"gitleaks detect -s {repo_path} {options}"
     logger.info("[%s] gitleaks: %s", distro, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=False) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=False)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=False,
+    )
 
 
 @tool(requires_approval=False)
@@ -232,11 +243,12 @@ def run_trufflehog(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     cmd = f"trufflehog {options} {target}"
     logger.info("[%s] trufflehog: %s", distro, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=False) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=False)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=False,
+    )

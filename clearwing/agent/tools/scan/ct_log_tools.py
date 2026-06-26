@@ -72,8 +72,11 @@ def query_crt_sh(
         }
         if exclude_expired and cert_entry.get("not_after"):
             from datetime import datetime, timezone
+
             try:
-                expiry = datetime.strptime(cert_entry["not_after"], "%Y-%m-%dT%H:%M:%S").replace(tzinfo=timezone.utc)
+                expiry = datetime.strptime(cert_entry["not_after"], "%Y-%m-%dT%H:%M:%S").replace(
+                    tzinfo=timezone.utc
+                )
                 if expiry < datetime.now(timezone.utc):
                     continue
             except ValueError:

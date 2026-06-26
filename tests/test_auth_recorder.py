@@ -2,13 +2,11 @@
 
 from __future__ import annotations
 
-import threading
-
 import pytest
 
+import clearwing.agent.tools.recon.auth_recorder as recorder_mod
 from clearwing.agent.tools.recon.auth_recorder import (
     AuthFlowEvent,
-    AuthFlowRecord,
     _RecordingState,
     _saved_flows,
     diff_auth_flows,
@@ -18,8 +16,6 @@ from clearwing.agent.tools.recon.auth_recorder import (
 )
 from clearwing.agent.tools.recon.proxy_tools import _proxy_history
 from clearwing.agent.tools.recon.webcrypto_hooks import CryptoLog, _crypto_logs, _hooks_installed
-
-import clearwing.agent.tools.recon.auth_recorder as recorder_mod
 
 
 @pytest.fixture(autouse=True)
@@ -44,8 +40,20 @@ def _reset_state():
     _hooks_installed.clear()
 
 
-def _add_proxy_entry(method: str = "POST", url: str = "https://example.com/auth", status_code: int = 200, duration_ms: int = 100, response_body: str = ""):
-    return _proxy_history.add(method=method, url=url, status_code=status_code, duration_ms=duration_ms, response_body=response_body)
+def _add_proxy_entry(
+    method: str = "POST",
+    url: str = "https://example.com/auth",
+    status_code: int = 200,
+    duration_ms: int = 100,
+    response_body: str = "",
+):
+    return _proxy_history.add(
+        method=method,
+        url=url,
+        status_code=status_code,
+        duration_ms=duration_ms,
+        response_body=response_body,
+    )
 
 
 def _setup_crypto_log(tab_name: str = "default"):
@@ -60,14 +68,23 @@ def _setup_crypto_log(tab_name: str = "default"):
 
 class TestAuthFlowEvent:
     def test_fields(self):
-        e = AuthFlowEvent(source="proxy", timestamp="2024-01-01T00:00:00Z", seq=1, event_type="POST /auth")
+        e = AuthFlowEvent(
+            source="proxy", timestamp="2024-01-01T00:00:00Z", seq=1, event_type="POST /auth"
+        )
         assert e.source == "proxy"
         assert e.seq == 1
 
 
 class TestRecordingState:
     def test_slots(self):
-        s = _RecordingState(name="test", tab_name="default", started_at="now", proxy_watermark=1, crypto_watermark=1, cookies_at_start=[])
+        s = _RecordingState(
+            name="test",
+            tab_name="default",
+            started_at="now",
+            proxy_watermark=1,
+            crypto_watermark=1,
+            cookies_at_start=[],
+        )
         assert s.name == "test"
         assert s.proxy_watermark == 1
 
@@ -141,7 +158,9 @@ class TestStopAuthRecording:
     def test_builds_sorted_timeline(self):
         start_auth_recording.invoke({"name": "test_flow"})
 
-        _proxy_history.add(method="POST", url="https://example.com/auth", status_code=200, duration_ms=50)
+        _proxy_history.add(
+            method="POST", url="https://example.com/auth", status_code=200, duration_ms=50
+        )
 
         log = _setup_crypto_log()
         log.add_batch([{"method": "deriveBits", "seq": 0}])
@@ -170,7 +189,12 @@ class TestStopAuthRecording:
 
 
 class TestDiffAuthFlows:
-    def _record_flow(self, name: str, proxy_entries: list[dict] | None = None, crypto_entries: list[dict] | None = None):
+    def _record_flow(
+        self,
+        name: str,
+        proxy_entries: list[dict] | None = None,
+        crypto_entries: list[dict] | None = None,
+    ):
         """Helper to create a saved flow with given entries."""
         start_auth_recording.invoke({"name": name})
         for p in proxy_entries or []:
@@ -202,8 +226,14 @@ class TestDiffAuthFlows:
         assert result["response_diffs"][0]["status_b"] == 401
 
     def test_diff_different_crypto_sequences(self):
-        self._record_flow("flow_a", crypto_entries=[{"method": "importKey", "seq": 0}, {"method": "deriveBits", "seq": 1}])
-        self._record_flow("flow_b", crypto_entries=[{"method": "importKey", "seq": 0}, {"method": "encrypt", "seq": 1}])
+        self._record_flow(
+            "flow_a",
+            crypto_entries=[{"method": "importKey", "seq": 0}, {"method": "deriveBits", "seq": 1}],
+        )
+        self._record_flow(
+            "flow_b",
+            crypto_entries=[{"method": "importKey", "seq": 0}, {"method": "encrypt", "seq": 1}],
+        )
         result = diff_auth_flows.invoke({"flow_a": "flow_a", "flow_b": "flow_b"})
         assert result["crypto_sequence_diffs"]["sequences_match"] is False
         assert result["crypto_sequence_diffs"]["first_divergence_index"] == 1
@@ -218,7 +248,10 @@ class TestDiffAuthFlows:
 
     def test_diff_extra_events_in_one_flow(self):
         self._record_flow("flow_a", [{"status_code": 200}])
-        self._record_flow("flow_b", [{"status_code": 200}, {"url": "https://example.com/extra", "status_code": 302}])
+        self._record_flow(
+            "flow_b",
+            [{"status_code": 200}, {"url": "https://example.com/extra", "status_code": 302}],
+        )
         result = diff_auth_flows.invoke({"flow_a": "flow_a", "flow_b": "flow_b"})
         extras = [d for d in result["response_diffs"] if d.get("note") == "extra in flow_b"]
         assert len(extras) == 1

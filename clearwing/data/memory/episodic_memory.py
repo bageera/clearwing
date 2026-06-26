@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import json
+import logging
 import sqlite3
 import threading
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 # Valid event types
 EVENT_TYPES = (
@@ -75,6 +78,7 @@ class EpisodicMemory:
             try:
                 conn.close()
             except Exception:
+                logger.warning("Silent exception in episodic_memory", exc_info=True)
                 pass
             self._local.conn = None
 
@@ -207,15 +211,17 @@ class EpisodicMemory:
             last_id = cursor.lastrowid or 0
             first_id = last_id - len(rows) + 1
             for i, (target, sid, _ts, etype, content, meta_json) in enumerate(rows):
-                episodes.append(Episode(
-                    id=first_id + i,
-                    target=target,
-                    session_id=sid,
-                    timestamp=ts,
-                    event_type=etype,
-                    content=content,
-                    metadata=json.loads(meta_json),
-                ))
+                episodes.append(
+                    Episode(
+                        id=first_id + i,
+                        target=target,
+                        session_id=sid,
+                        timestamp=ts,
+                        event_type=etype,
+                        content=content,
+                        metadata=json.loads(meta_json),
+                    )
+                )
         return episodes
 
     def recall(self, target: str, limit: int = 50) -> list[Episode]:

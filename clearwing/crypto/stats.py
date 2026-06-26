@@ -150,10 +150,26 @@ def reject_outliers_zscore(times: list[float], threshold: float = 3.0) -> list[f
 
 
 _T_CRITICAL_95: dict[int, float] = {
-    2: 4.303, 3: 3.182, 4: 2.776, 5: 2.571, 6: 2.447,
-    7: 2.365, 8: 2.306, 9: 2.262, 10: 2.228, 11: 2.201,
-    12: 2.179, 13: 2.160, 14: 2.145, 15: 2.131, 16: 2.120,
-    17: 2.110, 18: 2.101, 19: 2.093, 20: 2.086, 25: 2.060,
+    2: 4.303,
+    3: 3.182,
+    4: 2.776,
+    5: 2.571,
+    6: 2.447,
+    7: 2.365,
+    8: 2.306,
+    9: 2.262,
+    10: 2.228,
+    11: 2.201,
+    12: 2.179,
+    13: 2.160,
+    14: 2.145,
+    15: 2.131,
+    16: 2.120,
+    17: 2.110,
+    18: 2.101,
+    19: 2.093,
+    20: 2.086,
+    25: 2.060,
     30: 2.042,
 }
 
@@ -187,20 +203,26 @@ def histogram(times: list[float], bins: int = 10) -> list[dict]:
         return []
     lo, hi = min(times), max(times)
     if lo == hi:
-        return [{"bin_start": round(lo, 3), "bin_end": round(hi, 3), "count": len(times), "pct": 100.0}]
+        return [
+            {"bin_start": round(lo, 3), "bin_end": round(hi, 3), "count": len(times), "pct": 100.0}
+        ]
     width = (hi - lo) / bins
     n = len(times)
     result: list[dict] = []
     for i in range(bins):
         edge_lo = lo + i * width
         edge_hi = lo + (i + 1) * width
-        count = sum(1 for t in times if (edge_lo <= t < edge_hi) or (i == bins - 1 and t == edge_hi))
-        result.append({
-            "bin_start": round(edge_lo, 3),
-            "bin_end": round(edge_hi, 3),
-            "count": count,
-            "pct": round(100 * count / n, 1),
-        })
+        count = sum(
+            1 for t in times if (edge_lo <= t < edge_hi) or (i == bins - 1 and t == edge_hi)
+        )
+        result.append(
+            {
+                "bin_start": round(edge_lo, 3),
+                "bin_end": round(edge_hi, 3),
+                "count": count,
+                "pct": round(100 * count / n, 1),
+            }
+        )
     return result
 
 

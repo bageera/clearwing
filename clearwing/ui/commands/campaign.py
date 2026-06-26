@@ -11,7 +11,6 @@ Subcommands:
 from __future__ import annotations
 
 import time
-from datetime import datetime, timezone
 from pathlib import Path
 
 from rich.table import Table
@@ -27,7 +26,8 @@ def add_parser(subparsers):
     r = sub.add_parser("run", help="Start a campaign from a YAML config")
     r.add_argument("config_file", help="Path to campaign.yaml")
     r.add_argument(
-        "--dry-run", action="store_true",
+        "--dry-run",
+        action="store_true",
         help="Validate config and show plan without running",
     )
 
@@ -43,7 +43,8 @@ def add_parser(subparsers):
     rp = sub.add_parser("report", help="Generate aggregate campaign report")
     rp.add_argument("config_file", help="Path to campaign.yaml")
     rp.add_argument(
-        "--format", nargs="+",
+        "--format",
+        nargs="+",
         choices=["sarif", "markdown", "json", "all"],
         default=["all"],
     )
@@ -56,8 +57,7 @@ def handle(cli, args):
     action = getattr(args, "campaign_action", None)
     if not action:
         cli.console.print(
-            "[yellow]Usage: clearwing campaign "
-            "<run|status|pause|resume|report>[/yellow]",
+            "[yellow]Usage: clearwing campaign <run|status|pause|resume|report>[/yellow]",
         )
         return
 
@@ -130,7 +130,9 @@ def _handle_status(cli, args):
     )
     cli.console.print(
         f"[bold]Budget:[/bold] ${cp.budget_spent:.0f} / ${config.budget:.0f} "
-        f"({cp.budget_spent / config.budget * 100:.1f}%)" if config.budget > 0 else "",
+        f"({cp.budget_spent / config.budget * 100:.1f}%)"
+        if config.budget > 0
+        else "",
     )
 
     table = Table(title="Projects")
@@ -155,8 +157,9 @@ def _handle_status(cli, args):
     if cp.recent_runs_count > 0:
         rate = cp.recent_new_findings / cp.recent_runs_count
         cli.console.print(
-            f"\n[bold]Finding rate:[/bold] "
-            f"1 per {1 / rate:.0f} runs" if rate > 0 else "no findings yet",
+            f"\n[bold]Finding rate:[/bold] 1 per {1 / rate:.0f} runs"
+            if rate > 0
+            else "no findings yet",
         )
 
 
@@ -237,16 +240,9 @@ def _handle_report(cli, args):
         cli.console.print("[yellow]Could not load checkpoint.[/yellow]")
         return
 
-    total_findings = sum(
-        ps.findings_count for ps in cp.per_project_state.values()
-    )
-    total_verified = sum(
-        ps.verified_count for ps in cp.per_project_state.values()
-    )
-    completed = sum(
-        1 for ps in cp.per_project_state.values()
-        if ps.status == "completed"
-    )
+    total_findings = sum(ps.findings_count for ps in cp.per_project_state.values())
+    total_verified = sum(ps.verified_count for ps in cp.per_project_state.values())
+    completed = sum(1 for ps in cp.per_project_state.values() if ps.status == "completed")
 
     cli.console.print(f"[bold]Campaign Report: {cp.campaign_name}[/bold]")
     cli.console.print(f"Session: {cp.campaign_session_id}")

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import fnmatch
+import logging
 import threading
 import time
 from dataclasses import asdict, dataclass, field
@@ -10,6 +11,8 @@ from typing import Any
 from urllib.parse import urlparse
 
 from clearwing.agent.tooling import interrupt, tool
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -94,7 +97,9 @@ def mitm_start(tab_name: str = "default", url_pattern: str = "**/*") -> dict:
 
     with _lock:
         if tab_name in _intercepted_tabs:
-            return {"error": f"Tab '{tab_name}' is already being intercepted. Call mitm_stop first."}
+            return {
+                "error": f"Tab '{tab_name}' is already being intercepted. Call mitm_stop first."
+            }
 
     from clearwing.agent.tools.recon.browser_tools import _get_page
     from clearwing.agent.tools.recon.proxy_tools import _proxy_history
@@ -110,6 +115,7 @@ def mitm_start(tab_name: str = "default", url_pattern: str = "**/*") -> dict:
         try:
             req_body = request.post_data or ""
         except Exception:
+            logger.debug("Silent exception in mitm_proxy", exc_info=True)
             pass
 
         inject_def = _matches_inject(req_url)
@@ -229,6 +235,7 @@ def mitm_stop(tab_name: str = "default") -> dict:
         try:
             page.unroute("**/*")
         except Exception:
+            logger.debug("Silent exception in mitm_proxy", exc_info=True)
             pass
 
     with _lock:
@@ -390,4 +397,10 @@ def mitm_inject_response(
 
 def get_mitm_tools() -> list[Any]:
     """Return all MITM proxy tools."""
-    return [mitm_start, mitm_stop, mitm_set_intercept_rule, mitm_get_decrypted_traffic, mitm_inject_response]
+    return [
+        mitm_start,
+        mitm_stop,
+        mitm_set_intercept_rule,
+        mitm_get_decrypted_traffic,
+        mitm_inject_response,
+    ]

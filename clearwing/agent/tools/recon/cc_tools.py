@@ -285,26 +285,31 @@ def cc_fuzz_fields(
                 "status": status,
                 "response_preview": resp_body[:300],
                 "duration_ms": round(duration, 2),
-                "differs_from_baseline": status != baseline_status or resp_body[:200] != baseline_resp[:200],
+                "differs_from_baseline": status != baseline_status
+                or resp_body[:200] != baseline_resp[:200],
             }
             field_results.append(entry)
 
             if status in (200, 201):
-                interesting.append({
-                    "field": field,
-                    "value_type": label,
-                    "value": str(value)[:100],
-                    "severity": "HIGH",
-                    "description": f"Server accepted {label} for field '{field}'",
-                })
+                interesting.append(
+                    {
+                        "field": field,
+                        "value_type": label,
+                        "value": str(value)[:100],
+                        "severity": "HIGH",
+                        "description": f"Server accepted {label} for field '{field}'",
+                    }
+                )
             elif status != baseline_status and status not in (400, 422):
-                interesting.append({
-                    "field": field,
-                    "value_type": label,
-                    "status": status,
-                    "severity": "MEDIUM",
-                    "description": f"Unexpected status {status} for {label} in field '{field}'",
-                })
+                interesting.append(
+                    {
+                        "field": field,
+                        "value_type": label,
+                        "status": status,
+                        "severity": "MEDIUM",
+                        "description": f"Unexpected status {status} for {label} in field '{field}'",
+                    }
+                )
 
         results[field] = field_results
 

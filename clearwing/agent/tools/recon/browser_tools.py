@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from clearwing.agent.tooling import interrupt, tool
+
+logger = logging.getLogger(__name__)
 
 # Module-level browser state. Typed as `dict[str, Any]` rather than a
 # TypedDict because the shape is transiently inconsistent across the
@@ -303,6 +306,7 @@ def browser_close(tab_name: str | None = None) -> dict:
             try:
                 page.close()
             except Exception:
+                logger.debug("Silent exception in browser_tools", exc_info=True)
                 pass
         remaining = list(_browser_state["tabs"].keys())
         if _browser_state["active_tab"] == tab_name:
@@ -314,6 +318,7 @@ def browser_close(tab_name: str | None = None) -> dict:
             try:
                 page.close()
             except Exception:
+                logger.debug("Silent exception in browser_tools", exc_info=True)
                 pass
         _browser_state["tabs"].clear()
         _browser_state["active_tab"] = None
@@ -322,6 +327,7 @@ def browser_close(tab_name: str | None = None) -> dict:
             try:
                 _browser_state["browser"].close()
             except Exception:
+                logger.debug("Silent exception in browser_tools", exc_info=True)
                 pass
             _browser_state["browser"] = None
 
@@ -329,6 +335,7 @@ def browser_close(tab_name: str | None = None) -> dict:
             try:
                 _browser_state["_pw"].stop()
             except Exception:
+                logger.debug("Silent exception in browser_tools", exc_info=True)
                 pass
             _browser_state["_pw"] = None
 

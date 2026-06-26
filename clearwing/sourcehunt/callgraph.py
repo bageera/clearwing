@@ -366,6 +366,7 @@ class CallGraphBuilder:
                 try:
                     return source[n.start_byte : n.end_byte].decode("utf-8", errors="replace")
                 except Exception:
+                    logger.debug("Silent exception in callgraph", exc_info=True)
                     return None
             stack[0:0] = list(n.children)
         return None
@@ -385,6 +386,7 @@ class CallGraphBuilder:
                 try:
                     result = source[n.start_byte : n.end_byte].decode("utf-8", errors="replace")
                 except Exception:
+                    logger.debug("Silent exception in callgraph", exc_info=True)
                     pass
             stack[0:0] = list(n.children)
         return result

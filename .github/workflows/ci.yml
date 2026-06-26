@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.10", "3.11", "3.12"]
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
 
     steps:
       - uses: actions/checkout@v6
@@ -52,17 +52,33 @@ jobs:
             clearwing/agent/tools \
             clearwing/core
 
-      - name: Run pytest
-        run: python -m pytest -q --strict-markers --strict-config
-
-      - name: Coverage
-        run: coverage run -m pytest -q --strict-markers --strict-config
+      - name: Run pytest with coverage
+        run: |
+          python -m pytest -q --strict-markers --strict-config \
+            --cov=clearwing --cov-report=term-missing --cov-report=xml
 
       - name: Coverage report
-        run: coverage report --fail-under=50
+        run: coverage report --fail-under=65
 
       - name: Build wheel + sdist
         run: python -m build
 
       - name: Validate artifacts
         run: twine check dist/*
+
+  security:
+    name: dependency audit (pip-audit)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install pip-audit
+        run: pip install pip-audit
+
+      - name: Audit dependencies
+        run: pip-audit --strict --desc

@@ -10,6 +10,7 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
+import logging
 import os
 import queue
 import secrets
@@ -29,6 +30,10 @@ from pathlib import Path
 from socketserver import TCPServer
 from typing import Any
 
+from clearwing.core.config import clearwing_home
+
+logger = logging.getLogger(__name__)
+
 try:
     import fcntl
 except ImportError:  # pragma: no cover - non-Unix fallback
@@ -47,8 +52,6 @@ OPENAI_CODEX_DEFAULT_BASE_URL = "https://chatgpt.com/backend-api"
 OPENAI_CODEX_DEFAULT_MODEL = "gpt-5.2"
 OPENAI_CODEX_OAUTH_CONFIG_KEY = "oauth.openai_codex"
 OPENAI_AUTH_JWT_CLAIM_PATH = "https://api.openai.com/auth"
-
-from clearwing.core.config import clearwing_home
 
 AUTH_DIR = clearwing_home() / "auth"
 
@@ -134,6 +137,7 @@ def decode_jwt_payload(token: str) -> dict[str, Any] | None:
             return None
         return json.loads(_b64url_decode(parts[1]).decode("utf-8"))
     except Exception:
+        logger.warning("Silent exception in openai_oauth", exc_info=True)
         return None
 
 
@@ -231,6 +235,7 @@ def credentials_from_value(value: Any) -> OpenAIOAuthCredentials | None:
         try:
             value = json.loads(value)
         except Exception:
+            logger.warning("Silent exception in openai_oauth", exc_info=True)
             return None
     if not isinstance(value, dict):
         return None
@@ -278,7 +283,9 @@ def load_openai_oauth_credentials() -> OpenAIOAuthCredentials | None:
 def save_openai_oauth_credentials(creds: OpenAIOAuthCredentials) -> None:
     _ensure_auth_dir()
     path = _auth_file()
-    fd, tmp = tempfile.mkstemp(dir=AUTH_DIR, suffix=".tmp", prefix=f"{OPENAI_CODEX_OAUTH_CONFIG_KEY}.")
+    fd, tmp = tempfile.mkstemp(
+        dir=AUTH_DIR, suffix=".tmp", prefix=f"{OPENAI_CODEX_OAUTH_CONFIG_KEY}."
+    )
     try:
         os.write(fd, json.dumps(credentials_to_dict(creds), indent=2).encode("utf-8"))
         os.fsync(fd)
@@ -326,7 +333,9 @@ def ensure_fresh_openai_oauth_credentials(
     with _auth_lock():
         creds = load_openai_oauth_credentials()
         if not creds:
-            raise RuntimeError("OpenAI OAuth is not configured. Run: `clearwing setup --provider openai-oauth`")
+            raise RuntimeError(
+                "OpenAI OAuth is not configured. Run: `clearwing setup --provider openai-oauth`"
+            )
 
         now_ms = int(time.time() * 1000)
         if creds.expires_ms > now_ms + skew_seconds * 1000:
@@ -383,6 +392,7 @@ def run_callback_server(
             try:
                 result_queue.put_nowait({"code": code, "state": state})
             except Exception:
+                logger.warning("Silent exception in openai_oauth", exc_info=True)
                 pass
 
     server: TCPServer | None = None
@@ -401,11 +411,13 @@ def run_callback_server(
     try:
         return result_queue.get(timeout=max(5, timeout_seconds))
     except Exception:
+        logger.warning("Silent exception in openai_oauth", exc_info=True)
         return None
     finally:
         try:
             server.shutdown()
         except Exception:
+            logger.warning("Silent exception in openai_oauth", exc_info=True)
             pass
         thread.join(timeout=1.0)
 
@@ -444,6 +456,7 @@ def login_openai_oauth(
         try:
             webbrowser.open(auth_url)
         except Exception:
+            logger.warning("Silent exception in openai_oauth", exc_info=True)
             pass
 
     result = run_callback_server(timeout_seconds=timeout_seconds, expected_state=state)

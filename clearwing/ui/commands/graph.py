@@ -17,10 +17,10 @@ def handle(cli, args):
     """Show the interactive attack graph in the browser."""
     import networkx as nx
 
+    from clearwing.core.config import clearwing_home
+
     from ...data.knowledge.graph import KnowledgeGraph
     from ...reporting.report_generator import ReportGenerator
-
-    from clearwing.core.config import clearwing_home
 
     persist_path = args.path or str(clearwing_home() / "knowledge_graph.json")
     kg = KnowledgeGraph(persist_path=persist_path)

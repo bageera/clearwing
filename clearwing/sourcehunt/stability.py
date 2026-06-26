@@ -13,7 +13,6 @@ from __future__ import annotations
 
 import logging
 import re
-from collections import Counter
 from dataclasses import dataclass, replace
 from typing import Any
 
@@ -102,7 +101,9 @@ class StabilityVerifier:
 
         for i in range(self.config.num_containers):
             successes, total, failures = self._run_in_container(
-                finding, i, runs_per,
+                finding,
+                i,
+                runs_per,
             )
             container_results.append((successes, total))
             all_failures.extend(failures)
@@ -110,9 +111,7 @@ class StabilityVerifier:
         total_successes = sum(s for s, _ in container_results)
         total_runs = sum(t for _, t in container_results)
         rate = total_successes / total_runs if total_runs > 0 else 0.0
-        per_container = [
-            s / t if t > 0 else 0.0 for s, t in container_results
-        ]
+        per_container = [s / t if t > 0 else 0.0 for s, t in container_results]
         classification = self._classify(rate, threshold)
         failure_analysis = self._analyze_failures(all_failures)
 
@@ -155,7 +154,8 @@ class StabilityVerifier:
         except Exception:
             logger.debug(
                 "Stability container spawn failed for container %d",
-                container_idx, exc_info=True,
+                container_idx,
+                exc_info=True,
             )
             return 0, 0, []
 
@@ -186,6 +186,7 @@ class StabilityVerifier:
             try:
                 container.stop()
             except Exception:
+                logger.debug("Silent exception in stability", exc_info=True)
                 pass
 
     def _is_race_condition(self, finding: Finding) -> bool:
@@ -222,13 +223,9 @@ class StabilityVerifier:
 
         parts: list[str] = []
         if timeout_count > len(stderrs) * 0.3:
-            parts.append(
-                f"timing-dependent ({timeout_count}/{len(stderrs)} failures are timeouts)"
-            )
+            parts.append(f"timing-dependent ({timeout_count}/{len(stderrs)} failures are timeouts)")
         if unique_addrs > 3 and addresses:
-            parts.append(
-                f"ASLR-sensitive ({unique_addrs} unique addresses across failures)"
-            )
+            parts.append(f"ASLR-sensitive ({unique_addrs} unique addresses across failures)")
         if clean_count > len(stderrs) * 0.3:
             parts.append(
                 f"environment-dependent ({clean_count}/{len(stderrs)} failures produce no output)"
@@ -257,7 +254,8 @@ class StabilityVerifier:
 
         try:
             response = await self._hardening_llm.aask_text(
-                system=HARDEN_SYSTEM_PROMPT, user=prompt,
+                system=HARDEN_SYSTEM_PROMPT,
+                user=prompt,
             )
             hardened_poc = (response.first_text() or "").strip()
         except Exception:
@@ -272,7 +270,8 @@ class StabilityVerifier:
 
         no_harden_config = replace(self.config, enable_hardening=False)
         retest = StabilityVerifier(
-            self._sandbox_manager, config=no_harden_config,
+            self._sandbox_manager,
+            config=no_harden_config,
         )
         try:
             retest_result = await retest.averify(hardened_finding)

@@ -96,7 +96,7 @@ def _parse_crash_evidence(stderr: str) -> str:
         if _SANITIZER_HEADER.search(line):
             start = i
             break
-    snippet = "\n".join(lines[start:start + 60])
+    snippet = "\n".join(lines[start : start + 60])
     return snippet[:6000]
 
 
@@ -151,7 +151,8 @@ class CrashClassifier:
 
         try:
             llm_tier, rationale, cost = await self._llm_classify(
-                classification.crash_evidence, poc,
+                classification.crash_evidence,
+                poc,
             )
             classification.llm_tier = llm_tier
             classification.llm_rationale = rationale
@@ -173,7 +174,8 @@ class CrashClassifier:
             user_msg += f"\nProof-of-concept input:\n```\n{poc[:2000]}\n```\n"
 
         response = await self._llm.aask(
-            user_msg, system=CLASSIFIER_SYSTEM_PROMPT,
+            user_msg,
+            system=CLASSIFIER_SYSTEM_PROMPT,
         )
         text = response.first_text() if hasattr(response, "first_text") else str(response)
         cost = getattr(response, "cost_usd", 0.0) or 0.0

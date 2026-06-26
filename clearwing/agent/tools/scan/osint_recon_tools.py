@@ -8,7 +8,7 @@ import logging
 from typing import Any
 
 from clearwing.agent.tooling import tool
-from clearwing.agent.tools.ops.pentest_container import KALI, PARROT
+from clearwing.agent.tools.ops.pentest_container import run_in_pentest_container
 
 logger = logging.getLogger(__name__)
 
@@ -44,14 +44,15 @@ def run_amass(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     cmd = f"timeout {timeout_minutes}m amass {mode} -d {domain} {options}"
     logger.info("[%s] amass (%s): %s", distro, mode, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=False) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=False)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=False,
+    )
 
 
 @tool(requires_approval=False)
@@ -78,15 +79,16 @@ def run_subfinder(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     source_flag = f"-sources {sources}" if sources != "all" else ""
     cmd = f"subfinder -d {domain} {source_flag} {options}"
     logger.info("[%s] subfinder: %s", distro, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=False) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=False)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=False,
+    )
 
 
 @tool(requires_approval=False)
@@ -113,15 +115,16 @@ def run_recon_ng(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     module_cmd = f"-m {module}" if module else ""
     cmd = f"recon-ng -w {workspace} {module_cmd} {options}"
     logger.info("[%s] recon-ng: %s", distro, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=False) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=False)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=False,
+    )
 
 
 @tool(requires_approval=False)
@@ -148,15 +151,16 @@ def run_assetfinder(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     flag = "-subs-only" if subs_only else ""
     cmd = f"assetfinder {flag} {domain} {options}"
     logger.info("[%s] assetfinder: %s", distro, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=False) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=False)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=False,
+    )
 
 
 @tool(requires_approval=False)
@@ -180,14 +184,15 @@ def run_findomain(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     cmd = f"findomain -t {domain} {options}"
     logger.info("[%s] findomain: %s", distro, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=False) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=False)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=False,
+    )
 
 
 @tool(requires_approval=False)
@@ -212,14 +217,15 @@ def run_httpx(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     cmd = f"httpx -l {target_file} {options}"
     logger.info("[%s] httpx: %s", distro, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=False) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=False)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=False,
+    )
 
 
 @tool(requires_approval=False)
@@ -243,14 +249,15 @@ def run_dnsx(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     cmd = f"echo '{domain}' | dnsx {options}"
     logger.info("[%s] dnsx: %s", distro, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=False) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=False)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=False,
+    )
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -277,14 +284,15 @@ def run_gau(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     cmd = f"gau {domain} {options}"
     logger.info("[%s] gau: %s", distro, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=False) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=False)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=False,
+    )
 
 
 @tool(requires_approval=False)
@@ -305,14 +313,15 @@ def run_waybackurls(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     cmd = f"echo '{domain}' | waybackurls {options}"
     logger.info("[%s] waybackurls: %s", distro, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=False) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=False)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=False,
+    )
 
 
 @tool(requires_approval=False)
@@ -336,11 +345,12 @@ def run_gowitness(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     cmd = f"gowitness file -f {target_file} {options}"
     logger.info("[%s] gowitness: %s", distro, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=False) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=False)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=False,
+    )

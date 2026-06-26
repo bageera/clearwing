@@ -44,10 +44,12 @@ class ActivityFeed(RichLog):
         axes_str = " ".join(parts) if parts else "no axes"
         outcome = "advanced" if payload.get("advance") else "rejected"
         sev = payload.get("severity") or "n/a"
-        self.write(Text(
-            f"[VALIDATOR] {fid}: {axes_str} \u2192 {outcome} (severity={sev})",
-            style="bold cyan" if payload.get("advance") else "dim yellow",
-        ))
+        self.write(
+            Text(
+                f"[VALIDATOR] {fid}: {axes_str} \u2192 {outcome} (severity={sev})",
+                style="bold cyan" if payload.get("advance") else "dim yellow",
+            )
+        )
 
     def add_flag(self, flag: str, context: str) -> None:
         """Add a prominent flag-found banner to the feed."""

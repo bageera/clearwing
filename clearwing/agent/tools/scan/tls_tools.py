@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import socket
 import ssl
 import urllib.error
@@ -10,6 +11,8 @@ from datetime import datetime, timezone
 from typing import Any
 
 from clearwing.agent.tooling import interrupt, tool
+
+logger = logging.getLogger(__name__)
 
 _KNOWN_SIG_OIDS: dict[str, str] = {
     "1.2.840.113549.1.1.5": "sha1WithRSAEncryption",
@@ -202,6 +205,7 @@ def _fetch_security_headers(host: str, port: int, timeout: int = 10) -> dict:
             if val:
                 result[header] = val
     except Exception:
+        logger.debug("Silent exception in tls_tools", exc_info=True)
         pass
     return result
 
@@ -284,6 +288,7 @@ def scan_tls_config(
                 cert_summary["signature_algorithm"] = der_info["signature_algorithm"]
                 cert_summary["key_strength"] = _key_strength_rating(der_info["key_bits"])
         except Exception:
+            logger.debug("Silent exception in tls_tools", exc_info=True)
             pass
     finally:
         ssock.close()
@@ -361,13 +366,15 @@ def enumerate_cipher_suites(
         if cipher_name in excluded:
             break
 
-        accepted.append({
-            "name": cipher_name,
-            "bits": cipher_info[2],
-            "protocol": cipher_info[1],
-            "strength": _classify_cipher(cipher_name),
-            "preference_order": len(accepted) + 1,
-        })
+        accepted.append(
+            {
+                "name": cipher_name,
+                "bits": cipher_info[2],
+                "protocol": cipher_info[1],
+                "strength": _classify_cipher(cipher_name),
+                "preference_order": len(accepted) + 1,
+            }
+        )
         excluded.append(cipher_name)
 
     weak_count = sum(1 for c in accepted if c["strength"] in ("weak", "insecure"))

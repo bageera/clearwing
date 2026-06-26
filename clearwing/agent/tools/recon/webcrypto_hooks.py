@@ -179,9 +179,18 @@ _WEBCRYPTO_INSTRUMENT_JS = """
 """
 
 _SUBTLE_METHODS = [
-    "encrypt", "decrypt", "sign", "verify", "digest",
-    "generateKey", "deriveKey", "deriveBits",
-    "importKey", "exportKey", "wrapKey", "unwrapKey",
+    "encrypt",
+    "decrypt",
+    "sign",
+    "verify",
+    "digest",
+    "generateKey",
+    "deriveKey",
+    "deriveBits",
+    "importKey",
+    "exportKey",
+    "wrapKey",
+    "unwrapKey",
 ]
 
 
@@ -282,9 +291,7 @@ def _flush_js_log(tab_name: str) -> list[dict]:
     page = _get_page(tab_name)
     try:
         raw = page.evaluate(
-            "window.__clearwing_crypto_flush"
-            " ? window.__clearwing_crypto_flush()"
-            " : []"
+            "window.__clearwing_crypto_flush ? window.__clearwing_crypto_flush() : []"
         )
     except Exception:
         raw = []
@@ -425,6 +432,7 @@ def clear_webcrypto_log(tab_name: str = "default") -> dict:
         page = _get_page(tab_name)
         page.evaluate("window.__clearwing_crypto_log = []; window.__clearwing_crypto_seq = 0;")
     except Exception:
+        logger.debug("Silent exception in webcrypto_hooks", exc_info=True)
         pass
 
     return {"cleared_count": count, "tab_name": tab_name}
@@ -457,27 +465,41 @@ def _parse_kdf_from_derive_bits(args: dict) -> dict[str, Any] | None:
         kdf_entry["salt_hex"] = salt_info
     if args_algo.get("info"):
         info_val = args_algo["info"]
-        kdf_entry["info_hex"] = info_val.get("hex", "") if isinstance(info_val, dict) else str(info_val)
+        kdf_entry["info_hex"] = (
+            info_val.get("hex", "") if isinstance(info_val, dict) else str(info_val)
+        )
     return kdf_entry
 
 
 def _collect_import_key_materials(
-    entry: CryptoLogEntry, algo_name: str, args: dict,
+    entry: CryptoLogEntry,
+    algo_name: str,
+    args: dict,
 ) -> list[dict[str, Any]]:
     results: list[dict[str, Any]] = []
     if entry.key_material:
-        results.append({
-            "seq": entry.seq, "key_hex": entry.key_material,
-            "algorithm": algo_name, "format": args.get("format"),
-            "usages": (args.get("usages") or []), "from_method": "importKey",
-        })
+        results.append(
+            {
+                "seq": entry.seq,
+                "key_hex": entry.key_material,
+                "algorithm": algo_name,
+                "format": args.get("format"),
+                "usages": (args.get("usages") or []),
+                "from_method": "importKey",
+            }
+        )
     key_data = args.get("keyData")
     if isinstance(key_data, dict) and key_data.get("hex"):
-        results.append({
-            "seq": entry.seq, "key_hex": key_data["hex"],
-            "algorithm": algo_name, "format": args.get("format"),
-            "usages": (args.get("usages") or []), "from_method": "importKey_input",
-        })
+        results.append(
+            {
+                "seq": entry.seq,
+                "key_hex": key_data["hex"],
+                "algorithm": algo_name,
+                "format": args.get("format"),
+                "usages": (args.get("usages") or []),
+                "from_method": "importKey_input",
+            }
+        )
     return results
 
 
@@ -509,20 +531,28 @@ def extract_srp_values(tab_name: str = "default") -> dict:
         algo_name = _extract_algo_name(entry)
         args = entry.args_summary
 
-        timeline.append({
-            "seq": entry.seq, "method": entry.method,
-            "algorithm_name": algo_name, "timestamp": entry.timestamp,
-        })
+        timeline.append(
+            {
+                "seq": entry.seq,
+                "method": entry.method,
+                "algorithm_name": algo_name,
+                "timestamp": entry.timestamp,
+            }
+        )
 
         if entry.method == "deriveBits":
             kdf = _parse_kdf_from_derive_bits(args)
             if kdf:
                 kdf_info.append(kdf)
             if entry.key_material:
-                derived_keys.append({
-                    "seq": entry.seq, "key_hex": entry.key_material,
-                    "algorithm": algo_name, "from_method": "deriveBits",
-                })
+                derived_keys.append(
+                    {
+                        "seq": entry.seq,
+                        "key_hex": entry.key_material,
+                        "algorithm": algo_name,
+                        "from_method": "deriveBits",
+                    }
+                )
 
         elif entry.method == "importKey":
             derived_keys.extend(_collect_import_key_materials(entry, algo_name, args))
@@ -530,18 +560,25 @@ def extract_srp_values(tab_name: str = "default") -> dict:
         elif entry.method in ("encrypt", "decrypt"):
             args_algo = args.get("algorithm") or {}
             iv_info = args_algo.get("iv") or {}
-            encryption_ops.append({
-                "seq": entry.seq, "method": entry.method,
-                "algorithm": args_algo.get("name", algo_name),
-                "iv_hex": iv_info.get("hex", "") if isinstance(iv_info, dict) else str(iv_info),
-                "data_length": (args.get("data") or {}).get("length"),
-            })
+            encryption_ops.append(
+                {
+                    "seq": entry.seq,
+                    "method": entry.method,
+                    "algorithm": args_algo.get("name", algo_name),
+                    "iv_hex": iv_info.get("hex", "") if isinstance(iv_info, dict) else str(iv_info),
+                    "data_length": (args.get("data") or {}).get("length"),
+                }
+            )
 
         elif entry.method == "deriveKey" and entry.key_material:
-            derived_keys.append({
-                "seq": entry.seq, "key_hex": entry.key_material,
-                "algorithm": algo_name, "from_method": "deriveKey",
-            })
+            derived_keys.append(
+                {
+                    "seq": entry.seq,
+                    "key_hex": entry.key_material,
+                    "algorithm": algo_name,
+                    "from_method": "deriveKey",
+                }
+            )
 
     return {
         "kdf": kdf_info,
@@ -586,23 +623,27 @@ def extract_key_hierarchy(tab_name: str = "default") -> dict:
         if entry.method in ("deriveBits", "deriveKey"):
             step_num += 1
             args_algo = args.get("algorithm") or {}
-            hierarchy.append({
-                "step": step_num,
-                "operation": entry.method,
-                "algorithm": args_algo.get("name", algo_name),
-                "input": "baseKey",
-                "output_key_hex": entry.key_material or "[non-extractable]",
-                "output_length_bits": args.get("length"),
-                "seq": entry.seq,
-            })
-            if entry.key_material:
-                captured_keys.append({
-                    "id": step_num,
-                    "hex": entry.key_material,
-                    "algorithm": algo_name,
-                    "source": entry.method,
+            hierarchy.append(
+                {
+                    "step": step_num,
+                    "operation": entry.method,
+                    "algorithm": args_algo.get("name", algo_name),
+                    "input": "baseKey",
+                    "output_key_hex": entry.key_material or "[non-extractable]",
+                    "output_length_bits": args.get("length"),
                     "seq": entry.seq,
-                })
+                }
+            )
+            if entry.key_material:
+                captured_keys.append(
+                    {
+                        "id": step_num,
+                        "hex": entry.key_material,
+                        "algorithm": algo_name,
+                        "source": entry.method,
+                        "seq": entry.seq,
+                    }
+                )
 
         elif entry.method == "importKey":
             step_num += 1
@@ -610,73 +651,87 @@ def extract_key_hierarchy(tab_name: str = "default") -> dict:
             input_hex = ""
             if isinstance(key_data, dict):
                 input_hex = key_data.get("hex", "")
-            hierarchy.append({
-                "step": step_num,
-                "operation": "importKey",
-                "format": args.get("format"),
-                "algorithm": algo_name,
-                "input_key_hex": input_hex,
-                "output_key_hex": entry.key_material or "[non-extractable]",
-                "usages": args.get("usages"),
-                "extractable": args.get("extractable"),
-                "seq": entry.seq,
-            })
-            if entry.key_material:
-                captured_keys.append({
-                    "id": step_num,
-                    "hex": entry.key_material,
+            hierarchy.append(
+                {
+                    "step": step_num,
+                    "operation": "importKey",
+                    "format": args.get("format"),
                     "algorithm": algo_name,
-                    "source": "importKey",
+                    "input_key_hex": input_hex,
+                    "output_key_hex": entry.key_material or "[non-extractable]",
+                    "usages": args.get("usages"),
+                    "extractable": args.get("extractable"),
                     "seq": entry.seq,
-                })
+                }
+            )
+            if entry.key_material:
+                captured_keys.append(
+                    {
+                        "id": step_num,
+                        "hex": entry.key_material,
+                        "algorithm": algo_name,
+                        "source": "importKey",
+                        "seq": entry.seq,
+                    }
+                )
 
         elif entry.method in ("wrapKey", "unwrapKey"):
             step_num += 1
-            hierarchy.append({
-                "step": step_num,
-                "operation": entry.method,
-                "algorithm": algo_name,
-                "format": args.get("format"),
-                "output_key_hex": entry.key_material or "[non-extractable]",
-                "seq": entry.seq,
-            })
-            if entry.key_material:
-                captured_keys.append({
-                    "id": step_num,
-                    "hex": entry.key_material,
+            hierarchy.append(
+                {
+                    "step": step_num,
+                    "operation": entry.method,
                     "algorithm": algo_name,
-                    "source": entry.method,
+                    "format": args.get("format"),
+                    "output_key_hex": entry.key_material or "[non-extractable]",
                     "seq": entry.seq,
-                })
+                }
+            )
+            if entry.key_material:
+                captured_keys.append(
+                    {
+                        "id": step_num,
+                        "hex": entry.key_material,
+                        "algorithm": algo_name,
+                        "source": entry.method,
+                        "seq": entry.seq,
+                    }
+                )
 
         elif entry.method in ("encrypt", "decrypt"):
             args_algo = args.get("algorithm") or {}
             iv_info = args_algo.get("iv") or {}
-            encryption_ops.append({
-                "method": entry.method,
-                "algorithm": args_algo.get("name", algo_name),
-                "iv_hex": iv_info.get("hex", "") if isinstance(iv_info, dict) else str(iv_info),
-                "data_length": (args.get("data") or {}).get("length"),
-                "seq": entry.seq,
-            })
+            encryption_ops.append(
+                {
+                    "method": entry.method,
+                    "algorithm": args_algo.get("name", algo_name),
+                    "iv_hex": iv_info.get("hex", "") if isinstance(iv_info, dict) else str(iv_info),
+                    "data_length": (args.get("data") or {}).get("length"),
+                    "seq": entry.seq,
+                }
+            )
 
         elif entry.method == "generateKey":
             step_num += 1
-            hierarchy.append({
-                "step": step_num,
-                "operation": "generateKey",
-                "algorithm": algo_name,
-                "output_key_hex": entry.key_material or "[non-extractable]",
-                "seq": entry.seq,
-            })
-            if entry.key_material:
-                captured_keys.append({
-                    "id": step_num,
-                    "hex": entry.key_material,
+            hierarchy.append(
+                {
+                    "step": step_num,
+                    "operation": "generateKey",
                     "algorithm": algo_name,
-                    "source": "generateKey",
+                    "output_key_hex": entry.key_material or "[non-extractable]",
                     "seq": entry.seq,
-                })
+                }
+            )
+            if entry.key_material:
+                captured_keys.append(
+                    {
+                        "id": step_num,
+                        "hex": entry.key_material,
+                        "algorithm": algo_name,
+                        "source": "generateKey",
+                        "seq": entry.seq,
+                    }
+                )
 
     return {
         "hierarchy": hierarchy,

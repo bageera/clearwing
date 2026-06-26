@@ -2,7 +2,7 @@ import logging
 from typing import Any
 
 from clearwing.agent.tooling import tool
-from clearwing.agent.tools.ops.pentest_container import KALI, PARROT
+from clearwing.agent.tools.ops.pentest_container import run_in_pentest_container
 
 logger = logging.getLogger(__name__)
 
@@ -34,21 +34,18 @@ def run_gcp_bucket_enum(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        setup_result = manager.setup()
-        container_id = setup_result["container_id"]
 
     cmd = (
         f"gcpbucketbrute -k {target_project} -w {wordlist} "
-        f"|| python3 -c \"from google.cloud import storage; client=storage.Client(); "
-        f"[print(b.name) for b in client.list_buckets()]\""
+        f'|| python3 -c "from google.cloud import storage; client=storage.Client(); '
+        f'[print(b.name) for b in client.list_buckets()]"'
     )
     logger.info("Executing GCP bucket enum in %s container: %s", distro, cmd)
-    return KALI.execute(
-        container_id, cmd, requires_approval=True
-    ) if distro == "kali" else PARROT.execute(
-        container_id, cmd, requires_approval=True
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
     )
 
 
@@ -70,10 +67,6 @@ def run_gcp_metadata_exploit(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        setup_result = manager.setup()
-        container_id = setup_result["container_id"]
 
     cmd = (
         "curl -s -H 'Metadata-Flavor: Google' "
@@ -82,10 +75,11 @@ def run_gcp_metadata_exploit(
         "'http://169.254.169.254/computeMetadata/v1/instance/service-accounts/default/token'"
     )
     logger.info("Executing GCP metadata exploit in %s container", distro)
-    return KALI.execute(
-        container_id, cmd, requires_approval=True
-    ) if distro == "kali" else PARROT.execute(
-        container_id, cmd, requires_approval=True
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
     )
 
 
@@ -110,20 +104,17 @@ def run_gcp_iam_audit(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        setup_result = manager.setup()
-        container_id = setup_result["container_id"]
 
     cmd = (
         f"gcloud projects get-iam-policy {project_id} {options} && "
         f"gcloud iam service-accounts list --project={project_id}"
     )
     logger.info("Executing GCP IAM audit in %s container: %s", distro, cmd)
-    return KALI.execute(
-        container_id, cmd, requires_approval=True
-    ) if distro == "kali" else PARROT.execute(
-        container_id, cmd, requires_approval=True
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
     )
 
 
@@ -149,20 +140,17 @@ def run_gcp_secrets_enum(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        setup_result = manager.setup()
-        container_id = setup_result["container_id"]
 
     cmd = (
         f"gcloud secrets list --project={project_id} {options} && "
         f"gcloud kms keyrings list --location=global --project={project_id}"
     )
     logger.info("Executing GCP secrets enum in %s container: %s", distro, cmd)
-    return KALI.execute(
-        container_id, cmd, requires_approval=True
-    ) if distro == "kali" else PARROT.execute(
-        container_id, cmd, requires_approval=True
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
     )
 
 
@@ -190,10 +178,6 @@ def run_gcp_cloudfunction_enum(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        setup_result = manager.setup()
-        container_id = setup_result["container_id"]
 
     cmd = (
         f"gcloud functions list --project={project_id} --regions={region} {options} && "
@@ -205,10 +189,11 @@ def run_gcp_cloudfunction_enum(
         f"done"
     )
     logger.info("Executing GCP Cloud Function enum in %s container: %s", distro, cmd)
-    return KALI.execute(
-        container_id, cmd, requires_approval=True
-    ) if distro == "kali" else PARROT.execute(
-        container_id, cmd, requires_approval=True
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
     )
 
 
@@ -239,22 +224,19 @@ def run_aws_s3_enum(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        setup_result = manager.setup()
-        container_id = setup_result["container_id"]
 
     cmd = (
         f"s3scanner -bucket {target} -wordlist {wordlist} || "
         f"aws s3api list-buckets 2>/dev/null || "
         f"python3 -c \"import boto3; s3=boto3.client('s3'); "
-        f"import json; print(json.dumps(s3.list_buckets(), indent=2))\""
+        f'import json; print(json.dumps(s3.list_buckets(), indent=2))"'
     )
     logger.info("Executing AWS S3 enum in %s container: %s", distro, cmd)
-    return KALI.execute(
-        container_id, cmd, requires_approval=True
-    ) if distro == "kali" else PARROT.execute(
-        container_id, cmd, requires_approval=True
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
     )
 
 
@@ -280,10 +262,6 @@ def run_aws_ec2_enum(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        setup_result = manager.setup()
-        container_id = setup_result["container_id"]
 
     cmd = (
         f"aws ec2 describe-instances --region={region} {options} && "
@@ -292,10 +270,11 @@ def run_aws_ec2_enum(
         f"aws iam list-instance-profiles"
     )
     logger.info("Executing AWS EC2 enum in %s container: %s", distro, cmd)
-    return KALI.execute(
-        container_id, cmd, requires_approval=True
-    ) if distro == "kali" else PARROT.execute(
-        container_id, cmd, requires_approval=True
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
     )
 
 
@@ -319,24 +298,21 @@ def run_aws_metadata_exploit(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        setup_result = manager.setup()
-        container_id = setup_result["container_id"]
 
     cmd = (
         f"echo '=== IMDSv1 ===' && curl -s {endpoint}iam/security-credentials/ && "
         f"echo '=== IMDSv2 ===' && "
         f"TOKEN=$(curl -s -X PUT 'http://169.254.169.254/latest/api/token' "
         f"-H 'X-aws-ec2-metadata-token-ttl-seconds: 21600') && "
-        f"curl -s -H \"X-aws-ec2-metadata-token: $TOKEN\" "
+        f'curl -s -H "X-aws-ec2-metadata-token: $TOKEN" '
         f"{endpoint}iam/security-credentials/"
     )
     logger.info("Executing AWS metadata exploit in %s container", distro)
-    return KALI.execute(
-        container_id, cmd, requires_approval=True
-    ) if distro == "kali" else PARROT.execute(
-        container_id, cmd, requires_approval=True
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
     )
 
 
@@ -361,20 +337,17 @@ def run_aws_secrets_enum(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        setup_result = manager.setup()
-        container_id = setup_result["container_id"]
 
     cmd = (
         f"aws secretsmanager list-secrets --region={region} {options} && "
         f"aws ssm describe-parameters --region={region} {options}"
     )
     logger.info("Executing AWS secrets enum in %s container: %s", distro, cmd)
-    return KALI.execute(
-        container_id, cmd, requires_approval=True
-    ) if distro == "kali" else PARROT.execute(
-        container_id, cmd, requires_approval=True
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
     )
 
 
@@ -400,27 +373,24 @@ def run_aws_lambda_enum(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        setup_result = manager.setup()
-        container_id = setup_result["container_id"]
 
     cmd = (
         f"aws lambda list-functions --region={region} {options} && "
         f"echo '---' && "
         f"for fn in $(aws lambda list-functions --region={region} "
         f"--query 'Functions[*].FunctionName' --output text); do "
-        f"echo \"=== $fn ===\" && "
+        f'echo "=== $fn ===" && '
         f"aws lambda get-function --region={region} --function-name $fn "
-        f"--query 'Configuration.{Role:Role,EnvVars:Environment.Variables,Layers:Layers}' "
+        f"--query 'Configuration.{{Role:Role,EnvVars:Environment.Variables,Layers:Layers}}' "
         f"--output yaml; "
         f"done"
     )
     logger.info("Executing AWS Lambda enum in %s container: %s", distro, cmd)
-    return KALI.execute(
-        container_id, cmd, requires_approval=True
-    ) if distro == "kali" else PARROT.execute(
-        container_id, cmd, requires_approval=True
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
     )
 
 
@@ -446,19 +416,16 @@ def run_aws_iam_escalation(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        setup_result = manager.setup()
-        container_id = setup_result["container_id"]
 
     cmd = (
-        f"cloudsplaining download --profile default && "
-        f"cloudsplaining scan --input default.json --output cloudsplaining-report && "
-        f"cat cloudsplaining-report/default-iam-results.txt"
+        "cloudsplaining download --profile default && "
+        "cloudsplaining scan --input default.json --output cloudsplaining-report && "
+        "cat cloudsplaining-report/default-iam-results.txt"
     )
     logger.info("Executing AWS IAM escalation test in %s container: %s", distro, cmd)
-    return KALI.execute(
-        container_id, cmd, requires_approval=True
-    ) if distro == "kali" else PARROT.execute(
-        container_id, cmd, requires_approval=True
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
     )

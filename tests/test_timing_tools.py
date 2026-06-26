@@ -227,7 +227,9 @@ class TestTimingProbeWithMock:
             patch.object(timing_mod, "interrupt", return_value=True),
             patch.object(timing_mod, "_timed_request", side_effect=mock_request),
         ):
-            result = timing_probe.invoke({"target": "http://example.com", "samples": 10, "warmup": 2})
+            result = timing_probe.invoke(
+                {"target": "http://example.com", "samples": 10, "warmup": 2}
+            )
 
         assert "stats" in result
         assert result["stats"]["n"] <= 10
@@ -262,7 +264,9 @@ class TestTimingProbeWithMock:
             patch.object(timing_mod, "interrupt", return_value=True),
             patch.object(timing_mod, "_timed_request", side_effect=mock_request),
         ):
-            result = timing_probe.invoke({"target": "http://example.com", "samples": 10, "warmup": 2})
+            result = timing_probe.invoke(
+                {"target": "http://example.com", "samples": 10, "warmup": 2}
+            )
 
         assert result["outliers_removed"] >= 1
         assert result["cleaned_count"] < result["raw_count"]
@@ -294,13 +298,15 @@ class TestTimingCompareWithMock:
             patch.object(timing_mod, "interrupt", return_value=True),
             patch.object(timing_mod, "_timed_request", side_effect=mock_request),
         ):
-            timing_compare.invoke({
-                "target": "http://example.com",
-                "path_a": "/a",
-                "path_b": "/b",
-                "samples": 10,
-                "warmup": 2,
-            })
+            timing_compare.invoke(
+                {
+                    "target": "http://example.com",
+                    "path_a": "/a",
+                    "path_b": "/b",
+                    "samples": 10,
+                    "warmup": 2,
+                }
+            )
 
         # After warmup, verify interleaving: A, B, A, B pattern
         sample_urls = urls_called[2:]  # skip warmup
@@ -321,13 +327,15 @@ class TestTimingCompareWithMock:
             patch.object(timing_mod, "interrupt", return_value=True),
             patch.object(timing_mod, "_timed_request", side_effect=mock_request),
         ):
-            result = timing_compare.invoke({
-                "target": "http://example.com",
-                "path_a": "/a",
-                "path_b": "/b",
-                "samples": 20,
-                "warmup": 2,
-            })
+            result = timing_compare.invoke(
+                {
+                    "target": "http://example.com",
+                    "path_a": "/a",
+                    "path_b": "/b",
+                    "samples": 20,
+                    "warmup": 2,
+                }
+            )
 
         assert result["significant"] is True
         assert result["p_value"] < 0.05
@@ -340,13 +348,15 @@ class TestTimingCompareWithMock:
             patch.object(timing_mod, "interrupt", return_value=True),
             patch.object(timing_mod, "_timed_request", side_effect=mock_request),
         ):
-            result = timing_compare.invoke({
-                "target": "http://example.com",
-                "path_a": "/a",
-                "path_b": "/b",
-                "samples": 20,
-                "warmup": 2,
-            })
+            result = timing_compare.invoke(
+                {
+                    "target": "http://example.com",
+                    "path_a": "/a",
+                    "path_b": "/b",
+                    "samples": 20,
+                    "warmup": 2,
+                }
+            )
 
         assert result["significant"] is False
 
@@ -356,29 +366,35 @@ class TestTimingCompareWithMock:
 
 class TestTimingBitwiseProbeValidation:
     def test_rejects_empty_charset(self):
-        result = timing_bitwise_probe.invoke({
-            "target": "http://example.com",
-            "charset": "",
-            "body_template": '{"token": "{{PROBE}}"}',
-        })
+        result = timing_bitwise_probe.invoke(
+            {
+                "target": "http://example.com",
+                "charset": "",
+                "body_template": '{"token": "{{PROBE}}"}',
+            }
+        )
         assert "error" in result
 
     def test_rejects_too_few_samples(self):
-        result = timing_bitwise_probe.invoke({
-            "target": "http://example.com",
-            "charset": "abc",
-            "samples_per_candidate": 1,
-            "body_template": '{"token": "{{PROBE}}"}',
-        })
+        result = timing_bitwise_probe.invoke(
+            {
+                "target": "http://example.com",
+                "charset": "abc",
+                "samples_per_candidate": 1,
+                "body_template": '{"token": "{{PROBE}}"}',
+            }
+        )
         assert "error" in result
 
     def test_returns_error_when_declined(self):
         with patch.object(timing_mod, "interrupt", return_value=False):
-            result = timing_bitwise_probe.invoke({
-                "target": "http://example.com",
-                "charset": "abc",
-                "body_template": '{"token": "{{PROBE}}"}',
-            })
+            result = timing_bitwise_probe.invoke(
+                {
+                    "target": "http://example.com",
+                    "charset": "abc",
+                    "body_template": '{"token": "{{PROBE}}"}',
+                }
+            )
         assert "error" in result
 
 
@@ -394,14 +410,16 @@ class TestTimingBitwiseWithMock:
             patch.object(timing_mod, "_timed_request", side_effect=mock_request),
             patch("random.shuffle"),  # disable shuffle for determinism
         ):
-            result = timing_bitwise_probe.invoke({
-                "target": "http://example.com",
-                "charset": "abc",
-                "body_template": '{"token": "{{PROBE}}"}',
-                "samples_per_candidate": 5,
-                "warmup": 1,
-                "select": "max",
-            })
+            result = timing_bitwise_probe.invoke(
+                {
+                    "target": "http://example.com",
+                    "charset": "abc",
+                    "body_template": '{"token": "{{PROBE}}"}',
+                    "samples_per_candidate": 5,
+                    "warmup": 1,
+                    "select": "max",
+                }
+            )
 
         assert result["best_candidate"]["char"] == "a"
         assert result["candidates"][0]["char"] == "a"
@@ -419,14 +437,16 @@ class TestTimingBitwiseWithMock:
             patch.object(timing_mod, "_timed_request", side_effect=mock_request),
             patch("random.shuffle"),
         ):
-            timing_bitwise_probe.invoke({
-                "target": "http://example.com",
-                "charset": "x",
-                "body_template": '{"token": "{{PROBE}}"}',
-                "known_prefix": "abc",
-                "samples_per_candidate": 3,
-                "warmup": 1,
-            })
+            timing_bitwise_probe.invoke(
+                {
+                    "target": "http://example.com",
+                    "charset": "x",
+                    "body_template": '{"token": "{{PROBE}}"}',
+                    "known_prefix": "abc",
+                    "samples_per_candidate": 3,
+                    "warmup": 1,
+                }
+            )
 
         # After warmup, all sample bodies should have "abcx"
         sample_bodies = bodies_seen[1:]

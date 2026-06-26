@@ -145,7 +145,7 @@ class TestSRPClient:
 
     def test_full_handshake_u_zero(self):
         group = SRPGroupParams(N=23, g=5)
-        client = SRPClient(group)
+        SRPClient(group)
         # With a tiny group, we can't easily force u=0, but test the error path
         # by mocking. Instead verify the result dataclass structure.
         result = SRPHandshakeResult(success=False, username="test", error="u == 0")

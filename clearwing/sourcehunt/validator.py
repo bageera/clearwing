@@ -40,7 +40,13 @@ _VALID_SEVERITIES = {"critical", "high", "medium", "low", "info"}
 _VALID_CONFIDENCES = {"high", "medium", "low"}
 
 _VALID_BOUNDARIES = {
-    "privilege", "tenant", "origin", "user", "kernel", "sandbox", "none",
+    "privilege",
+    "tenant",
+    "origin",
+    "user",
+    "kernel",
+    "sandbox",
+    "none",
 }
 
 
@@ -177,7 +183,8 @@ class Validator:
         system_prompt = self._prompt_for_finding(finding)
         try:
             response = await self.llm.aask_text(
-                system=system_prompt, user=user_msg,
+                system=system_prompt,
+                user=user_msg,
             )
             content = response.first_text() or ""
         except Exception as e:
@@ -186,13 +193,15 @@ class Validator:
 
         verdict = self._parse_response(finding, content)
 
-        EventBus().emit_validation_result(ValidationResultPayload(
-            finding_id=verdict.finding_id,
-            axes={name: ar.passed for name, ar in verdict.axes.items()},
-            advance=verdict.advance,
-            severity=verdict.severity_validated,
-            evidence_level=verdict.evidence_level,
-        ))
+        EventBus().emit_validation_result(
+            ValidationResultPayload(
+                finding_id=verdict.finding_id,
+                axes={name: ar.passed for name, ar in verdict.axes.items()},
+                advance=verdict.advance,
+                severity=verdict.severity_validated,
+                evidence_level=verdict.evidence_level,
+            )
+        )
 
         return verdict
 
@@ -237,9 +246,7 @@ class Validator:
         total_chars = 0
         for start, end in islice(windows, 6):
             header = f"--- lines {start}-{end} ---"
-            body = "\n".join(
-                f"{n:5d}: {lines[n - 1]}" for n in range(start, end + 1)
-            )
+            body = "\n".join(f"{n:5d}: {lines[n - 1]}" for n in range(start, end + 1))
             chunk = f"{header}\n{body}"
             total_chars += len(chunk)
             if total_chars > 12000 and excerpts:
@@ -277,7 +284,8 @@ class Validator:
         return ordered
 
     def _merge_windows(
-        self, windows: list[tuple[int, int]],
+        self,
+        windows: list[tuple[int, int]],
     ) -> list[tuple[int, int]]:
         if not windows:
             return []
@@ -291,12 +299,15 @@ class Validator:
         return merged
 
     def _parse_response(
-        self, finding: Finding, content: str,
+        self,
+        finding: Finding,
+        content: str,
     ) -> ValidatorVerdict:
         match = re.search(r"\{[\s\S]*\}", content)
         if not match:
             logger.warning(
-                "Validator response had no JSON; got: %s", content[:300],
+                "Validator response had no JSON; got: %s",
+                content[:300],
             )
             return self._error_verdict(finding, "no JSON in response")
         try:
@@ -349,7 +360,9 @@ class Validator:
         return axes
 
     def _error_verdict(
-        self, finding: Finding, reason: str,
+        self,
+        finding: Finding,
+        reason: str,
     ) -> ValidatorVerdict:
         return ValidatorVerdict(
             finding_id=finding.get("id", "unknown"),
@@ -374,7 +387,10 @@ class Validator:
 
         temp_v = Verifier(self.llm)
         return await temp_v.arun_patch_oracle(
-            finding, file_content, sandbox, rerun_poc,
+            finding,
+            file_content,
+            sandbox,
+            rerun_poc,
         )
 
 

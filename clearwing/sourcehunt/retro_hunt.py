@@ -115,6 +115,7 @@ def fetch_patch_diff(
             if proc.returncode == 0:
                 return proc.stdout
         except Exception:
+            logger.debug("Silent exception in retro_hunt", exc_info=True)
             pass
 
     # URL — v0.3 doesn't implement fetch; raise so the caller can handle it

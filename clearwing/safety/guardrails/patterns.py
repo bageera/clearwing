@@ -139,9 +139,7 @@ DANGEROUS_COMMAND_PATTERNS: list[re.Pattern] = [
     re.compile(r"\.\./\.\./\.\./(?:etc|proc|sys|root|home)/", re.IGNORECASE),
     re.compile(r"%2e%2e/", re.IGNORECASE),
     # ---- Env var injection ----
-    re.compile(
-        r"export\s+(?:AWS_ACCESS_KEY|AWS_SECRET|GITHUB_TOKEN|DATABASE_URL)=", re.IGNORECASE
-    ),
+    re.compile(r"export\s+(?:AWS_ACCESS_KEY|AWS_SECRET|GITHUB_TOKEN|DATABASE_URL)=", re.IGNORECASE),
     # ---- Secrets exfiltration ----
     re.compile(r"(?:curl|wget|nc)\s+.*\$(?:AWS_|GITHUB_TOKEN)", re.IGNORECASE),
     re.compile(r"env\s*\|\s*curl", re.IGNORECASE),

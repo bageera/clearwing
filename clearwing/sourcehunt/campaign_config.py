@@ -117,7 +117,8 @@ def load_campaign_config(path: str | Path) -> CampaignConfig:
         ),
         output_dir=raw.get("output_dir", ""),
         output_formats=raw.get(
-            "output_formats", ["sarif", "markdown", "json"],
+            "output_formats",
+            ["sarif", "markdown", "json"],
         ),
     )
     validate_campaign_config(config)
@@ -174,4 +175,4 @@ def _expand_oss_fuzz(corpus: OSSFuzzCorpusConfig) -> list[CampaignTargetConfig]:
                 campaign_hint=f"OSS-Fuzz {category} corpus project",
             ),
         )
-    return targets[:corpus.max_projects]
+    return targets[: corpus.max_projects]

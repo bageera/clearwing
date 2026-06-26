@@ -33,11 +33,13 @@ class TestMyceliumCreateChannel:
         assert "error" in result
 
     def test_successful_creation(self):
-        resp = json.dumps({
-            "channelUuid": "test-uuid-1234",
-            "channelSeed": "seed-abc",
-            "initiatorAuth": "auth-xyz",
-        })
+        resp = json.dumps(
+            {
+                "channelUuid": "test-uuid-1234",
+                "channelSeed": "seed-abc",
+                "initiatorAuth": "auth-xyz",
+            }
+        )
 
         def mock_request(url, method="GET", body=None, headers=None, timeout=30):
             return (200, {}, resp, 50.0)
@@ -62,20 +64,24 @@ class TestMyceliumCreateChannel:
             patch.object(myc_mod, "interrupt", return_value=True),
             patch.object(myc_mod, "_http_request", mock_request),
         ):
-            result = mycelium_create_channel.invoke({
-                "target": "http://example.com",
-                "channel_type": "v",
-            })
+            result = mycelium_create_channel.invoke(
+                {
+                    "target": "http://example.com",
+                    "channel_type": "v",
+                }
+            )
         assert result["channel_type"] == "v"
 
 
 class TestMyceliumProbeChannel:
     def test_declined(self):
         with patch.object(myc_mod, "interrupt", return_value=False):
-            result = mycelium_probe_channel.invoke({
-                "target": "http://example.com",
-                "channel_uuid": "test",
-            })
+            result = mycelium_probe_channel.invoke(
+                {
+                    "target": "http://example.com",
+                    "channel_uuid": "test",
+                }
+            )
         assert "error" in result
 
     def test_read_segment(self):
@@ -86,12 +92,14 @@ class TestMyceliumProbeChannel:
             patch.object(myc_mod, "interrupt", return_value=True),
             patch.object(myc_mod, "_http_request", mock_request),
         ):
-            result = mycelium_probe_channel.invoke({
-                "target": "http://example.com",
-                "channel_uuid": "test-uuid",
-                "segment": 1,
-                "auth_value": "my-auth",
-            })
+            result = mycelium_probe_channel.invoke(
+                {
+                    "target": "http://example.com",
+                    "channel_uuid": "test-uuid",
+                    "segment": 1,
+                    "auth_value": "my-auth",
+                }
+            )
         assert result["status"] == 200
         assert result["auth_provided"] is True
 
@@ -104,13 +112,15 @@ class TestMyceliumProbeChannel:
             patch.object(myc_mod, "interrupt", return_value=True),
             patch.object(myc_mod, "_http_request", mock_request),
         ):
-            result = mycelium_probe_channel.invoke({
-                "target": "http://example.com",
-                "channel_uuid": "test-uuid",
-                "segment": 2,
-                "method": "PUT",
-                "body": '{"test": true}',
-            })
+            result = mycelium_probe_channel.invoke(
+                {
+                    "target": "http://example.com",
+                    "channel_uuid": "test-uuid",
+                    "segment": 2,
+                    "method": "PUT",
+                    "body": '{"test": true}',
+                }
+            )
         assert result["method"] == "PUT"
 
 
@@ -126,11 +136,18 @@ class TestMyceliumFuzzAuth:
         def mock_request(url, method="GET", body=None, headers=None, timeout=30):
             call_count[0] += 1
             if method == "POST" and call_count[0] == 1:
-                return (200, {}, json.dumps({
-                    "channelUuid": "fuzz-uuid",
-                    "channelSeed": "fuzz-seed",
-                    "initiatorAuth": "fuzz-auth",
-                }), 10.0)
+                return (
+                    200,
+                    {},
+                    json.dumps(
+                        {
+                            "channelUuid": "fuzz-uuid",
+                            "channelSeed": "fuzz-seed",
+                            "initiatorAuth": "fuzz-auth",
+                        }
+                    ),
+                    10.0,
+                )
             return (403, {}, '{"error": "forbidden"}', 5.0)
 
         with (
@@ -147,11 +164,18 @@ class TestMyceliumFuzzAuth:
         def mock_request(url, method="GET", body=None, headers=None, timeout=30):
             call_count[0] += 1
             if method == "POST" and call_count[0] == 1:
-                return (200, {}, json.dumps({
-                    "channelUuid": "fuzz-uuid",
-                    "channelSeed": "fuzz-seed",
-                    "initiatorAuth": "fuzz-auth",
-                }), 10.0)
+                return (
+                    200,
+                    {},
+                    json.dumps(
+                        {
+                            "channelUuid": "fuzz-uuid",
+                            "channelSeed": "fuzz-seed",
+                            "initiatorAuth": "fuzz-auth",
+                        }
+                    ),
+                    10.0,
+                )
             headers = headers or {}
             if not any(h in headers for h in ("ChannelAuth", "ChannelJoinAuth", "Authorization")):
                 return (200, {}, '{"data": "leaked"}', 5.0)
@@ -177,11 +201,18 @@ class TestMyceliumTestRace:
         def mock_request(url, method="GET", body=None, headers=None, timeout=30):
             call_count[0] += 1
             if method == "POST" and "/mycelium/u" in url and call_count[0] <= 2:
-                return (200, {}, json.dumps({
-                    "channelUuid": "race-uuid",
-                    "channelSeed": "race-seed",
-                    "initiatorAuth": "race-auth",
-                }), 10.0)
+                return (
+                    200,
+                    {},
+                    json.dumps(
+                        {
+                            "channelUuid": "race-uuid",
+                            "channelSeed": "race-seed",
+                            "initiatorAuth": "race-auth",
+                        }
+                    ),
+                    10.0,
+                )
             if "ChannelAuth" in (headers or {}):
                 return (201, {}, "", 5.0)
             return (403, {}, '{"error": "forbidden"}', 5.0)
@@ -190,10 +221,12 @@ class TestMyceliumTestRace:
             patch.object(myc_mod, "interrupt", return_value=True),
             patch.object(myc_mod, "_http_request", mock_request),
         ):
-            result = mycelium_test_race.invoke({
-                "target": "http://example.com",
-                "concurrent_joins": 3,
-            })
+            result = mycelium_test_race.invoke(
+                {
+                    "target": "http://example.com",
+                    "concurrent_joins": 3,
+                }
+            )
         assert result["successful_writes"] == 0
         assert "No race condition" in result["findings"][0]
 

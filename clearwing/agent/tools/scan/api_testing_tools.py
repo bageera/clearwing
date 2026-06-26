@@ -8,7 +8,7 @@ import logging
 from typing import Any
 
 from clearwing.agent.tooling import tool
-from clearwing.agent.tools.ops.pentest_container import KALI, PARROT
+from clearwing.agent.tools.ops.pentest_container import run_in_pentest_container
 
 logger = logging.getLogger(__name__)
 
@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 # ════════════════════════════════════════════════════════════════════════════
 # 1. GraphQL & gRPC
 # ════════════════════════════════════════════════════════════════════════════
+
 
 @tool(requires_approval=True)
 def run_graphqlmap(
@@ -39,14 +40,15 @@ def run_graphqlmap(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     cmd = f"graphqlmap -u '{target}' {options}"
     logger.info("[%s] graphqlmap: %s", distro, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=True)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )
 
 
 @tool(requires_approval=True)
@@ -72,21 +74,23 @@ def run_grpcurl(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     cmd = f"grpcurl -plaintext '{target}' {options}"
     if proto_file:
         cmd = f"grpcurl -proto {proto_file} -plaintext '{target}' {options}"
     logger.info("[%s] grpcurl: %s", distro, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=True)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )
 
 
 # ════════════════════════════════════════════════════════════════════════════
 # 2. WebSocket / Real-Time API
 # ════════════════════════════════════════════════════════════════════════════
+
 
 @tool(requires_approval=True)
 def run_wsprobe(
@@ -112,22 +116,24 @@ def run_wsprobe(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     cmd = (
         f"python3 /opt/wsprobe/wsprobe.py "
         f"--url '{target}' --message {repr(message)} --iterations {iterations}"
     )
     logger.info("[%s] wsprobe: %s", distro, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=True)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )
 
 
 # ════════════════════════════════════════════════════════════════════════════
 # 3. IDOR, Race Conditions, Mass Assignment
 # ════════════════════════════════════════════════════════════════════════════
+
 
 @tool(requires_approval=True)
 def run_idor_scanner(
@@ -155,9 +161,6 @@ def run_idor_scanner(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     cmd = f"python3 /opt/idor-scanner/scan.py --url '{base_url}' --range {object_range}"
     if cookie:
@@ -165,8 +168,12 @@ def run_idor_scanner(
     if header:
         cmd += f" --header {repr(header)}"
     logger.info("[%s] idor scanner: %s", distro, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=True)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )
 
 
 @tool(requires_approval=True)
@@ -192,17 +199,18 @@ def run_race_condition_tester(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     cmd = (
         f"python3 /opt/race-tester/race.py "
         f"--target '{target}' --request-file {request_file} --threads {threads}"
     )
     logger.info("[%s] race condition tester: %s", distro, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=True)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )
 
 
 @tool(requires_approval=True)
@@ -227,22 +235,21 @@ def run_swagger_abuse(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
-    cmd = (
-        f"python3 /opt/swagger-abuse/abuse.py "
-        f"--spec '{swagger_url}' --test {test_type}"
-    )
+    cmd = f"python3 /opt/swagger-abuse/abuse.py --spec '{swagger_url}' --test {test_type}"
     logger.info("[%s] swagger abuse (%s): %s", distro, test_type, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=True)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )
 
 
 # ════════════════════════════════════════════════════════════════════════════
 # 4. 2FA, SSO, Auth Bypass
 # ════════════════════════════════════════════════════════════════════════════
+
 
 @tool(requires_approval=True)
 def run_2fa_bypass_tester(
@@ -267,17 +274,18 @@ def run_2fa_bypass_tester(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     cmd = (
         f"python3 /opt/2fa-bypass/bypass.py "
         f"--target '{target}' --method {method} --range {code_range}"
     )
     logger.info("[%s] 2FA bypass tester (%s): %s", distro, method, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=True)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )
 
 
 @tool(requires_approval=True)
@@ -301,14 +309,12 @@ def run_cors_misconfig_tester(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
-    cmd = (
-        f"python3 /opt/cors-tester/test.py "
-        f"--target '{target}' --origins {origins}"
-    )
+    cmd = f"python3 /opt/cors-tester/test.py --target '{target}' --origins {origins}"
     logger.info("[%s] CORS misconfig tester: %s", distro, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=True)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )

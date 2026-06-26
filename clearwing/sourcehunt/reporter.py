@@ -159,9 +159,7 @@ def _details_block(f: Finding) -> str:
         parts.append(f"verifier_counter: {f['verifier_counter_argument']}")
     if f.get("stability_classification"):
         rate = f.get("stability_success_rate", 0) * 100
-        parts.append(
-            f"stability: {f['stability_classification']} ({rate:.0f}% reproduction)"
-        )
+        parts.append(f"stability: {f['stability_classification']} ({rate:.0f}% reproduction)")
     if f.get("crypto_protocol"):
         parts.append(f"crypto_protocol: {f['crypto_protocol']}")
     if f.get("algorithm"):
@@ -204,9 +202,7 @@ def _render_markdown(
             runs = band_stats.get(f"{band}_runs", 0)
             cost = band_stats.get(f"{band}_cost", 0.0)
             avg = cost / runs if runs else 0.0
-            lines.append(
-                f"- **{band.title()}:** {runs} runs, ${cost:.2f} (avg ${avg:.2f}/run)"
-            )
+            lines.append(f"- **{band.title()}:** {runs} runs, ${cost:.2f} (avg ${avg:.2f}/run)")
         promos = band_stats.get("promotions", {})
         if promos:
             promo_parts = ", ".join(f"{k}: {v}" for k, v in promos.items() if v)
@@ -216,25 +212,15 @@ def _render_markdown(
 
     if pool_stats:
         lines.append("## Dedup Summary")
-        lines.append(
-            f"- **Total findings:** {pool_stats.get('total_findings', 0)}"
-        )
-        lines.append(
-            f"- **Unique clusters:** {pool_stats.get('total_clusters', 0)}"
-        )
-        lines.append(
-            f"- **Duplicates removed:** {pool_stats.get('duplicates', 0)}"
-        )
+        lines.append(f"- **Total findings:** {pool_stats.get('total_findings', 0)}")
+        lines.append(f"- **Unique clusters:** {pool_stats.get('total_clusters', 0)}")
+        lines.append(f"- **Duplicates removed:** {pool_stats.get('duplicates', 0)}")
         lines.append("")
 
     if subsystem_stats:
         lines.append("## Subsystem Hunts")
-        lines.append(
-            f"- **Subsystems hunted:** {subsystem_stats.get('subsystems_hunted', 0)}"
-        )
-        lines.append(
-            f"- **Subsystem spend:** ${subsystem_stats.get('subsystem_spent_usd', 0):.2f}"
-        )
+        lines.append(f"- **Subsystems hunted:** {subsystem_stats.get('subsystems_hunted', 0)}")
+        lines.append(f"- **Subsystem spend:** ${subsystem_stats.get('subsystem_spent_usd', 0):.2f}")
         lines.append("")
 
     if pipeline_status and pipeline_status.stages:
@@ -310,9 +296,7 @@ def _render_markdown(
             lines.append(f"_Verifier counter-argument:_ {f['verifier_counter_argument']}")
         if f.get("exploit_partial"):
             lines.append("")
-            lines.append(
-                f"- **Exploit partial:** primitive={f.get('exploit_primitive_type', '?')}"
-            )
+            lines.append(f"- **Exploit partial:** primitive={f.get('exploit_primitive_type', '?')}")
         if f.get("exploit_mitigations_bypassed"):
             lines.append(
                 f"- **Mitigations bypassed:** {', '.join(f['exploit_mitigations_bypassed'])}"
@@ -322,19 +306,13 @@ def _render_markdown(
                 f"- **Mitigations blocking:** {', '.join(f['exploit_mitigations_blocking'])}"
             )
         if f.get("exploit_chained_findings"):
-            lines.append(
-                f"- **Chained findings:** {', '.join(f['exploit_chained_findings'])}"
-            )
+            lines.append(f"- **Chained findings:** {', '.join(f['exploit_chained_findings'])}")
         if f.get("exploit_cost_usd"):
             lines.append(f"- **Exploit cost:** ${f['exploit_cost_usd']:.2f}")
         if f.get("discovered_by") == "elaboration_agent":
-            lines.append(
-                f"- **Elaborated from:** {f.get('related_finding_id', '?')}"
-            )
+            lines.append(f"- **Elaborated from:** {f.get('related_finding_id', '?')}")
         if f.get("elaboration_upgrade_path"):
-            lines.append(
-                f"- **Upgrade path:** {f['elaboration_upgrade_path']}"
-            )
+            lines.append(f"- **Upgrade path:** {f['elaboration_upgrade_path']}")
         if f.get("stability_classification"):
             cls = f["stability_classification"]
             rate = f.get("stability_success_rate", 0) * 100
@@ -367,8 +345,7 @@ def _render_markdown(
             fid = f.get("id", "?")
             axes = ", ".join(f["rejected_axes"])
             lines.append(
-                f"- `{fid}` at `{f.get('file', '?')}:{f.get('line_number', '?')}` "
-                f"— failed: {axes}"
+                f"- `{fid}` at `{f.get('file', '?')}:{f.get('line_number', '?')}` — failed: {axes}"
             )
         lines.append("")
 

@@ -46,13 +46,15 @@ def _make_jwe_json(
     tag_bytes: int = 16,
 ) -> str:
     header = json.dumps({"alg": alg, "enc": enc}).encode()
-    return json.dumps({
-        "protected": _base64url_encode(header),
-        "encrypted_key": _base64url_encode(b"\xaa" * 40),
-        "iv": _base64url_encode(b"\xbb" * iv_bytes),
-        "ciphertext": _base64url_encode(b"\xcc" * ct_bytes),
-        "tag": _base64url_encode(b"\xdd" * tag_bytes),
-    })
+    return json.dumps(
+        {
+            "protected": _base64url_encode(header),
+            "encrypted_key": _base64url_encode(b"\xaa" * 40),
+            "iv": _base64url_encode(b"\xbb" * iv_bytes),
+            "ciphertext": _base64url_encode(b"\xcc" * ct_bytes),
+            "tag": _base64url_encode(b"\xdd" * tag_bytes),
+        }
+    )
 
 
 def _make_hex_blob(iv_bytes: int = 12, ct_bytes: int = 64, tag_bytes: int = 16) -> str:
@@ -175,8 +177,18 @@ class TestAnalyzeKeyHierarchy:
     def test_detects_extractable_keys(self):
         session_data = {
             "hierarchy": [
-                {"step": 1, "operation": "deriveBits", "algorithm": "PBKDF2", "output_key_hex": "[non-extractable]"},
-                {"step": 2, "operation": "importKey", "algorithm": "AES-GCM", "output_key_hex": "aabbccdd" * 8},
+                {
+                    "step": 1,
+                    "operation": "deriveBits",
+                    "algorithm": "PBKDF2",
+                    "output_key_hex": "[non-extractable]",
+                },
+                {
+                    "step": 2,
+                    "operation": "importKey",
+                    "algorithm": "AES-GCM",
+                    "output_key_hex": "aabbccdd" * 8,
+                },
             ],
             "captured_keys": [],
             "encryption_operations": [],
@@ -190,8 +202,18 @@ class TestAnalyzeKeyHierarchy:
             "hierarchy": [],
             "captured_keys": [],
             "encryption_operations": [
-                {"method": "encrypt", "algorithm": "AES-GCM", "iv_hex": "aabb" * 6, "data_length": 100},
-                {"method": "encrypt", "algorithm": "AES-GCM", "iv_hex": "aabb" * 6, "data_length": 200},
+                {
+                    "method": "encrypt",
+                    "algorithm": "AES-GCM",
+                    "iv_hex": "aabb" * 6,
+                    "data_length": 100,
+                },
+                {
+                    "method": "encrypt",
+                    "algorithm": "AES-GCM",
+                    "iv_hex": "aabb" * 6,
+                    "data_length": 200,
+                },
             ],
         }
         result = analyze_key_hierarchy.invoke({"session_data": session_data})
@@ -213,12 +235,27 @@ class TestAnalyzeKeyHierarchy:
     def test_missing_wrapping_layer(self):
         session_data = {
             "hierarchy": [
-                {"step": 1, "operation": "deriveBits", "algorithm": "PBKDF2", "output_key_hex": "[non-extractable]"},
-                {"step": 2, "operation": "importKey", "algorithm": "AES-GCM", "output_key_hex": "[non-extractable]"},
+                {
+                    "step": 1,
+                    "operation": "deriveBits",
+                    "algorithm": "PBKDF2",
+                    "output_key_hex": "[non-extractable]",
+                },
+                {
+                    "step": 2,
+                    "operation": "importKey",
+                    "algorithm": "AES-GCM",
+                    "output_key_hex": "[non-extractable]",
+                },
             ],
             "captured_keys": [],
             "encryption_operations": [
-                {"method": "encrypt", "algorithm": "AES-GCM", "iv_hex": "aabb" * 6, "data_length": 100},
+                {
+                    "method": "encrypt",
+                    "algorithm": "AES-GCM",
+                    "iv_hex": "aabb" * 6,
+                    "data_length": 100,
+                },
             ],
         }
         result = analyze_key_hierarchy.invoke({"session_data": session_data})
@@ -227,16 +264,46 @@ class TestAnalyzeKeyHierarchy:
     def test_full_healthy_hierarchy(self):
         session_data = {
             "hierarchy": [
-                {"step": 1, "operation": "deriveBits", "algorithm": "PBKDF2", "output_key_hex": "[non-extractable]"},
-                {"step": 2, "operation": "importKey", "algorithm": "AES-GCM", "output_key_hex": "[non-extractable]"},
-                {"step": 3, "operation": "unwrapKey", "algorithm": "AES-KW", "output_key_hex": "[non-extractable]"},
-                {"step": 4, "operation": "encrypt", "algorithm": "AES-GCM", "output_key_hex": "[non-extractable]"},
+                {
+                    "step": 1,
+                    "operation": "deriveBits",
+                    "algorithm": "PBKDF2",
+                    "output_key_hex": "[non-extractable]",
+                },
+                {
+                    "step": 2,
+                    "operation": "importKey",
+                    "algorithm": "AES-GCM",
+                    "output_key_hex": "[non-extractable]",
+                },
+                {
+                    "step": 3,
+                    "operation": "unwrapKey",
+                    "algorithm": "AES-KW",
+                    "output_key_hex": "[non-extractable]",
+                },
+                {
+                    "step": 4,
+                    "operation": "encrypt",
+                    "algorithm": "AES-GCM",
+                    "output_key_hex": "[non-extractable]",
+                },
             ],
             "captured_keys": [
-                {"id": 1, "hex": "[non-extractable]", "algorithm": "AES-GCM", "source": "importKey"},
+                {
+                    "id": 1,
+                    "hex": "[non-extractable]",
+                    "algorithm": "AES-GCM",
+                    "source": "importKey",
+                },
             ],
             "encryption_operations": [
-                {"method": "encrypt", "algorithm": "AES-GCM", "iv_hex": "aabb" * 6, "data_length": 100},
+                {
+                    "method": "encrypt",
+                    "algorithm": "AES-GCM",
+                    "iv_hex": "aabb" * 6,
+                    "data_length": 100,
+                },
             ],
         }
         result = analyze_key_hierarchy.invoke({"session_data": session_data})
@@ -252,8 +319,18 @@ class TestAnalyzeKeyHierarchy:
     def test_layer_mapping(self):
         session_data = {
             "hierarchy": [
-                {"step": 1, "operation": "deriveBits", "algorithm": "PBKDF2", "output_key_hex": "[non-extractable]"},
-                {"step": 2, "operation": "unwrapKey", "algorithm": "AES-KW", "output_key_hex": "[non-extractable]"},
+                {
+                    "step": 1,
+                    "operation": "deriveBits",
+                    "algorithm": "PBKDF2",
+                    "output_key_hex": "[non-extractable]",
+                },
+                {
+                    "step": 2,
+                    "operation": "unwrapKey",
+                    "algorithm": "AES-KW",
+                    "output_key_hex": "[non-extractable]",
+                },
             ],
             "captured_keys": [],
             "encryption_operations": [],
@@ -271,10 +348,12 @@ class TestTestAeadIntegrity:
     def test_declined(self):
         jwe = _make_jwe_compact()
         with patch.object(vault_mod, "interrupt", return_value=False):
-            result = test_aead_integrity.invoke({
-                "encrypted_data": jwe,
-                "target": "http://example.com",
-            })
+            result = test_aead_integrity.invoke(
+                {
+                    "encrypted_data": jwe,
+                    "target": "http://example.com",
+                }
+            )
         assert "error" in result
 
     def test_all_modifications_rejected(self):
@@ -287,11 +366,13 @@ class TestTestAeadIntegrity:
             patch.object(vault_mod, "interrupt", return_value=True),
             patch("clearwing.agent.tools.crypto.srp_tools._http_post", mock_http_post),
         ):
-            result = test_aead_integrity.invoke({
-                "encrypted_data": jwe,
-                "target": "http://example.com",
-                "samples": 1,
-            })
+            result = test_aead_integrity.invoke(
+                {
+                    "encrypted_data": jwe,
+                    "target": "http://example.com",
+                    "samples": 1,
+                }
+            )
 
         assert len(result["vulnerabilities"]) == 0
         assert result["risk_level"] == "LOW"
@@ -308,12 +389,14 @@ class TestTestAeadIntegrity:
             patch.object(vault_mod, "interrupt", return_value=True),
             patch("clearwing.agent.tools.crypto.srp_tools._http_post", mock_http_post),
         ):
-            result = test_aead_integrity.invoke({
-                "encrypted_data": jwe,
-                "target": "http://example.com",
-                "modifications": "bit_flip",
-                "samples": 1,
-            })
+            result = test_aead_integrity.invoke(
+                {
+                    "encrypted_data": jwe,
+                    "target": "http://example.com",
+                    "modifications": "bit_flip",
+                    "samples": 1,
+                }
+            )
 
         assert len(result["vulnerabilities"]) > 0
         assert result["risk_level"] == "CRITICAL"
@@ -328,12 +411,14 @@ class TestTestAeadIntegrity:
             patch.object(vault_mod, "interrupt", return_value=True),
             patch("clearwing.agent.tools.crypto.srp_tools._http_post", mock_http_post),
         ):
-            result = test_aead_integrity.invoke({
-                "encrypted_data": jwe,
-                "target": "http://example.com",
-                "modifications": "tag_substitution",
-                "samples": 1,
-            })
+            result = test_aead_integrity.invoke(
+                {
+                    "encrypted_data": jwe,
+                    "target": "http://example.com",
+                    "modifications": "tag_substitution",
+                    "samples": 1,
+                }
+            )
 
         assert any(v["modification"] == "tag_substitution" for v in result["vulnerabilities"])
         assert result["risk_level"] == "CRITICAL"
@@ -348,12 +433,14 @@ class TestTestAeadIntegrity:
             patch.object(vault_mod, "interrupt", return_value=True),
             patch("clearwing.agent.tools.crypto.srp_tools._http_post", mock_http_post),
         ):
-            result = test_aead_integrity.invoke({
-                "encrypted_data": jwe,
-                "target": "http://example.com",
-                "modifications": "bit_flip",
-                "samples": 1,
-            })
+            result = test_aead_integrity.invoke(
+                {
+                    "encrypted_data": jwe,
+                    "target": "http://example.com",
+                    "modifications": "bit_flip",
+                    "samples": 1,
+                }
+            )
 
         assert result["risk_level"] == "LOW"
         assert len(result["vulnerabilities"]) == 0
@@ -405,10 +492,12 @@ class TestKeyWrapAnalysis:
         unwrap_ops = [
             {"algorithm": "AES-KW", "format": "raw", "extractable": True, "usages": ["encrypt"]},
         ]
-        result = key_wrap_analysis.invoke({
-            "wrapped_keys": wrapped_keys,
-            "unwrap_operations": unwrap_ops,
-        })
+        result = key_wrap_analysis.invoke(
+            {
+                "wrapped_keys": wrapped_keys,
+                "unwrap_operations": unwrap_ops,
+            }
+        )
         assert result["unwrap_behavior"]["extractable_after_unwrap"] == 1
         assert result["risk_level"] == "HIGH"
 
@@ -443,4 +532,9 @@ class TestGetVaultTools:
     def test_tool_names(self):
         tools = get_vault_tools()
         names = [t.name for t in tools]
-        assert names == ["parse_vault_blob", "analyze_key_hierarchy", "test_aead_integrity", "key_wrap_analysis"]
+        assert names == [
+            "parse_vault_blob",
+            "analyze_key_hierarchy",
+            "test_aead_integrity",
+            "key_wrap_analysis",
+        ]

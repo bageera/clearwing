@@ -221,9 +221,11 @@ def benchmark_kdf_cracking(
     elapsed_ns = time.perf_counter_ns() - start_ns
     elapsed_ms = elapsed_ns / 1_000_000
 
-    cpu_iters_per_sec = int(calibration_rounds / (elapsed_ns / 1_000_000_000)) if elapsed_ns > 0 else 1
+    cpu_iters_per_sec = (
+        int(calibration_rounds / (elapsed_ns / 1_000_000_000)) if elapsed_ns > 0 else 1
+    )
 
-    password_space = 2 ** password_entropy_bits
+    password_space = 2**password_entropy_bits
 
     def _profile(iters_per_sec: float) -> dict:
         keys_sec = iters_per_sec / iterations if iterations > 0 else 0
@@ -263,7 +265,9 @@ def benchmark_kdf_cracking(
     elif gpu_seconds < 86400 * 365.25:
         assessment = f"MODERATE: Single GPU attack takes {_format_duration(gpu_seconds)}, but GPU clusters are practical."
     else:
-        assessment = f"Resistant to offline attack: single GPU would take {_format_duration(gpu_seconds)}."
+        assessment = (
+            f"Resistant to offline attack: single GPU would take {_format_duration(gpu_seconds)}."
+        )
 
     result["assessment"] = assessment
     return result
@@ -346,27 +350,35 @@ def test_2skd_implementation(
     expected_half = 32  # default dk_len=64, split in half
     checks["key_split_correct"] = len(auk) == expected_half and srp_x > 0
     if not checks["key_split_correct"]:
-        findings.append(f"Key split unexpected: AUK={len(auk)} bytes, SRP-x={'zero' if srp_x == 0 else 'nonzero'}.")
+        findings.append(
+            f"Key split unexpected: AUK={len(auk)} bytes, SRP-x={'zero' if srp_x == 0 else 'nonzero'}."
+        )
 
     # Check 2: secret key incorporation
     if sk_bytes:
         auk_no_sk, _ = derive_2skd(password, salt, iterations, b"\x00" * len(sk_bytes))
         checks["secret_key_incorporated"] = auk != auk_no_sk
         if not checks["secret_key_incorporated"]:
-            findings.append("CRITICAL: Secret Key XOR has no effect — AUK is identical with and without Secret Key.")
+            findings.append(
+                "CRITICAL: Secret Key XOR has no effect — AUK is identical with and without Secret Key."
+            )
     else:
         checks["secret_key_incorporated"] = None
         findings.append("Secret Key not provided — skipping incorporation check.")
 
     # Check 3: different password produces different AUK
-    auk_alt, _ = derive_2skd("different_password_for_test", salt, iterations, sk_bytes if sk_bytes else b"\x00" * 32)
+    auk_alt, _ = derive_2skd(
+        "different_password_for_test", salt, iterations, sk_bytes if sk_bytes else b"\x00" * 32
+    )
     checks["password_change_produces_new_auk"] = auk != auk_alt
     if not checks["password_change_produces_new_auk"]:
         findings.append("CRITICAL: Different password produces same AUK.")
 
     # Check 4: iteration count plausibility (timing-based)
     expected_ms_per_100k = derivation_ms / (iterations / 100_000) if iterations > 0 else 0
-    checks["iteration_count_plausible"] = expected_ms_per_100k > 1.0  # at least 1ms per 100k iterations
+    checks["iteration_count_plausible"] = (
+        expected_ms_per_100k > 1.0
+    )  # at least 1ms per 100k iterations
     if not checks["iteration_count_plausible"]:
         findings.append(
             f"Derivation completed in {derivation_ms:.1f}ms for {iterations:,} iterations — "
@@ -435,9 +447,7 @@ def kdf_oracle_test(
         return {"error": "Need at least 10 samples for meaningful oracle test."}
 
     total = warmup + samples
-    if not interrupt(
-        f"About to send ~{total} requests to {target} for KDF oracle testing"
-    ):
+    if not interrupt(f"About to send ~{total} requests to {target} for KDF oracle testing"):
         return {"error": "User declined KDF oracle test."}
 
     init_url = f"{target.rstrip('/')}{auth_init_path}"
@@ -543,4 +553,9 @@ def kdf_oracle_test(
 
 def get_kdf_tools() -> list[Any]:
     """Return all KDF analysis tools."""
-    return [analyze_kdf_parameters, benchmark_kdf_cracking, test_2skd_implementation, kdf_oracle_test]
+    return [
+        analyze_kdf_parameters,
+        benchmark_kdf_cracking,
+        test_2skd_implementation,
+        kdf_oracle_test,
+    ]

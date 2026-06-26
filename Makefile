@@ -57,7 +57,7 @@ test-coverage:
 	$(PYTEST) --cov=clearwing --cov-report=term-missing --cov-report=html
 
 coverage:
-	$(COVERAGE) report --fail-under=50
+	$(COVERAGE) report --fail-under=65
 
 coverage-html:
 	$(COVERAGE) html

@@ -12,14 +12,11 @@ Critical assertions:
 
 from __future__ import annotations
 
-import json
-from dataclasses import replace
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
 from clearwing.sourcehunt.stability import (
-    RACE_CWES,
     StabilityConfig,
     StabilityVerifier,
     apply_stability_result,
@@ -72,10 +69,10 @@ class _FakeSandbox:
             return _FakeExecResult(stdout="")
         self._call_count += 1
         import random
+
         if random.random() < self._crash_rate:
             crash_stderr = (
-                self._stderr_on_crash
-                or "==1==ERROR: AddressSanitizer: heap-buffer-overflow"
+                self._stderr_on_crash or "==1==ERROR: AddressSanitizer: heap-buffer-overflow"
             )
             return _FakeExecResult(
                 exit_code=1,
@@ -124,8 +121,11 @@ class _FakeSandboxManager:
 class TestStabilityResult:
     def test_defaults(self):
         r = StabilityResult(
-            finding_id="x", total_runs=0, successes=0,
-            success_rate=0.0, per_container_rates=[],
+            finding_id="x",
+            total_runs=0,
+            successes=0,
+            success_rate=0.0,
+            per_container_rates=[],
             classification="unreliable",
         )
         assert r.hardened is False
@@ -135,9 +135,13 @@ class TestStabilityResult:
 
     def test_full_construction(self):
         r = StabilityResult(
-            finding_id="f1", total_runs=60, successes=58,
-            success_rate=58 / 60, per_container_rates=[1.0, 0.95, 0.95],
-            classification="stable", hardened=False,
+            finding_id="f1",
+            total_runs=60,
+            successes=58,
+            success_rate=58 / 60,
+            per_container_rates=[1.0, 0.95, 0.95],
+            classification="stable",
+            hardened=False,
             failure_analysis="no failures",
         )
         assert r.classification == "stable"
@@ -226,8 +230,11 @@ class TestApplyStabilityResult:
     def test_sets_classification_fields(self):
         finding = _make_finding()
         result = StabilityResult(
-            finding_id="hunter-abc", total_runs=60, successes=55,
-            success_rate=55 / 60, per_container_rates=[0.9, 0.95, 0.9],
+            finding_id="hunter-abc",
+            total_runs=60,
+            successes=55,
+            success_rate=55 / 60,
+            per_container_rates=[0.9, 0.95, 0.9],
             classification="stable",
         )
         apply_stability_result(finding, result)
@@ -239,10 +246,15 @@ class TestApplyStabilityResult:
     def test_hardened_poc_replaces_original(self):
         finding = _make_finding(poc="original poc")
         result = StabilityResult(
-            finding_id="hunter-abc", total_runs=60, successes=55,
-            success_rate=55 / 60, per_container_rates=[0.9, 0.95, 0.9],
-            classification="stable", hardened=True,
-            hardening_improved=True, hardened_poc="hardened poc",
+            finding_id="hunter-abc",
+            total_runs=60,
+            successes=55,
+            success_rate=55 / 60,
+            per_container_rates=[0.9, 0.95, 0.9],
+            classification="stable",
+            hardened=True,
+            hardening_improved=True,
+            hardened_poc="hardened poc",
         )
         apply_stability_result(finding, result)
         assert finding["poc"] == "hardened poc"
@@ -250,8 +262,11 @@ class TestApplyStabilityResult:
     def test_no_poc_update_if_not_hardened(self):
         finding = _make_finding(poc="original poc")
         result = StabilityResult(
-            finding_id="hunter-abc", total_runs=60, successes=55,
-            success_rate=55 / 60, per_container_rates=[0.9, 0.95, 0.9],
+            finding_id="hunter-abc",
+            total_runs=60,
+            successes=55,
+            success_rate=55 / 60,
+            per_container_rates=[0.9, 0.95, 0.9],
             classification="stable",
         )
         apply_stability_result(finding, result)
@@ -266,7 +281,9 @@ class TestStabilityVerifier:
     async def test_stable_finding(self):
         manager = _FakeSandboxManager(crash_rate=1.0)
         config = StabilityConfig(
-            runs_per_container=5, num_containers=3, enable_hardening=False,
+            runs_per_container=5,
+            num_containers=3,
+            enable_hardening=False,
         )
         sv = StabilityVerifier(manager, config=config)
         result = await sv.averify(_make_finding())
@@ -281,7 +298,9 @@ class TestStabilityVerifier:
     async def test_flaky_finding(self):
         manager = _FakeSandboxManager(crash_rate=0.7)
         config = StabilityConfig(
-            runs_per_container=20, num_containers=3, enable_hardening=False,
+            runs_per_container=20,
+            num_containers=3,
+            enable_hardening=False,
         )
         sv = StabilityVerifier(manager, config=config)
         result = await sv.averify(_make_finding())
@@ -292,7 +311,9 @@ class TestStabilityVerifier:
     async def test_unreliable_no_hardening(self):
         manager = _FakeSandboxManager(crash_rate=0.2)
         config = StabilityConfig(
-            runs_per_container=20, num_containers=3, enable_hardening=False,
+            runs_per_container=20,
+            num_containers=3,
+            enable_hardening=False,
         )
         sv = StabilityVerifier(manager, config=config)
         result = await sv.averify(_make_finding())
@@ -305,7 +326,9 @@ class TestStabilityVerifier:
         manager = MagicMock()
         manager.spawn.side_effect = RuntimeError("Docker not available")
         config = StabilityConfig(
-            runs_per_container=5, num_containers=3, enable_hardening=False,
+            runs_per_container=5,
+            num_containers=3,
+            enable_hardening=False,
         )
         sv = StabilityVerifier(manager, config=config)
         result = await sv.averify(_make_finding())
@@ -316,8 +339,10 @@ class TestStabilityVerifier:
     async def test_race_condition_runs(self):
         manager = _FakeSandboxManager(crash_rate=1.0)
         config = StabilityConfig(
-            runs_per_container=20, race_runs_per_container=50,
-            num_containers=2, enable_hardening=False,
+            runs_per_container=20,
+            race_runs_per_container=50,
+            num_containers=2,
+            enable_hardening=False,
         )
         sv = StabilityVerifier(manager, config=config)
         f = _make_finding(cwe="CWE-362")
@@ -349,11 +374,13 @@ class TestHardening:
         mock_llm.aask_text = AsyncMock(return_value=mock_response)
 
         config = StabilityConfig(
-            runs_per_container=10, num_containers=3,
+            runs_per_container=10,
+            num_containers=3,
             enable_hardening=True,
         )
         sv = StabilityVerifier(
-            _FixingSandboxManager(), config=config,
+            _FixingSandboxManager(),
+            config=config,
             hardening_llm=mock_llm,
         )
         result = await sv.averify(_make_finding())
@@ -370,11 +397,14 @@ class TestHardening:
 
         manager = _FakeSandboxManager(crash_rate=0.0)
         config = StabilityConfig(
-            runs_per_container=10, num_containers=3,
+            runs_per_container=10,
+            num_containers=3,
             enable_hardening=True,
         )
         sv = StabilityVerifier(
-            manager, config=config, hardening_llm=mock_llm,
+            manager,
+            config=config,
+            hardening_llm=mock_llm,
         )
         result = await sv.averify(_make_finding())
         assert result.hardened is True
@@ -388,11 +418,14 @@ class TestHardening:
 
         manager = _FakeSandboxManager(crash_rate=0.1)
         config = StabilityConfig(
-            runs_per_container=10, num_containers=3,
+            runs_per_container=10,
+            num_containers=3,
             enable_hardening=True,
         )
         sv = StabilityVerifier(
-            manager, config=config, hardening_llm=mock_llm,
+            manager,
+            config=config,
+            hardening_llm=mock_llm,
         )
         result = await sv.averify(_make_finding())
         assert result.hardened is True
@@ -405,13 +438,16 @@ class TestHardening:
 class TestRunnerIntegration:
     def test_stability_enabled_by_default(self):
         from clearwing.sourcehunt.runner import SourceHuntRunner
+
         r = SourceHuntRunner(repo_url="test", depth="standard")
         assert r.enable_stability_verification is True
 
     def test_stability_disabled(self):
         from clearwing.sourcehunt.runner import SourceHuntRunner
+
         r = SourceHuntRunner(
-            repo_url="test", depth="standard",
+            repo_url="test",
+            depth="standard",
             enable_stability_verification=False,
         )
         assert r.enable_stability_verification is False

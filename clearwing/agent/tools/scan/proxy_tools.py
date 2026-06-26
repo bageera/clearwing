@@ -9,7 +9,7 @@ import logging
 from typing import Any
 
 from clearwing.agent.tooling import tool
-from clearwing.agent.tools.ops.pentest_container import KALI, PARROT
+from clearwing.agent.tools.ops.pentest_container import run_in_pentest_container
 
 logger = logging.getLogger(__name__)
 
@@ -40,14 +40,15 @@ def run_burp(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     cmd = f"burpsuite --headless --target '{target}' --action {action} --report-format {report_format} {options}"
     logger.info("[%s] burp (%s): %s", distro, action, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=True)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )
 
 
 @tool(requires_approval=True)
@@ -76,17 +77,18 @@ def run_owaspzap(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     cmd = (
         f"zap.sh -cmd -quickurl '{target}' -quickout /tmp/zap-report.{report_format} "
         f"-quickprogress {options}"
     )
     logger.info("[%s] owaspzap (%s): %s", distro, action, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=True)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )
 
 
 @tool(requires_approval=True)
@@ -117,9 +119,6 @@ def run_burp_intruder(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     cmd = (
         f"python3 /opt/burp-intruder-cli/intruder.py "
@@ -127,8 +126,12 @@ def run_burp_intruder(
         f"--payloads {payload_file} --attack {attack_type} --threads {threads}"
     )
     logger.info("[%s] burp intruder (%s): %s", distro, attack_type, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=True)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )
 
 
 @tool(requires_approval=True)
@@ -155,14 +158,12 @@ def run_zap_api_scan(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
-    cmd = (
-        f"zap-api-scan.py -t '{openapi_url}' {options} "
-        f"-r /tmp/zap-api-report.{report_format}"
-    )
+    cmd = f"zap-api-scan.py -t '{openapi_url}' {options} -r /tmp/zap-api-report.{report_format}"
     logger.info("[%s] zap api scan: %s", distro, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=True)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )

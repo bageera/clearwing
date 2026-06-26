@@ -154,11 +154,14 @@ class RevengPipeline:
                     static_summary.encode("utf-8"),
                 )
             except Exception:
+                logger.debug("Silent exception in reveng", exc_info=True)
                 pass
 
             # 4. Ghidra decompilation
             result.decompilation = run_ghidra_decompilation(
-                container, binary_name, timeout=600,
+                container,
+                binary_name,
+                timeout=600,
             )
             if result.decompilation.total_functions == 0:
                 logger.warning("No functions decompiled for %s", binary_name)
@@ -170,7 +173,8 @@ class RevengPipeline:
             # 5. LLM source reconstruction
             reconstructor = RevengReconstructor(self._llm)
             result.reconstruction = await reconstructor.areconstruct(
-                result.decompilation, result.static_analysis,
+                result.decompilation,
+                result.static_analysis,
             )
 
             # Write reconstructed source into container
@@ -181,6 +185,7 @@ class RevengPipeline:
                         result.reconstruction.combined_source.encode("utf-8"),
                     )
                 except Exception:
+                    logger.debug("Silent exception in reveng", exc_info=True)
                     pass
 
             # Validate reconstruction
@@ -194,7 +199,9 @@ class RevengPipeline:
 
             # 6. Hybrid hunt
             findings = await self._hybrid_hunt(
-                container, binary_name, static_summary,
+                container,
+                binary_name,
+                static_summary,
             )
             result.findings = findings
             result.status = "hunted"
@@ -202,11 +209,16 @@ class RevengPipeline:
             # 7. Exploit development for confirmed findings
             for finding in findings:
                 evidence = finding.get("evidence_level", "suspicion")
-                if evidence in ("crash_reproduced", "root_cause_explained",
-                                "exploit_demonstrated", "patch_validated"):
+                if evidence in (
+                    "crash_reproduced",
+                    "root_cause_explained",
+                    "exploit_demonstrated",
+                    "patch_validated",
+                ):
                     try:
                         exploit_result = await self._attempt_exploit(
-                            finding, container,
+                            finding,
+                            container,
                         )
                         result.exploit_results.append(exploit_result)
                         result.total_cost_usd += exploit_result.cost_usd

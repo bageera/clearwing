@@ -3,20 +3,17 @@
 from __future__ import annotations
 
 import asyncio
-import json
 import uuid
-from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
 from clearwing.findings.types import Finding
 from clearwing.sourcehunt.findings_pool import (
-    PRIMITIVE_TYPES,
-    FindingCluster,
-    FindingsPool,
     _CWE_PRIMITIVE_MAP,
     _FINDING_TYPE_PRIMITIVE_MAP,
+    PRIMITIVE_TYPES,
+    FindingsPool,
 )
 from clearwing.sourcehunt.historical_findings_db import HistoricalFindingsDB
 
@@ -471,7 +468,6 @@ def test_pool_tool_in_propagation_tools():
 
 
 def test_prompt_includes_pool_block():
-    from clearwing.sourcehunt.hunter import POOL_ACCESS_BLOCK
 
     pool = FindingsPool()
     pool._findings["f1"] = _make_finding(id="f1")

@@ -3,14 +3,12 @@
 from __future__ import annotations
 
 import tempfile
-from pathlib import Path
 
 import pytest
 
 from clearwing.sourcehunt.campaign_config import (
     CampaignConfig,
     CampaignTargetConfig,
-    OSSFuzzCorpusConfig,
     load_campaign_config,
     validate_campaign_config,
 )
@@ -18,7 +16,9 @@ from clearwing.sourcehunt.campaign_config import (
 
 def _write_yaml(content: str) -> str:
     f = tempfile.NamedTemporaryFile(
-        mode="w", suffix=".yaml", delete=False,
+        mode="w",
+        suffix=".yaml",
+        delete=False,
     )
     f.write(content)
     f.close()
@@ -127,7 +127,8 @@ class TestValidation:
 
     def test_no_budget(self):
         config = CampaignConfig(
-            name="test", budget=0,
+            name="test",
+            budget=0,
             targets=[CampaignTargetConfig(repo="x")],
         )
         with pytest.raises(ValueError, match="budget must be > 0"):
@@ -135,7 +136,9 @@ class TestValidation:
 
     def test_bad_depth(self):
         config = CampaignConfig(
-            name="test", budget=100, depth="ultra",
+            name="test",
+            budget=100,
+            depth="ultra",
             targets=[CampaignTargetConfig(repo="x")],
         )
         with pytest.raises(ValueError, match="Invalid campaign depth"):
@@ -143,7 +146,8 @@ class TestValidation:
 
     def test_bad_target_depth(self):
         config = CampaignConfig(
-            name="test", budget=100,
+            name="test",
+            budget=100,
             targets=[CampaignTargetConfig(repo="x", depth="ultra")],
         )
         with pytest.raises(ValueError, match="Invalid target depth"):
@@ -151,7 +155,8 @@ class TestValidation:
 
     def test_valid_config_passes(self):
         config = CampaignConfig(
-            name="test", budget=100,
+            name="test",
+            budget=100,
             targets=[CampaignTargetConfig(repo="x")],
         )
         validate_campaign_config(config)  # should not raise

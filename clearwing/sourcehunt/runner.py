@@ -48,7 +48,7 @@ from .mechanism_memory import (
 )
 from .patcher import AutoPatcher, apply_patch_attempt
 from .poc_runner import build_rerun_poc_callback
-from .pool import BandBudget, HunterPool, HuntPoolConfig, TierBudget
+from .pool import HunterPool, HuntPoolConfig, TierBudget
 from .preprocessor import Preprocessor, PreprocessResult
 from .ranker import Ranker, RankerConfig
 from .state import (
@@ -125,7 +125,8 @@ def _apply_elaboration(finding: Finding, elab_result) -> Finding:
     import uuid
 
     sev = _IMPACT_TO_SEVERITY.get(
-        elab_result.upgraded_impact or "", "high",
+        elab_result.upgraded_impact or "",
+        "high",
     )
     return {
         "id": f"elab-{uuid.uuid4().hex[:8]}",
@@ -139,10 +140,7 @@ def _apply_elaboration(finding: Finding, elab_result) -> Finding:
         "severity_verified": sev,
         "evidence_level": "exploit_demonstrated",
         "verified": True,
-        "description": (
-            f"Elaborated from {finding.get('id', '?')}: "
-            f"{elab_result.upgrade_path}"
-        ),
+        "description": (f"Elaborated from {finding.get('id', '?')}: {elab_result.upgrade_path}"),
         "exploit": elab_result.upgraded_exploit_code or "",
         "exploit_success": True,
         "exploit_impact": elab_result.upgraded_impact or "",
@@ -150,6 +148,38 @@ def _apply_elaboration(finding: Finding, elab_result) -> Finding:
         "elaboration_upgrade_path": elab_result.upgrade_path,
         "exploit_chained_findings": elab_result.chained_findings,
     }
+
+
+@dataclass
+class _StageState:
+    """Mutable state shared across pipeline stages during a single arun() call.
+
+    Each ``_stage_*`` method reads from and writes to this object so that
+    ``arun`` itself stays a thin linear composition of stage calls.
+    """
+
+    preprocess_result: PreprocessResult | None = None
+    repo_path: str = ""
+    files: list[FileTarget] = field(default_factory=list)
+    files_ranked: int = 0
+    seeded_crashes: list = field(default_factory=list)
+    seeded_by_file: dict = field(default_factory=dict)
+    semgrep_hints_by_file: dict = field(default_factory=dict)
+    entry_points_by_file: dict = field(default_factory=dict)
+    seed_corpus_by_file: dict = field(default_factory=dict)
+    findings_pool: Any = None
+    historical_db: Any = None
+    all_findings: list[Finding] = field(default_factory=list)
+    verified: list[Finding] = field(default_factory=list)
+    rejected: list[Finding] = field(default_factory=list)
+    exploited: list[Finding] = field(default_factory=list)
+    elaborated: list[Finding] = field(default_factory=list)
+    patched: list[Finding] = field(default_factory=list)
+    spent_per_tier: dict[str, float] = field(default_factory=lambda: {"A": 0.0, "B": 0.0, "C": 0.0})
+    band_stats: dict | None = None
+    files_hunted: int = 0
+    subsystems_hunted: int = 0
+    subsystem_spent: float = 0.0
 
 
 class SourceHuntRunner:
@@ -237,21 +267,13 @@ class SourceHuntRunner:
             budget_usd = budget_usd if budget_usd != 0.0 else b.budget_usd
             max_parallel = max_parallel if max_parallel != 8 else b.max_parallel
             tier_budget = tier_budget if tier_budget is not None else b.tier_budget
-            exploit_budget = (
-                exploit_budget if exploit_budget is not None else b.exploit_budget
-            )
-            elaboration_cap = (
-                elaboration_cap if elaboration_cap != "10%" else b.elaboration_cap
-            )
+            exploit_budget = exploit_budget if exploit_budget is not None else b.exploit_budget
+            elaboration_cap = elaboration_cap if elaboration_cap != "10%" else b.elaboration_cap
             subsystem_budget_usd = (
-                subsystem_budget_usd
-                if subsystem_budget_usd != 0.0
-                else b.subsystem_budget_usd
+                subsystem_budget_usd if subsystem_budget_usd != 0.0 else b.subsystem_budget_usd
             )
             subsystem_max_parallel = (
-                subsystem_max_parallel
-                if subsystem_max_parallel != 4
-                else b.subsystem_max_parallel
+                subsystem_max_parallel if subsystem_max_parallel != 4 else b.subsystem_max_parallel
             )
             # Output params
             output_dir = output_dir if output_dir is not None else (o.output_dir or None)
@@ -280,20 +302,14 @@ class SourceHuntRunner:
             enable_stability_verification = (
                 enable_stability_verification and f.enable_stability_verification
             )
-            enable_mechanism_memory = (
-                enable_mechanism_memory and f.enable_mechanism_memory
-            )
-            enable_behavior_monitor = (
-                enable_behavior_monitor and f.enable_behavior_monitor
-            )
+            enable_mechanism_memory = enable_mechanism_memory and f.enable_mechanism_memory
+            enable_behavior_monitor = enable_behavior_monitor and f.enable_behavior_monitor
             enable_patch_oracle = enable_patch_oracle and f.enable_patch_oracle
             enable_findings_pool = enable_findings_pool and f.enable_findings_pool
             enable_subsystem_hunt = enable_subsystem_hunt or f.enable_subsystem_hunt
             enable_auto_patch = enable_auto_patch or f.enable_auto_patch
             auto_pr = auto_pr or f.auto_pr
-            enable_knowledge_graph = (
-                enable_knowledge_graph and f.enable_knowledge_graph
-            )
+            enable_knowledge_graph = enable_knowledge_graph and f.enable_knowledge_graph
             enable_calibration = enable_calibration and f.enable_calibration
             enable_artifact_store = enable_artifact_store or f.enable_artifact_store
             no_per_file_hunt = no_per_file_hunt or f.no_per_file_hunt
@@ -305,54 +321,26 @@ class SourceHuntRunner:
                 if adversarial_threshold != "static_corroboration"
                 else f.adversarial_threshold
             )
-            validator_mode = (
-                validator_mode if validator_mode != "v2" else f.validator_mode
-            )
+            validator_mode = validator_mode if validator_mode != "v2" else f.validator_mode
             exploit_mode = exploit_mode or f.exploit_mode
             agent_mode = agent_mode if agent_mode != "auto" else f.agent_mode
-            prompt_mode = (
-                prompt_mode
-                if prompt_mode != "unconstrained"
-                else f.prompt_mode
-            )
+            prompt_mode = prompt_mode if prompt_mode != "unconstrained" else f.prompt_mode
             # Hunt tuning
-            starting_band = (
-                starting_band if starting_band is not None else h.starting_band
-            )
+            starting_band = starting_band if starting_band is not None else h.starting_band
             redundancy_override = (
-                redundancy_override
-                if redundancy_override is not None
-                else h.redundancy_override
+                redundancy_override if redundancy_override is not None else h.redundancy_override
             )
             shard_entry_points = (
-                shard_entry_points
-                if shard_entry_points is not None
-                else h.shard_entry_points
+                shard_entry_points if shard_entry_points is not None else h.shard_entry_points
             )
-            min_shard_rank = (
-                min_shard_rank if min_shard_rank != 4 else h.min_shard_rank
-            )
-            min_project_loc = (
-                min_project_loc
-                if min_project_loc != 50_000
-                else h.min_project_loc
-            )
+            min_shard_rank = min_shard_rank if min_shard_rank != 4 else h.min_shard_rank
+            min_project_loc = min_project_loc if min_project_loc != 50_000 else h.min_project_loc
             seed_corpus_sources = (
-                seed_corpus_sources
-                if seed_corpus_sources is not None
-                else h.seed_corpus_sources
+                seed_corpus_sources if seed_corpus_sources is not None else h.seed_corpus_sources
             )
-            subsystem_paths = (
-                subsystem_paths
-                if subsystem_paths is not None
-                else h.subsystem_paths
-            )
-            campaign_hint = (
-                campaign_hint if campaign_hint is not None else h.campaign_hint
-            )
-            gvisor_runtime = (
-                gvisor_runtime if gvisor_runtime is not None else h.gvisor_runtime
-            )
+            subsystem_paths = subsystem_paths if subsystem_paths is not None else h.subsystem_paths
+            campaign_hint = campaign_hint if campaign_hint is not None else h.campaign_hint
+            gvisor_runtime = gvisor_runtime if gvisor_runtime is not None else h.gvisor_runtime
 
         if not repo_url:
             raise ValueError(
@@ -388,6 +376,7 @@ class SourceHuntRunner:
         if enable_calibration:
             try:
                 from .calibration import CalibrationStore
+
                 self._calibration_store = CalibrationStore()
             except Exception:
                 logger.debug("CalibrationStore init failed", exc_info=True)
@@ -486,18 +475,24 @@ class SourceHuntRunner:
     # --- Public API ---------------------------------------------------------
 
     def _emit_stage(
-        self, stage: str, status: str, findings_so_far: int = 0,
-        cost_usd: float = 0.0, detail: str = "",
+        self,
+        stage: str,
+        status: str,
+        findings_so_far: int = 0,
+        cost_usd: float = 0.0,
+        detail: str = "",
     ) -> None:
-        EventBus().emit_sourcehunt_stage(SourcehuntStagePayload(
-            session_id=self._session_id,
-            repo=self.repo_url,
-            stage=stage,
-            status=status,
-            findings_so_far=findings_so_far,
-            cost_usd=cost_usd,
-            detail=detail,
-        ))
+        EventBus().emit_sourcehunt_stage(
+            SourcehuntStagePayload(
+                session_id=self._session_id,
+                repo=self.repo_url,
+                stage=stage,
+                status=status,
+                findings_so_far=findings_so_far,
+                cost_usd=cost_usd,
+                detail=detail,
+            )
+        )
 
     def run(self) -> SourceHuntResult:
         return asyncio.run(self.arun())
@@ -508,777 +503,134 @@ class SourceHuntRunner:
         pipeline_status = PipelineStatus()
         logger.info("Sourcehunt session %s starting on %s", self._session_id, self.repo_url)
         try:
-            # 1. Preprocess
-            self._emit_stage("preprocess", "started")
-            preprocess_result = self._preprocess()
-            repo_path = preprocess_result.repo_path
-            files = preprocess_result.file_targets
-            files_ranked = len(files)
-            logger.info("Preprocessor enumerated %d files", files_ranked)
-            self._emit_stage("preprocess", "completed", detail=f"Enumerated {files_ranked} files")
-            self._ensure_sandbox_factory(repo_path, files)
+            state = _StageState()
 
-            # 2. Rank — unless depth=quick AND no LLM available
-            ranker_llm = self._get_native_client("ranker", self.ranker_llm)
-            self._emit_stage("rank", "started", detail=f"{len(files)} files")
-            if ranker_llm is not None and files:
-                logger.info("Ranker starting on %d files", len(files))
-                try:
-                    ranker_config = RankerConfig()
-                    if not self._preprocessing:
-                        ranker_config.include_static_hints = False
-                        ranker_config.include_imports_by = False
-                    if ranker_llm.provider_name == "openai_resp":
-                        ranker_config.chunk_size = 30
-                        ranker_config.max_inflight_chunks = self.max_parallel
-                        logger.info(
-                            "Ranker tuned for openai_resp backend: chunk_size=%d max_inflight_chunks=%d",
-                            ranker_config.chunk_size,
-                            ranker_config.max_inflight_chunks,
-                        )
-                    await Ranker(ranker_llm, ranker_config).arank(files)
-                    logger.info("Ranker completed")
-                    pipeline_status.record_succeeded("ranker")
-                    self._emit_stage("rank", "completed", detail=f"Ranked {len(files)} files")
-                except Exception:
-                    logger.warning("Ranker failed", exc_info=True)
-                    pipeline_status.record_degraded(
-                        "ranker",
-                        "All files assigned default priority scores (surface=3, influence=2)",
-                    )
-                    self._emit_stage("rank", "degraded", detail="Default priority scores used")
-            else:
-                logger.info("Ranker skipped; no LLM available")
-                pipeline_status.record_degraded(
-                    "ranker",
-                    "All files assigned default priority scores (surface=3, influence=2)",
-                )
-                # Fallback: assign reasonable defaults so tier assignment still works
-                for ft in files:
-                    ft["surface"] = ft.get("surface") or 3
-                    ft["influence"] = ft.get("influence") or 2
-                    ft["reachability"] = ft.get("reachability") or 3
-                    ft["priority"] = (
-                        ft["surface"] * 0.5 + ft["influence"] * 0.2 + ft["reachability"] * 0.3
-                    )
+            # 1. Preprocess
+            await self._stage_preprocess(state, pipeline_status)
 
             # depth=quick exits here with the static_findings as-is
             if self.depth == "quick":
                 return self._build_quick_result(
                     start_time=start_time,
-                    repo_path=repo_path,
-                    preprocess_result=preprocess_result,
-                    files_ranked=files_ranked,
+                    repo_path=state.repo_path,
+                    preprocess_result=state.preprocess_result,
+                    files_ranked=state.files_ranked,
                     pipeline_status=pipeline_status,
                 )
 
+            # 2. Rank — unless depth=quick AND no LLM available
+            await self._stage_rank(state, pipeline_status)
+
             # 2.5. Harness Generator (crash-first ordering) — at depth=deep or
             #      when seed_harness_crashes is explicitly enabled (spec 018).
-            seeded_crashes: list[SeededCrash] = []
-            if self.depth == "deep" or self._seed_harness_crashes:
-                harness_llm = self._get_native_client("hunter", self.hunter_llm)
-                harness_sandbox = self._sandbox_manager or self.sandbox_factory
-                if harness_llm is not None and harness_sandbox is not None:
-                    try:
-                        hg = HarnessGenerator(
-                            llm=harness_llm,
-                            sandbox_factory=harness_sandbox,
-                            config=HarnessGeneratorConfig(),
-                        )
-                        hg_result = hg.run(files, repo_path)
-                        seeded_crashes = hg_result.seeded_crashes
-                        logger.info(
-                            "Harness generator produced %d crashes from %d harnesses",
-                            len(seeded_crashes),
-                            hg_result.harnesses_generated,
-                        )
-                    except Exception:
-                        logger.warning("Harness generator failed", exc_info=True)
-                        pipeline_status.record_degraded(
-                            "harness_generator",
-                            "No seeded crashes available; hunting without crash context",
-                        )
-
-            # Build a lookup so hunters for fuzzed files can pull their seeded
-            # crash context via file path
-            seeded_by_file: dict[str, dict] = {}
-            for c in seeded_crashes:
-                seeded_by_file[c.file] = {
-                    "report": c.report,
-                    "target_function": c.target_function,
-                    "harness_source": c.harness_source,
-                }
-
-            # Build a per-file Semgrep hint lookup so hunters get their file's hits
-            semgrep_hints_by_file: dict[str, list[dict]] = {}
-            for sf in preprocess_result.semgrep_findings:
-                semgrep_hints_by_file.setdefault(sf.get("file", ""), []).append(sf)
-
-            # v0.3: Recall cross-run mechanisms and inject them into every hunter's
-            # hint list as a synthetic entry. The hunter's prompt wraps these in
-            # "static analysis hints — NOT ground truth" framing.
-            if self._mechanism_store is not None:
-                mechanism_hints = self._recalled_mechanism_hints(files)
-                if mechanism_hints:
-                    for ft in files:
-                        key = ft.get("path", "")
-                        semgrep_hints_by_file.setdefault(key, []).extend(mechanism_hints)
+            await self._stage_harness(state, pipeline_status)
 
             # 2.7. Entry-point extraction (spec 004)
-            entry_points_by_file: dict = {}
-            if self._shard_entry_points and preprocess_result.callgraph is not None:
-                total_loc = sum(ft.get("loc", 0) for ft in files)
-                if total_loc >= self._min_project_loc:
-                    try:
-                        from .entry_points import extract_entry_points_batch
-
-                        entry_points_by_file = extract_entry_points_batch(
-                            file_targets=files,
-                            callgraph=preprocess_result.callgraph,
-                            repo_path=repo_path,
-                            min_rank=self._min_shard_rank,
-                        )
-                    except Exception:
-                        logger.warning("Entry-point extraction failed", exc_info=True)
-                        pipeline_status.record_degraded(
-                            "entry_points",
-                            "Entry-point sharding unavailable; hunting at file level",
-                        )
+            await self._stage_entry_points(state, pipeline_status)
 
             # 2.8. Seed corpus ingestion (spec 004)
-            seed_corpus_by_file: dict = {}
-            if self._seed_corpus_sources:
-                try:
-                    from .seed_corpus import ingest_seed_corpus
-
-                    sc_result = ingest_seed_corpus(
-                        repo_path, files, self._seed_corpus_sources,
-                    )
-                    for entry in sc_result.entries:
-                        seed_corpus_by_file.setdefault(entry.file_path, []).append(entry)
-                    if sc_result.errors:
-                        for err in sc_result.errors:
-                            logger.warning("Seed corpus: %s", err)
-                except Exception:
-                    logger.warning("Seed corpus ingestion failed", exc_info=True)
-                    pipeline_status.record_degraded(
-                        "seed_corpus",
-                        "Seed corpus unavailable; hunting without CVE/crash history",
-                    )
+            await self._stage_seed_corpus(state, pipeline_status)
 
             # 2.9. Shared findings pool (spec 005)
-            findings_pool = None
-            historical_db = None
-            if self._injected_findings_pool is not None:
-                # Campaign mode: use shared pool (spec 012)
-                findings_pool = self._injected_findings_pool
-                historical_db = self._injected_historical_db
-            elif self._enable_findings_pool:
-                from .findings_pool import FindingsPool
-                from .historical_findings_db import HistoricalFindingsDB
-
-                checkpoint_path = (
-                    Path(self.output_dir) / self._session_id / "findings_pool.jsonl"
-                )
-                findings_pool = FindingsPool(checkpoint_path=checkpoint_path)
-                try:
-                    historical_db = HistoricalFindingsDB(path=self._historical_db_path)
-                    prior = historical_db.query_prior(repo_url=self.repo_url)
-                    if prior:
-                        logger.info("Loaded %d historical findings for dedup", len(prior))
-                except Exception:
-                    logger.warning("Historical findings DB load failed", exc_info=True)
-                    historical_db = None
+            await self._stage_findings_pool(state, pipeline_status)
 
             # 3. Tiered hunt
-            hunter_llm = self._get_native_client("hunter", self.hunter_llm)
-            all_findings: list[Finding] = []
-            files_hunted = 0
-            spent_per_tier: dict[str, float] = {"A": 0.0, "B": 0.0, "C": 0.0}
-            band_stats: dict | None = None
-
-            if self._no_per_file_hunt:
-                logger.info("Per-file hunt skipped (--no-per-file-hunt)")
-            elif hunter_llm is not None and files:
-                self._emit_stage("hunt", "started", detail=f"{len(files)} files")
-                logger.info("HunterPool starting on %d files", len(files))
-                pool = HunterPool(
-                    HuntPoolConfig(
-                        files=files,
-                        repo_path=repo_path,
-                        sandbox_factory=self.sandbox_factory,
-                        sandbox_manager=self._sandbox_manager,
-                        hunter_factory=None,
-                        llm=hunter_llm,
-                        max_parallel=self.max_parallel,
-                        budget_usd=self.budget_usd,
-                        tier_budget=self.tier_budget,
-                        session_id_prefix=self._session_id,
-                        seeded_crashes_by_file=seeded_by_file,
-                        semgrep_hints_by_file=semgrep_hints_by_file,
-                        agent_mode=self._agent_mode,
-                        prompt_mode=self._prompt_mode,
-                        campaign_hint=self._campaign_hint,
-                        exploit_mode=self._exploit_mode,
-                        starting_band=self._starting_band,
-                        max_band=self._max_band,
-                        redundancy_override=self._redundancy_override,
-                        entry_points_by_file=entry_points_by_file,
-                        seed_corpus_by_file=seed_corpus_by_file,
-                        shard_entry_points=self._shard_entry_points,
-                        findings_pool=findings_pool,
-                    )
-                )
-                try:
-                    all_findings = await pool.arun()
-                    logger.info("HunterPool completed with %d findings", len(all_findings))
-                    pipeline_status.record_succeeded("hunter_pool")
-                    self._emit_stage(
-                        "hunt", "completed", findings_so_far=len(all_findings),
-                        cost_usd=pool.total_spent, detail=f"{len(all_findings)} findings",
-                    )
-                except Exception:
-                    logger.warning("HunterPool run failed", exc_info=True)
-                    pipeline_status.record_degraded(
-                        "hunter_pool",
-                        "Hunter phase produced no findings due to error",
-                    )
-                spent_per_tier = pool.spent_per_tier
-                band_stats = {
-                    "fast_runs": pool.runs_per_band.get("fast", 0),
-                    "fast_cost": pool.spent_per_band.get("fast", 0.0),
-                    "standard_runs": pool.runs_per_band.get("standard", 0),
-                    "standard_cost": pool.spent_per_band.get("standard", 0.0),
-                    "deep_runs": pool.runs_per_band.get("deep", 0),
-                    "deep_cost": pool.spent_per_band.get("deep", 0.0),
-                    "promotions": pool.promotion_counts,
-                }
-                files_hunted = sum(
-                    [
-                        p.get("tier") in ("A", "B", "C")
-                        for p in files
-                        if p.get("tier") != "C" or self.tier_budget.tier_c_fraction > 0
-                    ]
-                )
-            else:
-                logger.info("HunterPool skipped; no LLM available")
+            await self._stage_tiered_hunt(state, pipeline_status)
 
             # 3.5. v0.6: Behavioral monitoring of findings text (spec 013).
-            if self._enable_behavior_monitor and all_findings:
-                try:
-                    from .behavior_monitor import BehaviorMonitor
-                    bmon = BehaviorMonitor(session_id=self._session_id)
-                    for f in all_findings:
-                        for field in ("description", "poc", "exploit", "evidence"):
-                            text = f.get(field, "")
-                            if text:
-                                bmon.scan_text(str(text), finding_id=f.get("id", ""))
-                    alerts = bmon.get_alerts()
-                    if alerts:
-                        logger.warning(
-                            "Behavior monitor: %d alerts — %s",
-                            len(alerts), bmon.summary(),
-                        )
-                except Exception:
-                    logger.debug("Behavior monitor failed", exc_info=True)
+            await self._stage_behavior_monitor(state, pipeline_status)
 
             # Promote static findings into the all_findings list so depth=quick
             # output is still useful when no hunter llm is available
-            all_findings = self._merge_static_findings(all_findings, preprocess_result)
+            state.all_findings = self._merge_static_findings(
+                state.all_findings, state.preprocess_result
+            )
 
             # 3.5. Persist findings to historical DB (spec 005)
-            # Skip when running under campaign — campaign handles bulk ingestion.
-            if historical_db is not None and all_findings and self._injected_findings_pool is None:
-                try:
-                    count = historical_db.ingest_campaign(
-                        all_findings, repo_url=self.repo_url, session_id=self._session_id,
-                    )
-                    logger.info("Persisted %d findings to historical DB", count)
-                except Exception:
-                    logger.warning("Historical DB ingest failed", exc_info=True)
-                finally:
-                    historical_db.close()
+            await self._stage_historical_db(state, pipeline_status)
 
             # 3.7. Subsystem hunt (spec 006)
-            subsystems_hunted = 0
-            subsystem_spent = 0.0
-            if self._enable_subsystem_hunt and hunter_llm is not None:
-                from .subsystem import (
-                    SubsystemHuntConfig,
-                    SubsystemHuntRunner as SubsysRunner,
-                    identify_subsystems_auto,
-                    subsystem_from_path,
-                )
-
-                subsystem_targets: list = []
-                if self._subsystem_paths:
-                    for sp in self._subsystem_paths:
-                        try:
-                            st = subsystem_from_path(
-                                sp, files,
-                                callgraph=preprocess_result.callgraph,
-                                entry_points_by_file=entry_points_by_file,
-                            )
-                            subsystem_targets.append(st)
-                        except ValueError:
-                            logger.warning("No files match subsystem path: %s", sp)
-                else:
-                    subsystem_targets = identify_subsystems_auto(
-                        files,
-                        callgraph=preprocess_result.callgraph,
-                        entry_points_by_file=entry_points_by_file,
-                    )
-
-                if subsystem_targets:
-                    logger.info(
-                        "Subsystem hunt: %d targets identified", len(subsystem_targets),
-                    )
-                    for st in subsystem_targets:
-                        logger.info(
-                            "  %s (%d files, priority=%.2f)",
-                            st.name, len(st.files), st.priority,
-                        )
-                    subsys_runner = SubsysRunner(SubsystemHuntConfig(
-                        subsystems=subsystem_targets,
-                        repo_path=repo_path,
-                        sandbox_factory=self.sandbox_factory,
-                        llm=hunter_llm,
-                        max_parallel=self._subsystem_max_parallel,
-                        budget_per_subsystem_usd=self._subsystem_budget_usd or 100.0,
-                        findings_pool=findings_pool,
-                        session_id_prefix=f"{self._session_id}-subsys",
-                        sandbox_manager=self._sandbox_manager,
-                        campaign_hint=self._campaign_hint,
-                        callgraph=preprocess_result.callgraph,
-                    ))
-                    try:
-                        subsys_findings = await subsys_runner.arun()
-                        all_findings.extend(subsys_findings)
-                        subsystems_hunted = len(subsystem_targets)
-                        subsystem_spent = subsys_runner.total_spent
-                        logger.info(
-                            "Subsystem hunt completed: %d findings, $%.4f spent",
-                            len(subsys_findings), subsystem_spent,
-                        )
-                    except Exception:
-                        logger.warning("Subsystem hunt failed", exc_info=True)
-                        pipeline_status.record_degraded(
-                            "subsystem_hunt",
-                            "Subsystem hunt failed; only per-file findings available",
-                        )
+            await self._stage_subsystem_hunt(state, pipeline_status)
 
             # 4. Verify (unless --no-verify)
-            verified: list[Finding] = []
-            rejected: list[Finding] = []
-            self._emit_stage(
-                "verify", "started", findings_so_far=len(all_findings),
-                detail=f"{len(all_findings)} findings to verify",
-            )
-            if not self.no_verify:
-                verifier_llm = self._get_native_client("verifier", self.verifier_llm)
-                if verifier_llm is not None:
-                    if self.validator_mode == "v2":
-                        verified, rejected = await self._verify_v2(
-                            verifier_llm, all_findings, repo_path,
-                        )
-                    else:
-                        verified = await self._verify_v1(
-                            verifier_llm, all_findings, repo_path,
-                        )
-                else:
-                    for f in all_findings:
-                        f["verified"] = True
-                    verified = all_findings
-                    pipeline_status.record_degraded(
-                        "verifier",
-                        "Findings auto-verified without independent review",
-                    )
-            else:
-                verified = all_findings
-                pipeline_status.record(
-                    "verifier", StageOutcome.SKIPPED,
-                    fallback_description="Verification skipped (--no-verify)",
-                )
+            await self._stage_verify(state, pipeline_status)
 
-            self._emit_stage(
-                "verify", "completed", findings_so_far=len(all_findings),
-                detail=f"{len(verified)} verified, {len(rejected)} rejected",
-            )
-            if rejected:
-                self._write_rejected_findings(rejected)
+            # 4.5. v0.3: Extract mechanisms from verified findings
+            await self._stage_mechanism_extract(state, pipeline_status)
 
-            # 4.5. v0.3: Extract mechanisms from verified findings and persist them
-            #      to the cross-run store. Cheap LLM pass; failures are non-fatal.
-            if self._mechanism_store is not None and verified:
-                verifier_llm_for_extract = self._get_native_client("verifier", self.verifier_llm)
-                if verifier_llm_for_extract is not None:
-                    try:
-                        extractor = MechanismExtractor(verifier_llm_for_extract)
-                        for finding in verified:
-                            mech = await extractor.aextract(finding, source_repo=self.repo_url)
-                            if mech is not None:
-                                self._mechanism_store.append(mech)
-                    except Exception:
-                        logger.warning("Mechanism extraction failed", exc_info=True)
-                        pipeline_status.record_degraded(
-                            "mechanism_extraction",
-                            "Mechanism extraction failed; cross-run memory not updated",
-                        )
-
-            # 4.75. v0.3: Variant Hunter Loop — compound finding density within
-            #       this run. For each verified finding, generate a grep pattern,
-            #       search the codebase for structural matches, and surface each
-            #       match as a new suspicion-level finding linked back to the
-            #       original. v0.3 scope: we surface the matches in the report;
-            #       we don't re-spawn hunters on each match (that's a v1.0 pass).
-            if self.enable_variant_loop and verified:
-                variant_llm = self._get_native_client("verifier", self.verifier_llm)
-                if variant_llm is not None:
-                    try:
-                        loop = VariantLoop(
-                            pattern_gen=VariantPatternGenerator(variant_llm),
-                        )
-                        # Track locations we've already reported to avoid dupes
-                        already_seen = {
-                            (f.get("file", ""), f.get("line_number", 0)) for f in all_findings
-                        }
-                        # v0.4: drive the multi-iteration fixpoint loop rather
-                        # than the single-pass run_once. Each iteration feeds
-                        # its new seeds back in as starting points for the
-                        # next pattern generation pass.
-                        variant_result = await loop.arun(
-                            verified_findings=verified,
-                            repo_path=repo_path,
-                            already_seen_locations=already_seen,
-                            reverify_callback=None,
-                        )
-                        for seed in variant_result.seeds:
-                            parent = seed.original_finding
-                            variant_finding = Finding(
-                                id=f"variant-{uuid.uuid4().hex[:8]}",
-                                file=seed.match.file,
-                                line_number=seed.match.line_number,
-                                finding_type=parent.finding_type or "variant",
-                                cwe=parent.cwe,
-                                severity=parent.effective_severity or "medium",
-                                confidence="low",
-                                description=(
-                                    f"Variant of {parent.id}: {seed.match.pattern.semantic_description}"
-                                ),
-                                code_snippet=seed.match.matched_text,
-                                evidence_level="suspicion",
-                                discovered_by="variant_loop",
-                                related_finding_id=parent.id or None,
-                                related_cve=parent.related_cve,
-                                hunter_session_id=self._session_id,
-                            )
-                            all_findings.append(variant_finding)
-                        logger.info(
-                            "Variant loop: %d patterns, %d matches surfaced",
-                            variant_result.patterns_generated,
-                            variant_result.matches_found,
-                        )
-                    except Exception:
-                        logger.warning("Variant loop failed", exc_info=True)
-                        pipeline_status.record_degraded(
-                            "variant_loop",
-                            "Variant loop failed; no sibling bugs surfaced",
-                        )
+            # 4.75. v0.3: Variant Hunter Loop
+            await self._stage_variant_loop(state, pipeline_status)
 
             # 4.9. Stage 2.5: PoC stability verification (spec 010).
-            # Rerun PoCs in fresh containers to measure reliability.
-            if (
-                self.enable_stability_verification
-                and verified
-                and self._sandbox_manager is not None
-            ):
-                from .stability import StabilityVerifier, apply_stability_result
-
-                stability_llm = self._get_native_client("verifier", self.verifier_llm)
-                sv = StabilityVerifier(
-                    sandbox_manager=self._sandbox_manager,
-                    hardening_llm=stability_llm,
-                )
-                stability_eligible = [
-                    f for f in verified
-                    if f.get("poc") and f.get("crash_evidence")
-                    and evidence_at_or_above(
-                        f.get("evidence_level", "suspicion"), "crash_reproduced",
-                    )
-                ]
-                stable_verified: list[Finding] = []
-                for finding in stability_eligible:
-                    try:
-                        sr = await sv.averify(finding)
-                        apply_stability_result(finding, sr)
-                        if sr.classification != "unreliable":
-                            stable_verified.append(finding)
-                        else:
-                            logger.info(
-                                "Finding %s demoted to unreliable (%.0f%% success rate)",
-                                finding.get("id"),
-                                sr.success_rate * 100,
-                            )
-                    except Exception:
-                        logger.warning(
-                            "Stability check failed for %s",
-                            finding.get("id"), exc_info=True,
-                        )
-                        stable_verified.append(finding)
-                non_poc = [f for f in verified if f not in stability_eligible]
-                verified = stable_verified + non_poc
+            await self._stage_stability_verify(state, pipeline_status)
 
             # 5. Exploit-triage (unless --no-exploit) — gated on evidence_level
-            self._emit_stage("exploit", "started", findings_so_far=len(all_findings))
-            exploited: list[Finding] = []
-            # 5.5 v0.3: Auto-patch (opt-in) — runs after exploiter on verified
-            #          critical/high findings with root_cause_explained evidence.
-            patched: list[Finding] = []
-            if not self.no_exploit:
-                exploiter_llm = self._get_native_client("sourcehunt_exploit", self.exploiter_llm)
-                if exploiter_llm is not None:
-                    eligible = filter_by_evidence(verified, "crash_reproduced")
-                    has_sandbox = (
-                        self._sandbox_manager is not None
-                        or self.sandbox_factory is not None
-                    )
-                    if eligible and has_sandbox:
-                        agentic = AgenticExploiter(
-                            llm=exploiter_llm,
-                            sandbox_manager=self._sandbox_manager,
-                            sandbox_factory=self.sandbox_factory,
-                            findings_pool=findings_pool,
-                            budget_band=self._exploit_budget_band,
-                            output_dir=str(self._ensure_output_dir_layout()),
-                            project_name=(
-                                self.repo_url.split("/")[-1]
-                                if self.repo_url else "target"
-                            ),
-                        )
-                        for finding in eligible:
-                            try:
-                                exploit_result = await agentic.aattempt(finding)
-                                apply_exploiter_result(finding, exploit_result)
-                                if exploit_result.success:
-                                    exploited.append(finding)
-                                if (
-                                    exploit_result.partial
-                                    and findings_pool is not None
-                                ):
-                                    finding["primitive_type"] = (
-                                        exploit_result.primitive_type
-                                        or finding.get("primitive_type", "")
-                                    )
-                                    await findings_pool.add(
-                                        finding, session_id=self._session_id,
-                                    )
-                            except Exception:
-                                logger.warning(
-                                    "Agentic exploiter failed for %s",
-                                    finding.get("id"), exc_info=True,
-                                )
-                    elif eligible:
-                        e = Exploiter(exploiter_llm)
-                        for finding in eligible:
-                            try:
-                                exploit_result = await e.aattempt(finding)
-                                apply_exploiter_result(finding, exploit_result)
-                                if exploit_result.success:
-                                    exploited.append(finding)
-                            except Exception:
-                                logger.warning("Exploiter failed", exc_info=True)
+            await self._stage_exploit(state, pipeline_status)
 
             # 5.25. Stage 1.5: Exploit elaboration (autonomous, opt-in).
-            elaborated: list[Finding] = []
-            if self.enable_elaboration and exploited:
-                from .elaboration import (
-                    ElaborationAgent,
-                    prioritize_for_elaboration,
-                )
-
-                elaboration_llm = self._get_native_client(
-                    "sourcehunt_exploit", self.exploiter_llm,
-                )
-                if elaboration_llm is not None:
-                    targets = prioritize_for_elaboration(
-                        exploited, self._elaboration_cap,
-                    )
-                    if targets:
-                        elab_agent = ElaborationAgent(
-                            llm=elaboration_llm,
-                            sandbox_manager=self._sandbox_manager,
-                            sandbox_factory=self.sandbox_factory,
-                            findings_pool=findings_pool,
-                            budget_band=self._exploit_budget_band,
-                            output_dir=str(self._ensure_output_dir_layout()),
-                            project_name=(
-                                self.repo_url.split("/")[-1]
-                                if self.repo_url else "target"
-                            ),
-                        )
-                        for finding in targets:
-                            try:
-                                elab_result = await elab_agent.aattempt(finding)
-                                if elab_result.elaborated:
-                                    elab_finding = _apply_elaboration(
-                                        finding, elab_result,
-                                    )
-                                    all_findings.append(elab_finding)
-                                    elaborated.append(elab_finding)
-                            except Exception:
-                                logger.warning(
-                                    "Elaboration failed for %s",
-                                    finding.get("id"), exc_info=True,
-                                )
+            await self._stage_elaborate(state, pipeline_status)
 
             # 5.5. v0.3: Auto-patch mode (opt-in).
-            # The verify-by-recompile gate is MANDATORY — a patch is only marked
-            # `validated` if we actually applied it, rebuilt, and re-ran the PoC.
-            if self.enable_auto_patch and verified:
-                patcher_llm = self._get_native_client("sourcehunt_exploit", self.exploiter_llm)
-                if patcher_llm is not None:
-                    try:
-                        patcher = AutoPatcher(patcher_llm)
-                        for finding in verified:
-                            if not patcher.is_eligible(finding):
-                                continue
-                            patch_sandbox = None
-                            rerun_cb = None
-                            if self.sandbox_factory is not None:
-                                try:
-                                    patch_sandbox = self.sandbox_factory()
-                                    rerun_cb = build_rerun_poc_callback(patch_sandbox)
-                                except Exception:
-                                    logger.debug(
-                                        "Auto-patch sandbox spawn failed",
-                                        exc_info=True,
-                                    )
-                                    patch_sandbox = None
-                                    rerun_cb = None
-                            try:
-                                attempt = await patcher.aattempt(
-                                    finding,
-                                    file_content=self._load_file_content(repo_path, finding),
-                                    sandbox=patch_sandbox,
-                                    rerun_poc=rerun_cb,
-                                )
-                            finally:
-                                if patch_sandbox is not None:
-                                    try:
-                                        patch_sandbox.stop()
-                                    except Exception:
-                                        pass
-                            apply_patch_attempt(finding, attempt)
-                            if attempt.validated:
-                                patched.append(finding)
-                                if self.auto_pr:
-                                    self._open_draft_pr(finding, attempt)
-                    except Exception:
-                        logger.warning("Auto-patcher failed", exc_info=True)
+            await self._stage_autopatch(state, pipeline_status)
 
-            # 5.75. v0.3: Populate the cross-run knowledge graph with source
-            #       findings. Best-effort — never blocks the run.
-            try:
-                if self.enable_knowledge_graph and all_findings:
-                    self._populate_knowledge_graph_source(repo_path, all_findings)
-            except Exception:
-                logger.warning("Knowledge graph population failed", exc_info=True)
-
-            # 5.85. v0.4: Coordinated-disclosure templates (opt-in).
-            if self.export_disclosures and verified:
-                try:
-                    self._export_disclosure_bundle(verified)
-                except Exception:
-                    logger.warning("Disclosure export failed", exc_info=True)
-
-                # 5.86. v0.5: Queue findings into disclosure DB (spec 011).
-                try:
-                    from .disclosure_db import DisclosureDB
-                    disclosure_db = DisclosureDB()
-                    try:
-                        disclosure_db.queue_findings(
-                            verified, self.repo_url, self._session_id,
-                        )
-                    finally:
-                        disclosure_db.close()
-                except Exception:
-                    logger.warning("Disclosure DB queue failed", exc_info=True)
-
-            # 5.87. v0.6: Store exploits in encrypted artifact store (spec 013).
-            if self._enable_artifact_store and exploited:
-                try:
-                    from .artifact_store import ArtifactStore
-                    artifact_store = ArtifactStore()
-                    for f in exploited:
-                        exploit_data = f.get("exploit") or f.get("poc")
-                        if exploit_data:
-                            if isinstance(exploit_data, str):
-                                exploit_data = exploit_data.encode()
-                            artifact_store.store_exploit(
-                                f.get("id", ""), exploit_data, operator="pipeline",
-                            )
-                except Exception:
-                    logger.warning("Artifact store failed", exc_info=True)
-
-            # 5.88. v0.6: Auto-commit findings with root_cause_explained (spec 014).
-            try:
-                from .commitment import CommitmentLog
-                committable = filter_by_evidence(verified, "root_cause_explained")
-                if committable:
-                    commitment_log = CommitmentLog()
-                    for f in committable:
-                        commitment_log.commit_finding(f, project=self.repo_url)
-                    logger.info(
-                        "Committed %d findings to commitment log", len(committable),
-                    )
-            except Exception:
-                logger.warning("Auto-commitment failed", exc_info=True)
+            # 5.75. v0.3: Knowledge graph + disclosures + artifacts + commitment
+            await self._stage_knowledge_graph(state, pipeline_status)
 
             self._emit_stage(
-                "exploit", "completed", findings_so_far=len(all_findings),
-                detail=f"{len(exploited)} exploited",
+                "exploit",
+                "completed",
+                findings_so_far=len(state.all_findings),
+                detail=f"{len(state.exploited)} exploited",
             )
 
             # 6. Report
-            self._emit_stage("report", "started", findings_so_far=len(all_findings))
-            _pool_stats = findings_pool.pool_stats() if findings_pool is not None else None
+            self._emit_stage("report", "started", findings_so_far=len(state.all_findings))
+            _pool_stats = (
+                state.findings_pool.pool_stats() if state.findings_pool is not None else None
+            )
             _subsystem_stats = (
-                {"subsystems_hunted": subsystems_hunted, "subsystem_spent_usd": subsystem_spent}
-                if subsystems_hunted > 0 else None
+                {
+                    "subsystems_hunted": state.subsystems_hunted,
+                    "subsystem_spent_usd": state.subsystem_spent,
+                }
+                if state.subsystems_hunted > 0
+                else None
             )
             output_paths = self._write_report(
-                findings=all_findings,
-                verified=verified,
-                spent_per_tier=spent_per_tier,
-                band_stats=band_stats,
+                findings=state.all_findings,
+                verified=state.verified,
+                spent_per_tier=state.spent_per_tier,
+                band_stats=state.band_stats,
                 pool_stats=_pool_stats,
                 subsystem_stats=_subsystem_stats,
                 pipeline_status=pipeline_status,
             )
 
             self._emit_stage(
-                "report", "completed", findings_so_far=len(all_findings),
-                cost_usd=sum(spent_per_tier.values()) + subsystem_spent,
+                "report",
+                "completed",
+                findings_so_far=len(state.all_findings),
+                cost_usd=sum(state.spent_per_tier.values()) + state.subsystem_spent,
             )
 
             duration = time.monotonic() - start_time
             return SourceHuntResult(
-                exit_code=self._exit_code(verified),
+                exit_code=self._exit_code(state.verified),
                 repo_url=self.repo_url,
-                repo_path=repo_path,
-                findings=all_findings,
-                verified_findings=verified,
-                exploited_findings=exploited,
-                files_ranked=files_ranked,
-                files_hunted=files_hunted,
+                repo_path=state.repo_path,
+                findings=state.all_findings,
+                verified_findings=state.verified,
+                exploited_findings=state.exploited,
+                files_ranked=state.files_ranked,
+                files_hunted=state.files_hunted,
                 duration_seconds=round(duration, 2),
-                cost_usd=sum(spent_per_tier.values()) + subsystem_spent,
-                spent_per_tier=spent_per_tier,
+                cost_usd=sum(state.spent_per_tier.values()) + state.subsystem_spent,
+                spent_per_tier=state.spent_per_tier,
                 tokens_used=0,  # filled by cost tracker if attached
                 output_paths=output_paths,
                 session_id=self._session_id,
-                subsystems_hunted=subsystems_hunted,
-                subsystem_spent_usd=subsystem_spent,
+                subsystems_hunted=state.subsystems_hunted,
+                subsystem_spent_usd=state.subsystem_spent,
                 pipeline_status=pipeline_status,
             )
         finally:
@@ -1287,6 +639,901 @@ class SourceHuntRunner:
                     self._sandbox_manager.cleanup(remove_image=False)
                 except Exception:
                     logger.debug("HunterSandbox cleanup failed", exc_info=True)
+
+    # --- Stage helpers ------------------------------------------------------
+
+    async def _run_stage(
+        self,
+        fn: Any,
+        *,
+        log_name: str,
+        pipeline_status: PipelineStatus,
+        record_key: str | None = None,
+        fallback_description: str = "",
+        warn_message: str | None = None,
+        debug_level: bool = False,
+    ) -> Any:
+        """Run a stage callable/coroutine with uniform error handling.
+
+        *fn* may be a coroutine (awaited) or a zero-argument callable (called
+        directly). On success the result is returned. On failure a warning
+        (or debug message when *debug_level* is True) is logged, a degraded
+        status is recorded when *record_key* is provided, and ``None`` is
+        returned.
+        """
+        try:
+            if asyncio.iscoroutine(fn):
+                return await fn
+            return fn()
+        except Exception:
+            msg = warn_message or f"{log_name} failed"
+            if debug_level:
+                logger.debug(msg, exc_info=True)
+            else:
+                logger.warning(msg, exc_info=True)
+            if record_key:
+                pipeline_status.record_degraded(record_key, fallback_description)
+            return None
+
+    async def _stage_preprocess(
+        self,
+        state: _StageState,
+        pipeline_status: PipelineStatus,
+    ) -> None:
+        """Stage 1: preprocess — enumerate files, build callgraph, run semgrep."""
+        self._emit_stage("preprocess", "started")
+        preprocess_result = self._preprocess()
+        state.preprocess_result = preprocess_result
+        state.repo_path = preprocess_result.repo_path
+        state.files = preprocess_result.file_targets
+        state.files_ranked = len(state.files)
+        logger.info("Preprocessor enumerated %d files", state.files_ranked)
+        self._emit_stage("preprocess", "completed", detail=f"Enumerated {state.files_ranked} files")
+        self._ensure_sandbox_factory(state.repo_path, state.files)
+
+    async def _stage_rank(
+        self,
+        state: _StageState,
+        pipeline_status: PipelineStatus,
+    ) -> None:
+        """Stage 2: rank files by surface/influence/reachability."""
+        ranker_llm = self._get_native_client("ranker", self.ranker_llm)
+        self._emit_stage("rank", "started", detail=f"{len(state.files)} files")
+        if ranker_llm is not None and state.files:
+            logger.info("Ranker starting on %d files", len(state.files))
+            try:
+                ranker_config = RankerConfig()
+                if not self._preprocessing:
+                    ranker_config.include_static_hints = False
+                    ranker_config.include_imports_by = False
+                if ranker_llm.provider_name == "openai_resp":
+                    ranker_config.chunk_size = 30
+                    ranker_config.max_inflight_chunks = self.max_parallel
+                    logger.info(
+                        "Ranker tuned for openai_resp backend: chunk_size=%d max_inflight_chunks=%d",
+                        ranker_config.chunk_size,
+                        ranker_config.max_inflight_chunks,
+                    )
+                await Ranker(ranker_llm, ranker_config).arank(state.files)
+                logger.info("Ranker completed")
+                pipeline_status.record_succeeded("ranker")
+                self._emit_stage("rank", "completed", detail=f"Ranked {len(state.files)} files")
+            except Exception:
+                logger.warning("Ranker failed", exc_info=True)
+                pipeline_status.record_degraded(
+                    "ranker",
+                    "All files assigned default priority scores (surface=3, influence=2)",
+                )
+                self._emit_stage("rank", "degraded", detail="Default priority scores used")
+        else:
+            logger.info("Ranker skipped; no LLM available")
+            pipeline_status.record_degraded(
+                "ranker",
+                "All files assigned default priority scores (surface=3, influence=2)",
+            )
+            # Fallback: assign reasonable defaults so tier assignment still works
+            for ft in state.files:
+                ft["surface"] = ft.get("surface") or 3
+                ft["influence"] = ft.get("influence") or 2
+                ft["reachability"] = ft.get("reachability") or 3
+                ft["priority"] = (
+                    ft["surface"] * 0.5 + ft["influence"] * 0.2 + ft["reachability"] * 0.3
+                )
+
+    async def _stage_harness(
+        self,
+        state: _StageState,
+        pipeline_status: PipelineStatus,
+    ) -> None:
+        """Stage 2.5: harness generator + semgrep/mechanism hint lookups."""
+        seeded_crashes: list[SeededCrash] = []
+        if self.depth == "deep" or self._seed_harness_crashes:
+            harness_llm = self._get_native_client("hunter", self.hunter_llm)
+            harness_sandbox = self._sandbox_manager or self.sandbox_factory
+            if harness_llm is not None and harness_sandbox is not None:
+                try:
+                    hg = HarnessGenerator(
+                        llm=harness_llm,
+                        sandbox_factory=harness_sandbox,
+                        config=HarnessGeneratorConfig(),
+                    )
+                    hg_result = hg.run(state.files, state.repo_path)
+                    seeded_crashes = hg_result.seeded_crashes
+                    logger.info(
+                        "Harness generator produced %d crashes from %d harnesses",
+                        len(seeded_crashes),
+                        hg_result.harnesses_generated,
+                    )
+                except Exception:
+                    logger.warning("Harness generator failed", exc_info=True)
+                    pipeline_status.record_degraded(
+                        "harness_generator",
+                        "No seeded crashes available; hunting without crash context",
+                    )
+        state.seeded_crashes = seeded_crashes
+
+        # Build a lookup so hunters for fuzzed files can pull their seeded
+        # crash context via file path
+        seeded_by_file: dict[str, dict] = {}
+        for c in seeded_crashes:
+            seeded_by_file[c.file] = {
+                "report": c.report,
+                "target_function": c.target_function,
+                "harness_source": c.harness_source,
+            }
+        state.seeded_by_file = seeded_by_file
+
+        # Build a per-file Semgrep hint lookup so hunters get their file's hits
+        semgrep_hints_by_file: dict[str, list[dict]] = {}
+        for sf in state.preprocess_result.semgrep_findings:
+            semgrep_hints_by_file.setdefault(sf.get("file", ""), []).append(sf)
+
+        # v0.3: Recall cross-run mechanisms and inject them into every hunter's
+        # hint list as a synthetic entry. The hunter's prompt wraps these in
+        # "static analysis hints — NOT ground truth" framing.
+        if self._mechanism_store is not None:
+            mechanism_hints = self._recalled_mechanism_hints(state.files)
+            if mechanism_hints:
+                for ft in state.files:
+                    key = ft.get("path", "")
+                    semgrep_hints_by_file.setdefault(key, []).extend(mechanism_hints)
+        state.semgrep_hints_by_file = semgrep_hints_by_file
+
+    async def _stage_entry_points(
+        self,
+        state: _StageState,
+        pipeline_status: PipelineStatus,
+    ) -> None:
+        """Stage 2.7: entry-point extraction (spec 004)."""
+        entry_points_by_file: dict = {}
+        if self._shard_entry_points and state.preprocess_result.callgraph is not None:
+            total_loc = sum(ft.get("loc", 0) for ft in state.files)
+            if total_loc >= self._min_project_loc:
+                try:
+                    from .entry_points import extract_entry_points_batch
+
+                    entry_points_by_file = extract_entry_points_batch(
+                        file_targets=state.files,
+                        callgraph=state.preprocess_result.callgraph,
+                        repo_path=state.repo_path,
+                        min_rank=self._min_shard_rank,
+                    )
+                except Exception:
+                    logger.warning("Entry-point extraction failed", exc_info=True)
+                    pipeline_status.record_degraded(
+                        "entry_points",
+                        "Entry-point sharding unavailable; hunting at file level",
+                    )
+        state.entry_points_by_file = entry_points_by_file
+
+    async def _stage_seed_corpus(
+        self,
+        state: _StageState,
+        pipeline_status: PipelineStatus,
+    ) -> None:
+        """Stage 2.8: seed corpus ingestion (spec 004)."""
+        seed_corpus_by_file: dict = {}
+        if self._seed_corpus_sources:
+            try:
+                from .seed_corpus import ingest_seed_corpus
+
+                sc_result = ingest_seed_corpus(
+                    state.repo_path,
+                    state.files,
+                    self._seed_corpus_sources,
+                )
+                for entry in sc_result.entries:
+                    seed_corpus_by_file.setdefault(entry.file_path, []).append(entry)
+                if sc_result.errors:
+                    for err in sc_result.errors:
+                        logger.warning("Seed corpus: %s", err)
+            except Exception:
+                logger.warning("Seed corpus ingestion failed", exc_info=True)
+                pipeline_status.record_degraded(
+                    "seed_corpus",
+                    "Seed corpus unavailable; hunting without CVE/crash history",
+                )
+        state.seed_corpus_by_file = seed_corpus_by_file
+
+    async def _stage_findings_pool(
+        self,
+        state: _StageState,
+        pipeline_status: PipelineStatus,
+    ) -> None:
+        """Stage 2.9: shared findings pool (spec 005)."""
+        findings_pool = None
+        historical_db = None
+        if self._injected_findings_pool is not None:
+            # Campaign mode: use shared pool (spec 012)
+            findings_pool = self._injected_findings_pool
+            historical_db = self._injected_historical_db
+        elif self._enable_findings_pool:
+            from .findings_pool import FindingsPool
+            from .historical_findings_db import HistoricalFindingsDB
+
+            checkpoint_path = Path(self.output_dir) / self._session_id / "findings_pool.jsonl"
+            findings_pool = FindingsPool(checkpoint_path=checkpoint_path)
+            try:
+                historical_db = HistoricalFindingsDB(path=self._historical_db_path)
+                prior = historical_db.query_prior(repo_url=self.repo_url)
+                if prior:
+                    logger.info("Loaded %d historical findings for dedup", len(prior))
+            except Exception:
+                logger.warning("Historical findings DB load failed", exc_info=True)
+                historical_db = None
+        state.findings_pool = findings_pool
+        state.historical_db = historical_db
+
+    async def _stage_tiered_hunt(
+        self,
+        state: _StageState,
+        pipeline_status: PipelineStatus,
+    ) -> None:
+        """Stage 3: tiered hunt via HunterPool."""
+        hunter_llm = self._get_native_client("hunter", self.hunter_llm)
+        all_findings: list[Finding] = []
+        files_hunted = 0
+        spent_per_tier: dict[str, float] = {"A": 0.0, "B": 0.0, "C": 0.0}
+        band_stats: dict | None = None
+
+        if self._no_per_file_hunt:
+            logger.info("Per-file hunt skipped (--no-per-file-hunt)")
+        elif hunter_llm is not None and state.files:
+            self._emit_stage("hunt", "started", detail=f"{len(state.files)} files")
+            logger.info("HunterPool starting on %d files", len(state.files))
+            pool = HunterPool(
+                HuntPoolConfig(
+                    files=state.files,
+                    repo_path=state.repo_path,
+                    sandbox_factory=self.sandbox_factory,
+                    sandbox_manager=self._sandbox_manager,
+                    hunter_factory=None,
+                    llm=hunter_llm,
+                    max_parallel=self.max_parallel,
+                    budget_usd=self.budget_usd,
+                    tier_budget=self.tier_budget,
+                    session_id_prefix=self._session_id,
+                    seeded_crashes_by_file=state.seeded_by_file,
+                    semgrep_hints_by_file=state.semgrep_hints_by_file,
+                    agent_mode=self._agent_mode,
+                    prompt_mode=self._prompt_mode,
+                    campaign_hint=self._campaign_hint,
+                    exploit_mode=self._exploit_mode,
+                    starting_band=self._starting_band,
+                    max_band=self._max_band,
+                    redundancy_override=self._redundancy_override,
+                    entry_points_by_file=state.entry_points_by_file,
+                    seed_corpus_by_file=state.seed_corpus_by_file,
+                    shard_entry_points=self._shard_entry_points,
+                    findings_pool=state.findings_pool,
+                )
+            )
+            try:
+                all_findings = await pool.arun()
+                logger.info("HunterPool completed with %d findings", len(all_findings))
+                pipeline_status.record_succeeded("hunter_pool")
+                self._emit_stage(
+                    "hunt",
+                    "completed",
+                    findings_so_far=len(all_findings),
+                    cost_usd=pool.total_spent,
+                    detail=f"{len(all_findings)} findings",
+                )
+            except Exception:
+                logger.warning("HunterPool run failed", exc_info=True)
+                pipeline_status.record_degraded(
+                    "hunter_pool",
+                    "Hunter phase produced no findings due to error",
+                )
+            spent_per_tier = pool.spent_per_tier
+            band_stats = {
+                "fast_runs": pool.runs_per_band.get("fast", 0),
+                "fast_cost": pool.spent_per_band.get("fast", 0.0),
+                "standard_runs": pool.runs_per_band.get("standard", 0),
+                "standard_cost": pool.spent_per_band.get("standard", 0.0),
+                "deep_runs": pool.runs_per_band.get("deep", 0),
+                "deep_cost": pool.spent_per_band.get("deep", 0.0),
+                "promotions": pool.promotion_counts,
+            }
+            files_hunted = sum(
+                [
+                    p.get("tier") in ("A", "B", "C")
+                    for p in state.files
+                    if p.get("tier") != "C" or self.tier_budget.tier_c_fraction > 0
+                ]
+            )
+        else:
+            logger.info("HunterPool skipped; no LLM available")
+
+        state.all_findings = all_findings
+        state.files_hunted = files_hunted
+        state.spent_per_tier = spent_per_tier
+        state.band_stats = band_stats
+
+    async def _stage_behavior_monitor(
+        self,
+        state: _StageState,
+        pipeline_status: PipelineStatus,
+    ) -> None:
+        """Stage 3.5: behavioral monitoring of findings text (spec 013)."""
+        if self._enable_behavior_monitor and state.all_findings:
+            try:
+                from .behavior_monitor import BehaviorMonitor
+
+                bmon = BehaviorMonitor(session_id=self._session_id)
+                for f in state.all_findings:
+                    for field in ("description", "poc", "exploit", "evidence"):
+                        text = f.get(field, "")
+                        if text:
+                            bmon.scan_text(str(text), finding_id=f.get("id", ""))
+                alerts = bmon.get_alerts()
+                if alerts:
+                    logger.warning(
+                        "Behavior monitor: %d alerts — %s",
+                        len(alerts),
+                        bmon.summary(),
+                    )
+            except Exception:
+                logger.debug("Behavior monitor failed", exc_info=True)
+
+    async def _stage_historical_db(
+        self,
+        state: _StageState,
+        pipeline_status: PipelineStatus,
+    ) -> None:
+        """Stage 3.5: persist findings to historical DB (spec 005).
+
+        Skip when running under campaign — campaign handles bulk ingestion.
+        """
+        if (
+            state.historical_db is not None
+            and state.all_findings
+            and self._injected_findings_pool is None
+        ):
+            try:
+                count = state.historical_db.ingest_campaign(
+                    state.all_findings,
+                    repo_url=self.repo_url,
+                    session_id=self._session_id,
+                )
+                logger.info("Persisted %d findings to historical DB", count)
+            except Exception:
+                logger.warning("Historical DB ingest failed", exc_info=True)
+            finally:
+                state.historical_db.close()
+
+    async def _stage_subsystem_hunt(
+        self,
+        state: _StageState,
+        pipeline_status: PipelineStatus,
+    ) -> None:
+        """Stage 3.7: subsystem hunt (spec 006)."""
+        subsystems_hunted = 0
+        subsystem_spent = 0.0
+        hunter_llm = self._get_native_client("hunter", self.hunter_llm)
+        if self._enable_subsystem_hunt and hunter_llm is not None:
+            from .subsystem import (
+                SubsystemHuntConfig,
+                identify_subsystems_auto,
+                subsystem_from_path,
+            )
+            from .subsystem import (
+                SubsystemHuntRunner as SubsysRunner,
+            )
+
+            subsystem_targets: list = []
+            if self._subsystem_paths:
+                for sp in self._subsystem_paths:
+                    try:
+                        st = subsystem_from_path(
+                            sp,
+                            state.files,
+                            callgraph=state.preprocess_result.callgraph,
+                            entry_points_by_file=state.entry_points_by_file,
+                        )
+                        subsystem_targets.append(st)
+                    except ValueError:
+                        logger.warning("No files match subsystem path: %s", sp)
+            else:
+                subsystem_targets = identify_subsystems_auto(
+                    state.files,
+                    callgraph=state.preprocess_result.callgraph,
+                    entry_points_by_file=state.entry_points_by_file,
+                )
+
+            if subsystem_targets:
+                logger.info(
+                    "Subsystem hunt: %d targets identified",
+                    len(subsystem_targets),
+                )
+                for st in subsystem_targets:
+                    logger.info(
+                        "  %s (%d files, priority=%.2f)",
+                        st.name,
+                        len(st.files),
+                        st.priority,
+                    )
+                subsys_runner = SubsysRunner(
+                    SubsystemHuntConfig(
+                        subsystems=subsystem_targets,
+                        repo_path=state.repo_path,
+                        sandbox_factory=self.sandbox_factory,
+                        llm=hunter_llm,
+                        max_parallel=self._subsystem_max_parallel,
+                        budget_per_subsystem_usd=self._subsystem_budget_usd or 100.0,
+                        findings_pool=state.findings_pool,
+                        session_id_prefix=f"{self._session_id}-subsys",
+                        sandbox_manager=self._sandbox_manager,
+                        campaign_hint=self._campaign_hint,
+                        callgraph=state.preprocess_result.callgraph,
+                    )
+                )
+                try:
+                    subsys_findings = await subsys_runner.arun()
+                    state.all_findings.extend(subsys_findings)
+                    subsystems_hunted = len(subsystem_targets)
+                    subsystem_spent = subsys_runner.total_spent
+                    logger.info(
+                        "Subsystem hunt completed: %d findings, $%.4f spent",
+                        len(subsys_findings),
+                        subsystem_spent,
+                    )
+                except Exception:
+                    logger.warning("Subsystem hunt failed", exc_info=True)
+                    pipeline_status.record_degraded(
+                        "subsystem_hunt",
+                        "Subsystem hunt failed; only per-file findings available",
+                    )
+        state.subsystems_hunted = subsystems_hunted
+        state.subsystem_spent = subsystem_spent
+
+    async def _stage_verify(
+        self,
+        state: _StageState,
+        pipeline_status: PipelineStatus,
+    ) -> None:
+        """Stage 4: verify (unless --no-verify)."""
+        verified: list[Finding] = []
+        rejected: list[Finding] = []
+        self._emit_stage(
+            "verify",
+            "started",
+            findings_so_far=len(state.all_findings),
+            detail=f"{len(state.all_findings)} findings to verify",
+        )
+        if not self.no_verify:
+            verifier_llm = self._get_native_client("verifier", self.verifier_llm)
+            if verifier_llm is not None:
+                if self.validator_mode == "v2":
+                    verified, rejected = await self._verify_v2(
+                        verifier_llm,
+                        state.all_findings,
+                        state.repo_path,
+                    )
+                else:
+                    verified = await self._verify_v1(
+                        verifier_llm,
+                        state.all_findings,
+                        state.repo_path,
+                    )
+            else:
+                for f in state.all_findings:
+                    f["verified"] = True
+                verified = state.all_findings
+                pipeline_status.record_degraded(
+                    "verifier",
+                    "Findings auto-verified without independent review",
+                )
+        else:
+            verified = state.all_findings
+            pipeline_status.record(
+                "verifier",
+                StageOutcome.SKIPPED,
+                fallback_description="Verification skipped (--no-verify)",
+            )
+
+        self._emit_stage(
+            "verify",
+            "completed",
+            findings_so_far=len(state.all_findings),
+            detail=f"{len(verified)} verified, {len(rejected)} rejected",
+        )
+        if rejected:
+            self._write_rejected_findings(rejected)
+        state.verified = verified
+        state.rejected = rejected
+
+    async def _stage_mechanism_extract(
+        self,
+        state: _StageState,
+        pipeline_status: PipelineStatus,
+    ) -> None:
+        """Stage 4.5: extract mechanisms from verified findings (v0.3)."""
+        if self._mechanism_store is not None and state.verified:
+            verifier_llm_for_extract = self._get_native_client("verifier", self.verifier_llm)
+            if verifier_llm_for_extract is not None:
+                try:
+                    extractor = MechanismExtractor(verifier_llm_for_extract)
+                    for finding in state.verified:
+                        mech = await extractor.aextract(finding, source_repo=self.repo_url)
+                        if mech is not None:
+                            self._mechanism_store.append(mech)
+                except Exception:
+                    logger.warning("Mechanism extraction failed", exc_info=True)
+                    pipeline_status.record_degraded(
+                        "mechanism_extraction",
+                        "Mechanism extraction failed; cross-run memory not updated",
+                    )
+
+    async def _stage_variant_loop(
+        self,
+        state: _StageState,
+        pipeline_status: PipelineStatus,
+    ) -> None:
+        """Stage 4.75: variant hunter loop — compound finding density (v0.3)."""
+        if self.enable_variant_loop and state.verified:
+            variant_llm = self._get_native_client("verifier", self.verifier_llm)
+            if variant_llm is not None:
+                try:
+                    loop = VariantLoop(
+                        pattern_gen=VariantPatternGenerator(variant_llm),
+                    )
+                    # Track locations we've already reported to avoid dupes
+                    already_seen = {
+                        (f.get("file", ""), f.get("line_number", 0)) for f in state.all_findings
+                    }
+                    # v0.4: drive the multi-iteration fixpoint loop rather
+                    # than the single-pass run_once. Each iteration feeds
+                    # its new seeds back in as starting points for the
+                    # next pattern generation pass.
+                    variant_result = await loop.arun(
+                        verified_findings=state.verified,
+                        repo_path=state.repo_path,
+                        already_seen_locations=already_seen,
+                        reverify_callback=None,
+                    )
+                    for seed in variant_result.seeds:
+                        parent = seed.original_finding
+                        variant_finding = Finding(
+                            id=f"variant-{uuid.uuid4().hex[:8]}",
+                            file=seed.match.file,
+                            line_number=seed.match.line_number,
+                            finding_type=parent.finding_type or "variant",
+                            cwe=parent.cwe,
+                            severity=parent.effective_severity or "medium",
+                            confidence="low",
+                            description=(
+                                f"Variant of {parent.id}: {seed.match.pattern.semantic_description}"
+                            ),
+                            code_snippet=seed.match.matched_text,
+                            evidence_level="suspicion",
+                            discovered_by="variant_loop",
+                            related_finding_id=parent.id or None,
+                            related_cve=parent.related_cve,
+                            hunter_session_id=self._session_id,
+                        )
+                        state.all_findings.append(variant_finding)
+                    logger.info(
+                        "Variant loop: %d patterns, %d matches surfaced",
+                        variant_result.patterns_generated,
+                        variant_result.matches_found,
+                    )
+                except Exception:
+                    logger.warning("Variant loop failed", exc_info=True)
+                    pipeline_status.record_degraded(
+                        "variant_loop",
+                        "Variant loop failed; no sibling bugs surfaced",
+                    )
+
+    async def _stage_stability_verify(
+        self,
+        state: _StageState,
+        pipeline_status: PipelineStatus,
+    ) -> None:
+        """Stage 4.9: PoC stability verification (spec 010).
+
+        Rerun PoCs in fresh containers to measure reliability.
+        """
+        if (
+            self.enable_stability_verification
+            and state.verified
+            and self._sandbox_manager is not None
+        ):
+            from .stability import StabilityVerifier, apply_stability_result
+
+            stability_llm = self._get_native_client("verifier", self.verifier_llm)
+            sv = StabilityVerifier(
+                sandbox_manager=self._sandbox_manager,
+                hardening_llm=stability_llm,
+            )
+            stability_eligible = [
+                f
+                for f in state.verified
+                if f.get("poc")
+                and f.get("crash_evidence")
+                and evidence_at_or_above(
+                    f.get("evidence_level", "suspicion"),
+                    "crash_reproduced",
+                )
+            ]
+            stable_verified: list[Finding] = []
+            for finding in stability_eligible:
+                try:
+                    sr = await sv.averify(finding)
+                    apply_stability_result(finding, sr)
+                    if sr.classification != "unreliable":
+                        stable_verified.append(finding)
+                    else:
+                        logger.info(
+                            "Finding %s demoted to unreliable (%.0f%% success rate)",
+                            finding.get("id"),
+                            sr.success_rate * 100,
+                        )
+                except Exception:
+                    logger.warning(
+                        "Stability check failed for %s",
+                        finding.get("id"),
+                        exc_info=True,
+                    )
+                    stable_verified.append(finding)
+            non_poc = [f for f in state.verified if f not in stability_eligible]
+            state.verified = stable_verified + non_poc
+
+    async def _stage_exploit(
+        self,
+        state: _StageState,
+        pipeline_status: PipelineStatus,
+    ) -> None:
+        """Stage 5: exploit-triage (unless --no-exploit) — gated on evidence_level."""
+        self._emit_stage("exploit", "started", findings_so_far=len(state.all_findings))
+        exploited: list[Finding] = []
+        if not self.no_exploit:
+            exploiter_llm = self._get_native_client("sourcehunt_exploit", self.exploiter_llm)
+            if exploiter_llm is not None:
+                eligible = filter_by_evidence(state.verified, "crash_reproduced")
+                has_sandbox = self._sandbox_manager is not None or self.sandbox_factory is not None
+                if eligible and has_sandbox:
+                    agentic = AgenticExploiter(
+                        llm=exploiter_llm,
+                        sandbox_manager=self._sandbox_manager,
+                        sandbox_factory=self.sandbox_factory,
+                        findings_pool=state.findings_pool,
+                        budget_band=self._exploit_budget_band,
+                        output_dir=str(self._ensure_output_dir_layout()),
+                        project_name=(self.repo_url.split("/")[-1] if self.repo_url else "target"),
+                    )
+                    for finding in eligible:
+                        try:
+                            exploit_result = await agentic.aattempt(finding)
+                            apply_exploiter_result(finding, exploit_result)
+                            if exploit_result.success:
+                                exploited.append(finding)
+                            if exploit_result.partial and state.findings_pool is not None:
+                                finding["primitive_type"] = (
+                                    exploit_result.primitive_type
+                                    or finding.get("primitive_type", "")
+                                )
+                                await state.findings_pool.add(
+                                    finding,
+                                    session_id=self._session_id,
+                                )
+                        except Exception:
+                            logger.warning(
+                                "Agentic exploiter failed for %s",
+                                finding.get("id"),
+                                exc_info=True,
+                            )
+                elif eligible:
+                    e = Exploiter(exploiter_llm)
+                    for finding in eligible:
+                        try:
+                            exploit_result = await e.aattempt(finding)
+                            apply_exploiter_result(finding, exploit_result)
+                            if exploit_result.success:
+                                exploited.append(finding)
+                        except Exception:
+                            logger.warning("Exploiter failed", exc_info=True)
+        state.exploited = exploited
+
+    async def _stage_elaborate(
+        self,
+        state: _StageState,
+        pipeline_status: PipelineStatus,
+    ) -> None:
+        """Stage 5.25: exploit elaboration (autonomous, opt-in)."""
+        elaborated: list[Finding] = []
+        if self.enable_elaboration and state.exploited:
+            from .elaboration import (
+                ElaborationAgent,
+                prioritize_for_elaboration,
+            )
+
+            elaboration_llm = self._get_native_client(
+                "sourcehunt_exploit",
+                self.exploiter_llm,
+            )
+            if elaboration_llm is not None:
+                targets = prioritize_for_elaboration(
+                    state.exploited,
+                    self._elaboration_cap,
+                )
+                if targets:
+                    elab_agent = ElaborationAgent(
+                        llm=elaboration_llm,
+                        sandbox_manager=self._sandbox_manager,
+                        sandbox_factory=self.sandbox_factory,
+                        findings_pool=state.findings_pool,
+                        budget_band=self._exploit_budget_band,
+                        output_dir=str(self._ensure_output_dir_layout()),
+                        project_name=(self.repo_url.split("/")[-1] if self.repo_url else "target"),
+                    )
+                    for finding in targets:
+                        try:
+                            elab_result = await elab_agent.aattempt(finding)
+                            if elab_result.elaborated:
+                                elab_finding = _apply_elaboration(
+                                    finding,
+                                    elab_result,
+                                )
+                                state.all_findings.append(elab_finding)
+                                elaborated.append(elab_finding)
+                        except Exception:
+                            logger.warning(
+                                "Elaboration failed for %s",
+                                finding.get("id"),
+                                exc_info=True,
+                            )
+        state.elaborated = elaborated
+
+    async def _stage_autopatch(
+        self,
+        state: _StageState,
+        pipeline_status: PipelineStatus,
+    ) -> None:
+        """Stage 5.5: auto-patch mode (opt-in, v0.3).
+
+        The verify-by-recompile gate is MANDATORY — a patch is only marked
+        ``validated`` if we actually applied it, rebuilt, and re-ran the PoC.
+        """
+        patched: list[Finding] = []
+        if self.enable_auto_patch and state.verified:
+            patcher_llm = self._get_native_client("sourcehunt_exploit", self.exploiter_llm)
+            if patcher_llm is not None:
+                try:
+                    patcher = AutoPatcher(patcher_llm)
+                    for finding in state.verified:
+                        if not patcher.is_eligible(finding):
+                            continue
+                        patch_sandbox = None
+                        rerun_cb = None
+                        if self.sandbox_factory is not None:
+                            try:
+                                patch_sandbox = self.sandbox_factory()
+                                rerun_cb = build_rerun_poc_callback(patch_sandbox)
+                            except Exception:
+                                logger.debug(
+                                    "Auto-patch sandbox spawn failed",
+                                    exc_info=True,
+                                )
+                                patch_sandbox = None
+                                rerun_cb = None
+                        try:
+                            attempt = await patcher.aattempt(
+                                finding,
+                                file_content=self._load_file_content(state.repo_path, finding),
+                                sandbox=patch_sandbox,
+                                rerun_poc=rerun_cb,
+                            )
+                        finally:
+                            if patch_sandbox is not None:
+                                try:
+                                    patch_sandbox.stop()
+                                except Exception:
+                                    logger.debug("Silent exception in runner", exc_info=True)
+                                    pass
+                        apply_patch_attempt(finding, attempt)
+                        if attempt.validated:
+                            patched.append(finding)
+                            if self.auto_pr:
+                                self._open_draft_pr(finding, attempt)
+                except Exception:
+                    logger.warning("Auto-patcher failed", exc_info=True)
+        state.patched = patched
+
+    async def _stage_knowledge_graph(
+        self,
+        state: _StageState,
+        pipeline_status: PipelineStatus,
+    ) -> None:
+        """Stage 5.75–5.88: KG, disclosures, artifact store, commitment log.
+
+        Best-effort — never blocks the run.
+        """
+        # 5.75. v0.3: Populate the cross-run knowledge graph with source
+        #       findings.
+        try:
+            if self.enable_knowledge_graph and state.all_findings:
+                self._populate_knowledge_graph_source(state.repo_path, state.all_findings)
+        except Exception:
+            logger.warning("Knowledge graph population failed", exc_info=True)
+
+        # 5.85. v0.4: Coordinated-disclosure templates (opt-in).
+        if self.export_disclosures and state.verified:
+            try:
+                self._export_disclosure_bundle(state.verified)
+            except Exception:
+                logger.warning("Disclosure export failed", exc_info=True)
+
+            # 5.86. v0.5: Queue findings into disclosure DB (spec 011).
+            try:
+                from .disclosure_db import DisclosureDB
+
+                disclosure_db = DisclosureDB()
+                try:
+                    disclosure_db.queue_findings(
+                        state.verified,
+                        self.repo_url,
+                        self._session_id,
+                    )
+                finally:
+                    disclosure_db.close()
+            except Exception:
+                logger.warning("Disclosure DB queue failed", exc_info=True)
+
+        # 5.87. v0.6: Store exploits in encrypted artifact store (spec 013).
+        if self._enable_artifact_store and state.exploited:
+            try:
+                from .artifact_store import ArtifactStore
+
+                artifact_store = ArtifactStore()
+                for f in state.exploited:
+                    exploit_data = f.get("exploit") or f.get("poc")
+                    if exploit_data:
+                        if isinstance(exploit_data, str):
+                            exploit_data = exploit_data.encode()
+                        artifact_store.store_exploit(
+                            f.get("id", ""),
+                            exploit_data,
+                            operator="pipeline",
+                        )
+            except Exception:
+                logger.warning("Artifact store failed", exc_info=True)
+
+        # 5.88. v0.6: Auto-commit findings with root_cause_explained (spec 014).
+        try:
+            from .commitment import CommitmentLog
+
+            committable = filter_by_evidence(state.verified, "root_cause_explained")
+            if committable:
+                commitment_log = CommitmentLog()
+                for f in committable:
+                    commitment_log.commit_finding(f, project=self.repo_url)
+                logger.info(
+                    "Committed %d findings to commitment log",
+                    len(committable),
+                )
+        except Exception:
+            logger.warning("Auto-commitment failed", exc_info=True)
 
     @property
     def session_id(self) -> str:
@@ -1333,9 +1580,8 @@ class SourceHuntRunner:
         kg = self._knowledge_graph
         if kg is None:
             try:
-                from clearwing.data.knowledge import KnowledgeGraph
-
                 from clearwing.core.config import clearwing_home
+                from clearwing.data.knowledge import KnowledgeGraph
 
                 kg = KnowledgeGraph(
                     persist_path=str(clearwing_home() / "knowledge_graph.json"),
@@ -1348,6 +1594,7 @@ class SourceHuntRunner:
         try:
             kg.add_repo(self.repo_url, local_path=repo_path)
         except Exception:
+            logger.debug("Silent exception in runner", exc_info=True)
             pass
 
         # First pass: add all findings so VARIANT_OF edges can resolve parents
@@ -1424,13 +1671,17 @@ class SourceHuntRunner:
                 if self.enable_patch_oracle and result.is_real:
                     result = await self._run_patch_oracle_v1(v, finding, repo_path, result)
                 apply_verifier_result(
-                    finding, result, session_id=self._session_id + "-v",
+                    finding,
+                    result,
+                    session_id=self._session_id + "-v",
                 )
                 if finding.get("verified"):
                     verified.append(finding)
             except Exception:
                 logger.warning(
-                    "Verifier failed for %s", finding.get("id"), exc_info=True,
+                    "Verifier failed for %s",
+                    finding.get("id"),
+                    exc_info=True,
                 )
         return verified
 
@@ -1458,10 +1709,14 @@ class SourceHuntRunner:
                 )
                 if self.enable_patch_oracle and verdict.advance:
                     verdict = await self._run_patch_oracle_v2(
-                        val, finding, repo_path, verdict,
+                        val,
+                        finding,
+                        repo_path,
+                        verdict,
                     )
                 apply_validator_verdict(
-                    finding, verdict,
+                    finding,
+                    verdict,
                     session_id=self._session_id + "-v",
                     discoverer_severity=discoverer_sev,
                 )
@@ -1472,7 +1727,9 @@ class SourceHuntRunner:
                 self._record_calibration(finding, verdict, discoverer_sev)
             except Exception:
                 logger.warning(
-                    "Validator failed for %s", finding.get("id"), exc_info=True,
+                    "Validator failed for %s",
+                    finding.get("id"),
+                    exc_info=True,
                 )
         return verified, rejected
 
@@ -1498,6 +1755,7 @@ class SourceHuntRunner:
                     try:
                         oracle_sandbox.stop()
                     except Exception:
+                        logger.debug("Silent exception in runner", exc_info=True)
                         pass
             result.patch_oracle_attempted = True
             result.patch_oracle_passed = passed
@@ -1529,6 +1787,7 @@ class SourceHuntRunner:
                     try:
                         oracle_sandbox.stop()
                     except Exception:
+                        logger.debug("Silent exception in runner", exc_info=True)
                         pass
             verdict.patch_oracle_attempted = True
             verdict.patch_oracle_passed = passed
@@ -1542,22 +1801,27 @@ class SourceHuntRunner:
         if self._calibration_store is None:
             return
         try:
-            from .calibration import CalibrationRecord
             import datetime
-            self._calibration_store.append(CalibrationRecord(
-                finding_id=finding.get("id", ""),
-                session_id=self._session_id,
-                cwe=finding.get("cwe", ""),
-                discoverer_severity=discoverer_sev or "unknown",
-                validator_severity=verdict.severity_validated,
-                axes={k: v.passed for k, v in verdict.axes.items()},
-                timestamp=datetime.datetime.now(datetime.timezone.utc).isoformat(),
-            ))
+
+            from .calibration import CalibrationRecord
+
+            self._calibration_store.append(
+                CalibrationRecord(
+                    finding_id=finding.get("id", ""),
+                    session_id=self._session_id,
+                    cwe=finding.get("cwe", ""),
+                    discoverer_severity=discoverer_sev or "unknown",
+                    validator_severity=verdict.severity_validated,
+                    axes={k: v.passed for k, v in verdict.axes.items()},
+                    timestamp=datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                )
+            )
         except Exception:
             logger.debug("Calibration record failed", exc_info=True)
 
     def _write_rejected_findings(self, rejected: list[Finding]) -> None:
         import json as _json
+
         session_dir = self._ensure_output_dir_layout()
         path = session_dir / "rejected_findings.jsonl"
         try:
@@ -1692,7 +1956,8 @@ class SourceHuntRunner:
         else:
             if gvisor_rt:
                 self.sandbox_factory = lambda **kw: manager.spawn(
-                    runtime=kw.pop("runtime", gvisor_rt), **kw,
+                    runtime=kw.pop("runtime", gvisor_rt),
+                    **kw,
                 )
             else:
                 self.sandbox_factory = manager.spawn
@@ -1816,6 +2081,19 @@ class SourceHuntRunner:
             logger.debug("No API key / endpoint in environment; skipping LLM for task=%s", task)
             return None
 
+        # --model override (single model string, routed through the
+        # same endpoint resolution as --base-url)
+        if self.model_override:
+            return self._build_llm_from_model_string(self.model_override)
+
+        # Last resort — build a default manager from the env triple
+        try:
+            endpoint = resolve_llm_endpoint()
+            return ProviderManager.for_endpoint(endpoint).get_llm(task)
+        except Exception:
+            logger.debug("Default endpoint resolution failed", exc_info=True)
+            return None
+
     def _get_native_client(
         self,
         task: str,
@@ -1851,19 +2129,6 @@ class SourceHuntRunner:
             return ProviderManager.for_endpoint(endpoint).get_native_client(task)
         except Exception:
             logger.debug("Default endpoint native resolution failed", exc_info=True)
-            return None
-
-        # --model override (single model string, routed through the
-        # same endpoint resolution as --base-url)
-        if self.model_override:
-            return self._build_llm_from_model_string(self.model_override)
-
-        # Last resort — build a default manager from the env triple
-        try:
-            endpoint = resolve_llm_endpoint()
-            return ProviderManager.for_endpoint(endpoint).get_llm(task)
-        except Exception:
-            logger.debug("Default endpoint resolution failed", exc_info=True)
             return None
 
     def _build_llm_from_model_string(self, model: str) -> Any:

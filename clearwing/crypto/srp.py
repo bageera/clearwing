@@ -229,7 +229,11 @@ def parse_secret_key(secret_key: str) -> bytes:
     cleaned = secret_key.replace("-", "")
     if cleaned.startswith("A3"):
         cleaned = cleaned[2:]
-    return bytes.fromhex(cleaned) if all(c in "0123456789abcdefABCDEF" for c in cleaned) else cleaned.encode()
+    return (
+        bytes.fromhex(cleaned)
+        if all(c in "0123456789abcdefABCDEF" for c in cleaned)
+        else cleaned.encode()
+    )
 
 
 def derive_2skd(

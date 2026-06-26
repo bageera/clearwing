@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import tempfile
 import time
 from pathlib import Path
@@ -81,8 +80,10 @@ class TestCheckpoint:
                 completed_projects=["repo-a"],
                 per_project_state={
                     "repo-a": ProjectState(
-                        repo="repo-a", status="completed",
-                        cost_usd=100.0, findings_count=5,
+                        repo="repo-a",
+                        status="completed",
+                        cost_usd=100.0,
+                        findings_count=5,
                     ),
                     "repo-b": ProjectState(repo="repo-b", status="queued"),
                 },
@@ -270,10 +271,12 @@ class TestCampaignRunnerIntegration:
 class TestCLIRegistration:
     def test_campaign_in_all_commands(self):
         from clearwing.ui.commands import ALL_COMMANDS, campaign
+
         assert campaign in ALL_COMMANDS
 
     def test_run_subcommand(self):
         import argparse
+
         from clearwing.ui.commands import campaign
 
         parser = argparse.ArgumentParser()
@@ -285,6 +288,7 @@ class TestCLIRegistration:
 
     def test_status_subcommand(self):
         import argparse
+
         from clearwing.ui.commands import campaign
 
         parser = argparse.ArgumentParser()
@@ -295,6 +299,7 @@ class TestCLIRegistration:
 
     def test_resume_subcommand(self):
         import argparse
+
         from clearwing.ui.commands import campaign
 
         parser = argparse.ArgumentParser()
@@ -305,6 +310,7 @@ class TestCLIRegistration:
 
     def test_dry_run_flag(self):
         import argparse
+
         from clearwing.ui.commands import campaign
 
         parser = argparse.ArgumentParser()

@@ -238,8 +238,10 @@ class ClearwingApp(App):
             return data
         try:
             from dataclasses import asdict
+
             return asdict(data)
         except Exception:
+            logger.debug("Silent exception in app", exc_info=True)
             return {}
 
     def _handle_campaign_progress(self, data):

@@ -60,7 +60,14 @@ def _reset_state():
 
 class TestInterceptRule:
     def test_fields(self):
-        rule = InterceptRule(id=1, url_pattern="*/api/*", methods=["POST"], log_request_body=True, log_response_body=True, enabled=True)
+        rule = InterceptRule(
+            id=1,
+            url_pattern="*/api/*",
+            methods=["POST"],
+            log_request_body=True,
+            log_response_body=True,
+            enabled=True,
+        )
         assert rule.id == 1
         assert rule.url_pattern == "*/api/*"
         assert rule.methods == ["POST"]
@@ -83,26 +90,32 @@ class TestInterceptRule:
 
 
 class TestIsTextContent:
-    @pytest.mark.parametrize("ct", [
-        "text/html",
-        "text/plain",
-        "text/css",
-        "application/json",
-        "application/json; charset=utf-8",
-        "application/xml",
-        "application/javascript",
-        "application/x-www-form-urlencoded",
-    ])
+    @pytest.mark.parametrize(
+        "ct",
+        [
+            "text/html",
+            "text/plain",
+            "text/css",
+            "application/json",
+            "application/json; charset=utf-8",
+            "application/xml",
+            "application/javascript",
+            "application/x-www-form-urlencoded",
+        ],
+    )
     def test_text_types(self, ct):
         assert _is_text_content(ct) is True
 
-    @pytest.mark.parametrize("ct", [
-        "image/png",
-        "image/jpeg",
-        "application/octet-stream",
-        "application/pdf",
-        "audio/mpeg",
-    ])
+    @pytest.mark.parametrize(
+        "ct",
+        [
+            "image/png",
+            "image/jpeg",
+            "application/octet-stream",
+            "application/pdf",
+            "audio/mpeg",
+        ],
+    )
     def test_binary_types(self, ct):
         assert _is_text_content(ct) is False
 
@@ -197,25 +210,40 @@ class TestMitmGetDecryptedTraffic:
         assert result["count"] == 0
 
     def test_filters_to_mitm_ids(self):
-        entry = _proxy_history.add(method="POST", url="https://example.com/auth", status_code=200, duration_ms=100)
+        entry = _proxy_history.add(
+            method="POST", url="https://example.com/auth", status_code=200, duration_ms=100
+        )
         _mitm_request_ids.append(entry.id)
-        _proxy_history.add(method="GET", url="https://example.com/other", status_code=200, duration_ms=50)
+        _proxy_history.add(
+            method="GET", url="https://example.com/other", status_code=200, duration_ms=50
+        )
 
         result = mitm_get_decrypted_traffic.invoke({})
         assert result["count"] == 1
         assert result["entries"][0]["url"] == "https://example.com/auth"
 
     def test_url_contains_filter(self):
-        e1 = _proxy_history.add(method="POST", url="https://example.com/auth", status_code=200, duration_ms=100)
-        e2 = _proxy_history.add(method="GET", url="https://example.com/static/style.css", status_code=200, duration_ms=10)
+        e1 = _proxy_history.add(
+            method="POST", url="https://example.com/auth", status_code=200, duration_ms=100
+        )
+        e2 = _proxy_history.add(
+            method="GET",
+            url="https://example.com/static/style.css",
+            status_code=200,
+            duration_ms=10,
+        )
         _mitm_request_ids.extend([e1.id, e2.id])
 
         result = mitm_get_decrypted_traffic.invoke({"url_contains": "auth"})
         assert result["count"] == 1
 
     def test_method_filter(self):
-        e1 = _proxy_history.add(method="POST", url="https://example.com/auth", status_code=200, duration_ms=100)
-        e2 = _proxy_history.add(method="GET", url="https://example.com/auth", status_code=200, duration_ms=50)
+        e1 = _proxy_history.add(
+            method="POST", url="https://example.com/auth", status_code=200, duration_ms=100
+        )
+        e2 = _proxy_history.add(
+            method="GET", url="https://example.com/auth", status_code=200, duration_ms=50
+        )
         _mitm_request_ids.extend([e1.id, e2.id])
 
         result = mitm_get_decrypted_traffic.invoke({"method": "POST"})
@@ -246,11 +274,13 @@ class TestMitmStopErrors:
 class TestMitmInjectResponse:
     def test_inject_sets_rule(self):
         with patch("clearwing.agent.tools.recon.mitm_proxy.interrupt"):
-            result = mitm_inject_response.invoke({
-                "url_pattern": "*/api/auth*",
-                "status": 401,
-                "body": '{"error": "denied"}',
-            })
+            result = mitm_inject_response.invoke(
+                {
+                    "url_pattern": "*/api/auth*",
+                    "status": 401,
+                    "body": '{"error": "denied"}',
+                }
+            )
         assert result["status"] == "inject_rule_set"
         assert "*/api/auth*" in _inject_rules
         assert _inject_rules["*/api/auth*"]["status"] == 401

@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import ast
+import logging
 from dataclasses import dataclass, field
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -245,6 +248,7 @@ class TaintTracker:
         try:
             return ast.unparse(node)
         except Exception:
+            logger.warning("Silent exception in taint_tracker", exc_info=True)
             return None
 
     def get_summary(self) -> str:

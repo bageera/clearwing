@@ -99,7 +99,7 @@ class RevengReconstructor:
         context = self._build_context(static_info)
 
         for i in range(0, len(prioritized), self.BATCH_SIZE):
-            batch = prioritized[i:i + self.BATCH_SIZE]
+            batch = prioritized[i : i + self.BATCH_SIZE]
             reconstructed = await self._reconstruct_batch(batch, context)
             result.sources.extend(reconstructed)
 
@@ -126,7 +126,8 @@ class RevengReconstructor:
 
         try:
             response = await self._llm.aask(
-                user_msg, system=RECONSTRUCTION_SYSTEM_PROMPT,
+                user_msg,
+                system=RECONSTRUCTION_SYSTEM_PROMPT,
             )
             text = response.first_text() if hasattr(response, "first_text") else str(response)
             return self._parse_response(text, batch)
@@ -152,13 +153,15 @@ class RevengReconstructor:
 
         results = []
         for item in items:
-            results.append(ReconstructedSource(
-                original_name=item.get("original_name", ""),
-                reconstructed_name=item.get("reconstructed_name", ""),
-                source_code=item.get("source_code", ""),
-                confidence=float(item.get("confidence", 0.0)),
-                notes=item.get("notes", ""),
-            ))
+            results.append(
+                ReconstructedSource(
+                    original_name=item.get("original_name", ""),
+                    reconstructed_name=item.get("reconstructed_name", ""),
+                    source_code=item.get("source_code", ""),
+                    confidence=float(item.get("confidence", 0.0)),
+                    notes=item.get("notes", ""),
+                )
+            )
         return results
 
     def _fallback_reconstruction(
@@ -186,12 +189,9 @@ class RevengReconstructor:
         if static_info.imports:
             parts.append(f"Imported functions: {', '.join(static_info.imports[:50])}")
         if static_info.strings_sample:
-            interesting = [
-                s for s in static_info.strings_sample.splitlines()[:100]
-                if len(s) > 4
-            ]
+            interesting = [s for s in static_info.strings_sample.splitlines()[:100] if len(s) > 4]
             if interesting:
-                parts.append(f"Notable strings:\n" + "\n".join(interesting[:30]))
+                parts.append("Notable strings:\n" + "\n".join(interesting[:30]))
         return "\n".join(parts) if parts else "(no static analysis context)"
 
     def _assemble_source(self, sources: list[ReconstructedSource]) -> str:

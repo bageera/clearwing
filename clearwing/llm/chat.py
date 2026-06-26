@@ -235,7 +235,9 @@ class ChatModel:
             },
         )
 
-    async def ainvoke(self, messages: Any, on_text_delta: Callable[[str], None] | None = None) -> AIMessage:
+    async def ainvoke(
+        self, messages: Any, on_text_delta: Callable[[str], None] | None = None
+    ) -> AIMessage:
         system, chat_messages = _coerce_chat_messages(messages)
         if on_text_delta is not None:
             response = await self._client.achat_stream(

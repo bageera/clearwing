@@ -135,7 +135,11 @@ def srp_handshake(
     try:
         server_params = json.loads(body)
     except json.JSONDecodeError:
-        return {**result, "success": False, "error": f"Non-JSON response (status {status}): {body[:500]}"}
+        return {
+            **result,
+            "success": False,
+            "error": f"Non-JSON response (status {status}): {body[:500]}",
+        }
 
     salt_hex = server_params.get("salt", "")
     B_hex = server_params.get("B", "")
@@ -164,8 +168,17 @@ def srp_handshake(
     if not password:
         verify_url = f"{target.rstrip('/')}{auth_verify_path}"
         status2, _, body2, ms2 = _http_post(verify_url, {"A": format(A, "x"), "M1": "0" * 64})
-        result["verify_response"] = {"status": status2, "body": body2[:5000], "duration_ms": round(ms2, 2)}
-        return {**result, "success": False, "error": "Recon-only mode (no password)", "recon_only": True}
+        result["verify_response"] = {
+            "status": status2,
+            "body": body2[:5000],
+            "duration_ms": round(ms2, 2),
+        }
+        return {
+            **result,
+            "success": False,
+            "error": "Recon-only mode (no password)",
+            "recon_only": True,
+        }
 
     if secret_key:
         sk_bytes = parse_secret_key(secret_key)
@@ -183,16 +196,22 @@ def srp_handshake(
     K = client.compute_K(S)
     M1 = client.compute_M1(username, salt, A, B, K)
 
-    result.update({
-        "u_hex": format(u, "x"),
-        "S_hex": format(S, "x"),
-        "K_hex": K.hex(),
-        "M1_hex": M1.hex(),
-    })
+    result.update(
+        {
+            "u_hex": format(u, "x"),
+            "S_hex": format(S, "x"),
+            "K_hex": K.hex(),
+            "M1_hex": M1.hex(),
+        }
+    )
 
     verify_url = f"{target.rstrip('/')}{auth_verify_path}"
     status2, _, body2, ms2 = _http_post(verify_url, {"A": format(A, "x"), "M1": M1.hex()})
-    result["verify_response"] = {"status": status2, "body": body2[:5000], "duration_ms": round(ms2, 2)}
+    result["verify_response"] = {
+        "status": status2,
+        "body": body2[:5000],
+        "duration_ms": round(ms2, 2),
+    }
 
     try:
         verify_data = json.loads(body2)
@@ -252,20 +271,24 @@ def srp_fuzz_parameters(
         vectors.append(("A=0", "0"))
 
     if test_vectors in ("multiples", "all"):
-        vectors.extend([
-            ("A=N", format(N, "x")),
-            ("A=2N", format(2 * N, "x")),
-            ("A=3N", format(3 * N, "x")),
-        ])
+        vectors.extend(
+            [
+                ("A=N", format(N, "x")),
+                ("A=2N", format(2 * N, "x")),
+                ("A=3N", format(3 * N, "x")),
+            ]
+        )
 
     if test_vectors in ("malformed", "all"):
-        vectors.extend([
-            ("A=1", "1"),
-            ("A=N-1", format(N - 1, "x")),
-            ("A=oversized", format(N * N, "x")),
-            ("A=empty", ""),
-            ("A=string", "not_a_number"),
-        ])
+        vectors.extend(
+            [
+                ("A=1", "1"),
+                ("A=N-1", format(N - 1, "x")),
+                ("A=oversized", format(N * N, "x")),
+                ("A=empty", ""),
+                ("A=string", "not_a_number"),
+            ]
+        )
 
     if not vectors:
         return {"success": False, "error": f"Unknown test_vectors category: {test_vectors}"}
@@ -355,12 +378,14 @@ def srp_extract_verifier_info(
 
     try:
         data = json.loads(body)
-        valid_result.update({
-            "salt_hex": data.get("salt", ""),
-            "iterations": data.get("iterations"),
-            "algorithm": data.get("algorithm", data.get("alg")),
-            "response_keys": list(data.keys()),
-        })
+        valid_result.update(
+            {
+                "salt_hex": data.get("salt", ""),
+                "iterations": data.get("iterations"),
+                "algorithm": data.get("algorithm", data.get("alg")),
+                "response_keys": list(data.keys()),
+            }
+        )
         if "B" in data:
             B_hex = data["B"]
             valid_result["B_length_hex"] = len(B_hex)

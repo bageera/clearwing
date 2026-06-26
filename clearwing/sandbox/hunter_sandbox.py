@@ -15,7 +15,6 @@ import hashlib
 import json
 import logging
 import os
-import platform
 import shutil
 import tempfile
 
@@ -140,6 +139,7 @@ class HunterSandbox:
             logger.debug("Reusing sourcehunt sandbox image %s", tag)
             return tag
         except Exception:
+            logger.warning("Silent exception in hunter_sandbox", exc_info=True)
             pass
 
         with tempfile.TemporaryDirectory(prefix="clearwing-sandbox-build-") as build_dir:
@@ -153,7 +153,9 @@ class HunterSandbox:
                 ",".join(sanitizers),
             )
             try:
-                client.images.build(path=build_dir, tag=tag, rm=True, forcerm=True, platform="linux/amd64")
+                client.images.build(
+                    path=build_dir, tag=tag, rm=True, forcerm=True, platform="linux/amd64"
+                )
             except Exception as e:
                 logger.warning("Sandbox image build failed: %s", e)
                 logger.debug("Sandbox image build failed", exc_info=True)
@@ -290,6 +292,7 @@ class HunterSandbox:
                 try:
                     shutil.rmtree(scratch, ignore_errors=True)
                 except Exception:
+                    logger.warning("Silent exception in hunter_sandbox", exc_info=True)
                     pass
         self._spawned.clear()
 

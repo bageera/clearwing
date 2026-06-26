@@ -27,7 +27,9 @@ def _generate_one_code() -> str:
     for _ in range(_RECOVERY_RANDOM_CHARS):
         chars.append(_RECOVERY_CHARSET[int.from_bytes(os.urandom(1)) % len(_RECOVERY_CHARSET)])
     raw = "".join(chars)
-    segments = [raw[i : i + _RECOVERY_SEGMENT_LEN] for i in range(0, len(raw), _RECOVERY_SEGMENT_LEN)]
+    segments = [
+        raw[i : i + _RECOVERY_SEGMENT_LEN] for i in range(0, len(raw), _RECOVERY_SEGMENT_LEN)
+    ]
     while len(segments) < _RECOVERY_SEGMENTS:
         extra = "".join(
             _RECOVERY_CHARSET[int.from_bytes(os.urandom(1)) % len(_RECOVERY_CHARSET)]
@@ -196,7 +198,9 @@ def test_recovery_acceptance(  # noqa: C901
             f"CRITICAL: {len(accepted)} recovery code(s) accepted by server. "
             "Server may not be validating recovery codes properly."
         )
-    active_endpoints = [p for p, s in endpoint_summary.items() if s not in ("not_found", "connection_error")]
+    active_endpoints = [
+        p for p, s in endpoint_summary.items() if s not in ("not_found", "connection_error")
+    ]
     if active_endpoints:
         findings.append(f"Active recovery endpoints: {', '.join(active_endpoints)}")
     if not findings:

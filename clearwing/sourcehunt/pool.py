@@ -200,6 +200,7 @@ def _format_seed_context(entries: list) -> str | None:
         return None
     try:
         from .seed_corpus import format_seed_context
+
         return format_seed_context(entries) or None
     except ImportError:
         return None
@@ -254,22 +255,32 @@ class HunterPool:
             if entry_points:
                 for ep in entry_points:
                     ep_seeds = [
-                        s for s in seed_entries
+                        s
+                        for s in seed_entries
                         if s.function_name is None or s.function_name == ep.function_name
                     ]
                     seed_ctx = _format_seed_context(ep_seeds) if ep_seeds else None
                     for attempt in range(n):
-                        items.append(WorkItem(
-                            file_target=ft, band=band, attempt=attempt,
-                            entry_point=ep, seed_context=seed_ctx,
-                        ))
+                        items.append(
+                            WorkItem(
+                                file_target=ft,
+                                band=band,
+                                attempt=attempt,
+                                entry_point=ep,
+                                seed_context=seed_ctx,
+                            )
+                        )
             else:
                 seed_ctx = _format_seed_context(seed_entries) if seed_entries else None
                 for attempt in range(n):
-                    items.append(WorkItem(
-                        file_target=ft, band=band, attempt=attempt,
-                        seed_context=seed_ctx,
-                    ))
+                    items.append(
+                        WorkItem(
+                            file_target=ft,
+                            band=band,
+                            attempt=attempt,
+                            seed_context=seed_ctx,
+                        )
+                    )
         return items
 
     async def arun(self) -> list[Finding]:
@@ -457,23 +468,33 @@ class HunterPool:
                 async with self._state_lock:
                     self._results[f"{key}{ep_suffix}:{wi.band}:{wi.attempt}"] = result
                     self._spent_per_tier[tier] += result.cost_usd
-                    self._spent_per_band[wi.band] = self._spent_per_band.get(wi.band, 0.0) + result.cost_usd
+                    self._spent_per_band[wi.band] = (
+                        self._spent_per_band.get(wi.band, 0.0) + result.cost_usd
+                    )
                     self._runs_per_band[wi.band] = self._runs_per_band.get(wi.band, 0) + 1
                     spent += result.cost_usd
 
-                completed_count = sum(1 for r in self._results.values() if r.status in ("completed", "error", "timeout"))
+                completed_count = sum(
+                    1
+                    for r in self._results.values()
+                    if r.status in ("completed", "error", "timeout")
+                )
                 total_files = len(self.config.files)
-                findings_count = sum(len(r.findings) for r in self._results.values() if r.status == "completed")
-                EventBus().emit_hunt_progress(HuntProgressPayload(
-                    session_id=self.config.session_id_prefix,
-                    tier=tier,
-                    band=wi.band,
-                    files_completed=completed_count,
-                    files_total=total_files,
-                    findings_this_tier=findings_count,
-                    cost_usd=spent,
-                    budget_remaining=max(0.0, budget - spent),
-                ))
+                findings_count = sum(
+                    len(r.findings) for r in self._results.values() if r.status == "completed"
+                )
+                EventBus().emit_hunt_progress(
+                    HuntProgressPayload(
+                        session_id=self.config.session_id_prefix,
+                        tier=tier,
+                        band=wi.band,
+                        files_completed=completed_count,
+                        files_total=total_files,
+                        findings_this_tier=findings_count,
+                        cost_usd=spent,
+                        budget_remaining=max(0.0, budget - spent),
+                    )
+                )
 
                 if result.status == "completed" and self.config.findings_pool is not None:
                     for f in cast(list[Finding], result.findings):
@@ -492,17 +513,23 @@ class HunterPool:
                     if next_band:
                         promo_key = f"{wi.band}→{next_band}"
                         async with self._state_lock:
-                            self._promotion_counts[promo_key] = self._promotion_counts.get(promo_key, 0) + 1
+                            self._promotion_counts[promo_key] = (
+                                self._promotion_counts.get(promo_key, 0) + 1
+                            )
                         logger.info(
                             "Promoting %s from %s to %s band",
-                            key, wi.band, next_band,
+                            key,
+                            wi.band,
+                            next_band,
                         )
-                        promotion_queue.append(WorkItem(
-                            file_target=wi.file_target,
-                            band=next_band,
-                            attempt=wi.attempt,
-                            seed_transcript=_extract_transcript(result),
-                        ))
+                        promotion_queue.append(
+                            WorkItem(
+                                file_target=wi.file_target,
+                                band=next_band,
+                                attempt=wi.attempt,
+                                seed_transcript=_extract_transcript(result),
+                            )
+                        )
 
                 _submit_next()
 
@@ -521,7 +548,8 @@ class HunterPool:
         seed_context: str | None = None,
     ) -> TargetResult:
         findings, cost, tokens, stop_reason = await self._run_one_hunter(
-            file_target, cost_limit,
+            file_target,
+            cost_limit,
             seed_transcript=seed_transcript,
             entry_point=entry_point,
             seed_context=seed_context,
@@ -562,7 +590,9 @@ class HunterPool:
 
         try:
             hunter, ctx = self._build_hunter_for_file(
-                file_target, sandbox, budget_usd=cost_limit,
+                file_target,
+                sandbox,
+                budget_usd=cost_limit,
                 seed_transcript=seed_transcript,
                 entry_point=entry_point,
                 seed_context=seed_context,
@@ -592,6 +622,7 @@ class HunterPool:
                 try:
                     await asyncio.to_thread(sandbox.stop)
                 except Exception:
+                    logger.debug("Silent exception in pool", exc_info=True)
                     pass
 
     def _build_hunter_for_file(

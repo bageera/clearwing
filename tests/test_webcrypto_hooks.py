@@ -34,10 +34,12 @@ def _reset_state():
 class TestCryptoLog:
     def test_add_batch(self):
         log = CryptoLog()
-        count = log.add_batch([
-            {"method": "encrypt", "seq": 0, "durationMs": 1.5},
-            {"method": "decrypt", "seq": 1, "durationMs": 2.0},
-        ])
+        count = log.add_batch(
+            [
+                {"method": "encrypt", "seq": 0, "durationMs": 1.5},
+                {"method": "decrypt", "seq": 1, "durationMs": 2.0},
+            ]
+        )
         assert count == 2
         assert log.count == 2
 
@@ -51,20 +53,24 @@ class TestCryptoLog:
 
     def test_get_all_no_filter(self):
         log = CryptoLog()
-        log.add_batch([
-            {"method": "encrypt", "seq": 0},
-            {"method": "deriveBits", "seq": 1},
-        ])
+        log.add_batch(
+            [
+                {"method": "encrypt", "seq": 0},
+                {"method": "deriveBits", "seq": 1},
+            ]
+        )
         results = log.get_all()
         assert len(results) == 2
 
     def test_get_all_method_filter(self):
         log = CryptoLog()
-        log.add_batch([
-            {"method": "encrypt", "seq": 0},
-            {"method": "deriveBits", "seq": 1},
-            {"method": "encrypt", "seq": 2},
-        ])
+        log.add_batch(
+            [
+                {"method": "encrypt", "seq": 0},
+                {"method": "deriveBits", "seq": 1},
+                {"method": "encrypt", "seq": 2},
+            ]
+        )
         results = log.get_all(method_filter="encrypt")
         assert len(results) == 2
         assert all(e.method == "encrypt" for e in results)
@@ -78,10 +84,12 @@ class TestCryptoLog:
 
     def test_get_by_id(self):
         log = CryptoLog()
-        log.add_batch([
-            {"method": "encrypt", "seq": 0},
-            {"method": "decrypt", "seq": 1},
-        ])
+        log.add_batch(
+            [
+                {"method": "encrypt", "seq": 0},
+                {"method": "decrypt", "seq": 1},
+            ]
+        )
         entry = log.get(2)
         assert entry is not None
         assert entry.method == "decrypt"
@@ -122,10 +130,12 @@ class TestCryptoLog:
 
     def test_export(self, tmp_path):
         log = CryptoLog()
-        log.add_batch([
-            {"method": "encrypt", "seq": 0},
-            {"method": "decrypt", "seq": 1},
-        ])
+        log.add_batch(
+            [
+                {"method": "encrypt", "seq": 0},
+                {"method": "decrypt", "seq": 1},
+            ]
+        )
         export_path = str(tmp_path / "crypto_log.json")
         log.export(export_path)
         data = json.loads(Path(export_path).read_text())
@@ -139,7 +149,9 @@ class TestCryptoLog:
 class TestCryptoLogEntry:
     def test_dataclass_fields(self):
         entry = CryptoLogEntry(
-            id=1, seq=0, timestamp="2024-01-01T00:00:00Z",
+            id=1,
+            seq=0,
+            timestamp="2024-01-01T00:00:00Z",
             method="encrypt",
         )
         assert entry.id == 1

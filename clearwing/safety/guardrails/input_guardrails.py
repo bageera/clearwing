@@ -1,6 +1,7 @@
 """Input guardrails for detecting prompt injection attempts."""
 
 import base64
+import logging
 import re
 
 from .patterns import (
@@ -8,6 +9,8 @@ from .patterns import (
     GuardrailResult,
     normalize_unicode,
 )
+
+logger = logging.getLogger(__name__)
 
 # Regex to find plausible base64-encoded strings (length > 20)
 _BASE64_RE = re.compile(r"[A-Za-z0-9+/]{20,}={0,2}")
@@ -75,6 +78,7 @@ class InputGuardrail:
                 decoded_bytes = base64.b64decode(candidate, validate=True)
                 decoded = decoded_bytes.decode("utf-8", errors="ignore")
             except Exception:
+                logger.warning("Silent exception in input_guardrails", exc_info=True)
                 continue
 
             # Re-check decoded content against injection patterns
@@ -92,9 +96,7 @@ class InputGuardrail:
                     )
 
             # Recursively check for nested base64 payloads
-            nested_result = InputGuardrail._check_base64(
-                decoded_normalized, depth=depth + 1
-            )
+            nested_result = InputGuardrail._check_base64(decoded_normalized, depth=depth + 1)
             if not nested_result.passed:
                 return nested_result
 

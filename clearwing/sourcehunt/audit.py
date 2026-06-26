@@ -86,14 +86,16 @@ class SecurityAuditLog:
                     continue
                 if target and record.get("target") != target:
                     continue
-                results.append(SecurityAuditEntry(
-                    timestamp=record["timestamp"],
-                    operator=record["operator"],
-                    action=record["action"],
-                    target=record["target"],
-                    approved_by=record.get("approved_by"),
-                    details=record.get("details", {}),
-                ))
+                results.append(
+                    SecurityAuditEntry(
+                        timestamp=record["timestamp"],
+                        operator=record["operator"],
+                        action=record["action"],
+                        target=record["target"],
+                        approved_by=record.get("approved_by"),
+                        details=record.get("details", {}),
+                    )
+                )
                 if len(results) >= limit:
                     break
         return results

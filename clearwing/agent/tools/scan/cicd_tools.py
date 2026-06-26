@@ -7,7 +7,7 @@ import logging
 from typing import Any
 
 from clearwing.agent.tooling import tool
-from clearwing.agent.tools.ops.pentest_container import KALI, PARROT
+from clearwing.agent.tools.ops.pentest_container import run_in_pentest_container
 
 logger = logging.getLogger(__name__)
 
@@ -33,14 +33,15 @@ def run_gitleaks(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     cmd = f"gitleaks detect --source {repo_path} {options}"
     logger.info("[%s] gitleaks: %s", distro, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=False) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=False)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=False,
+    )
 
 
 @tool(requires_approval=False)
@@ -52,27 +53,28 @@ def run_trufflehog(
 ) -> dict[str, Any]:
     """High-entropy secret scanning with live credential validation.
 
-    TruffleHog scans Git history, filesystems, and S3 buckets for secrets.
-    It verifies credentials aga
-inst live APIs when possible, reducing false positives.
+        TruffleHog scans Git history, filesystems, and S3 buckets for secrets.
+        It verifies credentials aga
+    inst live APIs when possible, reducing false positives.
 
-    Args:
-        target: Git URL, local path, or S3 URI to scan.
-        options: trufflehog flags (default: --only-verified).
-        container_id: Docker container ID; auto-discovers if None.
-        distro: "kali" or "parrot".
+        Args:
+            target: Git URL, local path, or S3 URI to scan.
+            options: trufflehog flags (default: --only-verified).
+            container_id: Docker container ID; auto-discovers if None.
+            distro: "kali" or "parrot".
 
-    Returns:
-        Dict with exit_code, output, and error.
+        Returns:
+            Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     cmd = f"trufflehog filesystem {target} {options}"
     logger.info("[%s] trufflehog: %s", distro, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=False) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=False)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=False,
+    )
 
 
 @tool(requires_approval=False)
@@ -96,14 +98,15 @@ def run_checkov(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     cmd = f"checkov --directory {scan_path} --framework {framework} --compact"
     logger.info("[%s] checkov: %s", distro, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=False) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=False)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=False,
+    )
 
 
 @tool(requires_approval=False)
@@ -130,14 +133,15 @@ def run_trivy(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     cmd = f"trivy {scan_type} {options} {target}"
     logger.info("[%s] trivy (%s): %s", distro, scan_type, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=False) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=False)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=False,
+    )
 
 
 @tool(requires_approval=False)
@@ -164,14 +168,15 @@ def run_semgrep(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     cmd = f"semgrep --config={config} {options} {target}"
     logger.info("[%s] semgrep (%s): %s", distro, config, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=False) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=False)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=False,
+    )
 
 
 @tool(requires_approval=False)
@@ -196,14 +201,15 @@ def run_dependency_audit(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     cmd = f"python3 /opt/dependency-audit/audit.py --manifest {manifest} {options}"
     logger.info("[%s] dependency audit: %s", distro, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=False) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=False)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=False,
+    )
 
 
 @tool(requires_approval=False)
@@ -228,13 +234,14 @@ def run_kube_hunter(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     cmd = f"kube-hunter {options}"
     if target:
         cmd += f" --api {target}"
     logger.info("[%s] kube-hunter: %s", distro, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=False) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=False)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=False,
+    )

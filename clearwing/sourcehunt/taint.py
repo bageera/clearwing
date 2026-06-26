@@ -681,6 +681,7 @@ class TaintAnalyzer:
         try:
             func_field = call_node.child_by_field_name("function")
         except Exception:
+            logger.warning("Silent exception in taint", exc_info=True)
             pass
         target = (
             func_field
@@ -785,6 +786,7 @@ class TaintAnalyzer:
                     try:
                         decl = parent.child_by_field_name("declarator")
                     except Exception:
+                        logger.warning("Silent exception in taint", exc_info=True)
                         pass
                     if decl is None and parent.children:
                         decl = parent.children[0]
@@ -794,6 +796,7 @@ class TaintAnalyzer:
                 try:
                     left = parent.child_by_field_name("left")
                 except Exception:
+                    logger.warning("Silent exception in taint", exc_info=True)
                     pass
                 if left is None and parent.children:
                     left = parent.children[0]
@@ -822,6 +825,7 @@ class TaintAnalyzer:
         try:
             args_node = call_node.child_by_field_name("arguments")
         except Exception:
+            logger.warning("Silent exception in taint", exc_info=True)
             pass
         if args_node is None:
             # Fall back: the arguments are typically the last child that's
@@ -873,12 +877,14 @@ class TaintAnalyzer:
             if name_field is not None:
                 return _node_text(name_field, source_text)
         except Exception:
+            logger.warning("Silent exception in taint", exc_info=True)
             pass
         try:
             decl = func_node.child_by_field_name("declarator")
             if decl is not None:
                 return self._rightmost_identifier_text(decl, source_text)
         except Exception:
+            logger.warning("Silent exception in taint", exc_info=True)
             pass
         return None
 
@@ -942,6 +948,7 @@ def _node_text(node: Any, source: Any) -> str:
             )
         return str(source[node.start_byte : node.end_byte])
     except Exception:
+        logger.warning("Silent exception in taint", exc_info=True)
         return ""
 
 

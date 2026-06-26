@@ -37,7 +37,7 @@ _TEMP_DIR_RE = re.compile(r"\s+(/tmp|/var/tmp)")
 
 def _rm_context(match: re.Match) -> str:
     """Classify rm commands: system dirs -> critical, temp dirs -> warning."""
-    text = match.string[match.start():]
+    text = match.string[match.start() :]
     if _TEMP_DIR_RE.search(text):
         return "warning"
     if _SYSTEM_DIR_RE.search(text):
@@ -52,7 +52,7 @@ _OUTPUT_FILE_RE = re.compile(r"-o\s+\S+")
 
 def _curl_wget_context(match: re.Match) -> str:
     """Classify curl/wget: piped to bash -> critical, -o file -> warning."""
-    text = match.string[match.start():]
+    text = match.string[match.start() :]
     if _PIPE_BASH_RE.search(text):
         return "critical"
     if _OUTPUT_FILE_RE.search(text):
@@ -64,6 +64,7 @@ def _curl_wget_context(match: re.Match) -> str:
 # Build the list of DangerousPattern objects from DANGEROUS_COMMAND_PATTERNS
 # ---------------------------------------------------------------------------
 
+
 def _build_dangerous_patterns() -> list[DangerousPattern]:
     """Map each regex from patterns.py to a DangerousPattern with metadata."""
     result: list[DangerousPattern] = []
@@ -73,64 +74,92 @@ def _build_dangerous_patterns() -> list[DangerousPattern]:
 
         # --- rm commands: context-aware ---
         if pat.startswith("rm\\s+"):
-            result.append(DangerousPattern(
-                regex=pattern,
-                label="rm destructive command",
-                default_severity="critical",
-                context_fn=_rm_context,
-            ))
+            result.append(
+                DangerousPattern(
+                    regex=pattern,
+                    label="rm destructive command",
+                    default_severity="critical",
+                    context_fn=_rm_context,
+                )
+            )
         # --- curl/wget piped to shell ---
         elif "(curl|wget)" in pat and ("bash|sh" in pat or "sudo" in pat):
-            result.append(DangerousPattern(
-                regex=pattern,
-                label="curl/wget piped to shell",
-                default_severity="warning",
-                context_fn=_curl_wget_context,
-            ))
+            result.append(
+                DangerousPattern(
+                    regex=pattern,
+                    label="curl/wget piped to shell",
+                    default_severity="warning",
+                    context_fn=_curl_wget_context,
+                )
+            )
         # --- base64 decode piped to shell ---
         elif "base64" in pat:
-            result.append(DangerousPattern(
-                regex=pattern,
-                label="base64 decode piped to shell",
-                default_severity="warning",
-            ))
+            result.append(
+                DangerousPattern(
+                    regex=pattern,
+                    label="base64 decode piped to shell",
+                    default_severity="warning",
+                )
+            )
         # --- Exfiltration ---
-        elif any(kw in pat for kw in ("shadow", "passwd", "upload-file", "/dev/tcp",
-                                       "nc\\s+", "mkfifo", "socket.*connect",
-                                       "curl|wget|nc", "env\\s*\\|", "printenv")):
-            result.append(DangerousPattern(
-                regex=pattern,
-                label="exfiltration / reverse shell",
-                default_severity="critical",
-            ))
+        elif any(
+            kw in pat
+            for kw in (
+                "shadow",
+                "passwd",
+                "upload-file",
+                "/dev/tcp",
+                "nc\\s+",
+                "mkfifo",
+                "socket.*connect",
+                "curl|wget|nc",
+                "env\\s*\\|",
+                "printenv",
+            )
+        ):
+            result.append(
+                DangerousPattern(
+                    regex=pattern,
+                    label="exfiltration / reverse shell",
+                    default_severity="critical",
+                )
+            )
         # --- Cloud CLI exfiltration ---
         elif any(kw in pat for kw in ("aws\\s+s3", "gsutil", "az\\s+storage")):
-            result.append(DangerousPattern(
-                regex=pattern,
-                label="cloud CLI exfiltration",
-                default_severity="critical",
-            ))
+            result.append(
+                DangerousPattern(
+                    regex=pattern,
+                    label="cloud CLI exfiltration",
+                    default_severity="critical",
+                )
+            )
         # --- Kernel module loading ---
         elif any(kw in pat for kw in ("insmod", "modprobe", "rmmod")):
-            result.append(DangerousPattern(
-                regex=pattern,
-                label="kernel module loading",
-                default_severity="critical",
-            ))
+            result.append(
+                DangerousPattern(
+                    regex=pattern,
+                    label="kernel module loading",
+                    default_severity="critical",
+                )
+            )
         # --- Path traversal ---
         elif ".." in pat or "%2e" in pat.lower():
-            result.append(DangerousPattern(
-                regex=pattern,
-                label="path traversal",
-                default_severity="high",
-            ))
+            result.append(
+                DangerousPattern(
+                    regex=pattern,
+                    label="path traversal",
+                    default_severity="high",
+                )
+            )
         # --- Everything else: critical by default ---
         else:
-            result.append(DangerousPattern(
-                regex=pattern,
-                label="dangerous command",
-                default_severity="critical",
-            ))
+            result.append(
+                DangerousPattern(
+                    regex=pattern,
+                    label="dangerous command",
+                    default_severity="critical",
+                )
+            )
 
     return result
 

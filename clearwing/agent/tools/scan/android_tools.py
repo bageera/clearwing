@@ -9,7 +9,7 @@ import logging
 from typing import Any
 
 from clearwing.agent.tooling import tool
-from clearwing.agent.tools.ops.pentest_container import KALI, PARROT
+from clearwing.agent.tools.ops.pentest_container import run_in_pentest_container
 
 logger = logging.getLogger(__name__)
 
@@ -38,14 +38,15 @@ def run_apk_info(
     Returns:
         Dict with exit_code, output (manifest dump), and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     cmd = f"aapt dump badging {apk_file}"
     logger.info("[%s] apk-info: %s", distro, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=False) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=False)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=False,
+    )
 
 
 @tool(requires_approval=False)
@@ -68,12 +69,9 @@ def run_apk_permissions(
     Returns:
         Dict with exit_code, output (permission list with risk scores), and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     script = (
-        f"python3 -c \""
+        f'python3 -c "'
         f"import zipfile, xml.etree.ElementTree as ET; "
         f"z = zipfile.ZipFile('{apk_file}'); "
         f"manifest = z.read('AndroidManifest.xml'); "
@@ -87,8 +85,12 @@ def run_apk_permissions(
         f"print('All:', perms)\""
     )
     logger.info("[%s] apk-permissions: %s", distro, script[:80])
-    return KALI.execute(container_id, script, requires_approval=False) \
-        if distro == "kali" else PARROT.execute(container_id, script, requires_approval=False)
+    return run_in_pentest_container(
+        script,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=False,
+    )
 
 
 @tool(requires_approval=False)
@@ -111,9 +113,6 @@ def run_apk_components(
     Returns:
         Dict with exit_code, output (component list with exported flags), and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     script = (
         f"androguard arsc {apk_file} | grep -E "
@@ -121,8 +120,12 @@ def run_apk_components(
         f"python3 /opt/androguard/androarsc.py -i {apk_file}"
     )
     logger.info("[%s] apk-components: %s", distro, script[:80])
-    return KALI.execute(container_id, script, requires_approval=False) \
-        if distro == "kali" else PARROT.execute(container_id, script, requires_approval=False)
+    return run_in_pentest_container(
+        script,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=False,
+    )
 
 
 @tool(requires_approval=False)
@@ -146,9 +149,6 @@ def run_apk_strings(
     Returns:
         Dict with exit_code, output (string dump with context), and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     cmd = (
         f"strings {apk_file} | grep -E "
@@ -156,8 +156,12 @@ def run_apk_strings(
         f"| grep -v '^Binary' | sort -u | head -100"
     )
     logger.info("[%s] apk-strings: %s", distro, cmd[:80])
-    return KALI.execute(container_id, cmd, requires_approval=False) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=False)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=False,
+    )
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -189,9 +193,6 @@ def run_frida_hook(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     default_script = "/opt/frida-scripts/ssl-pinning-bypass.js"
     script = hook_script or default_script
@@ -199,8 +200,12 @@ def run_frida_hook(
 
     cmd = f"frida {spawn_flag} {target_app} -l {script} --no-pause"
     logger.info("[%s] frida-hook: %s", distro, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=True)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )
 
 
 @tool(requires_approval=True)
@@ -231,14 +236,15 @@ def run_objection_explore(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     cmd = f"objection --gadget {target_app} {options} {command}"
     logger.info("[%s] objection-explore: %s", distro, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=True)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )
 
 
 @tool(requires_approval=True)
@@ -265,9 +271,6 @@ def run_frida_traffic_capture(
     Returns:
         Dict with exit_code, output (capture summary), and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     cmd = (
         f"timeout {duration} bash -c "
@@ -275,8 +278,12 @@ def run_frida_traffic_capture(
         f"tcpdump -w {output_pcap} -i any port not 22'"
     )
     logger.info("[%s] frida-traffic-capture: %s", distro, cmd[:80])
-    return KALI.execute(container_id, cmd, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=True)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -308,15 +315,16 @@ def run_adb_shell(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     device_flag = f"-s {device_id}" if device_id else ""
     cmd = f"adb {device_flag} {options} {command}"
     logger.info("[%s] adb-shell: %s", distro, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=True)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )
 
 
 @tool(requires_approval=True)
@@ -343,15 +351,16 @@ def run_android_emulator(
     Returns:
         Dict with exit_code, output (emulator status), and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     snapshot_flag = f"-snapshot {snapshot}" if snapshot else ""
     cmd = f"emulator -avd {avd_name} {snapshot_flag} {options}"
     logger.info("[%s] android-emulator: %s", distro, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=True)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -385,17 +394,18 @@ def run_burp_mobile_proxy(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     cmd = (
         f"python3 /opt/mobile-proxy-setup.py "
         f"--app {target_app} --proxy {proxy_host}:{proxy_port} {options}"
     )
     logger.info("[%s] burp-mobile-proxy: %s", distro, cmd[:80])
-    return KALI.execute(container_id, cmd, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=True)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )
 
 
 @tool(requires_approval=True)
@@ -424,14 +434,15 @@ def run_mitmproxy_android(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     cmd = f"mitmproxy --mode regular --listen-port {port} {options}"
     logger.info("[%s] mitmproxy-android: %s", distro, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=True)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -463,9 +474,6 @@ def run_ssl_pinning_bypass(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     if method == "frida":
         cmd = f"frida -U -f {target_app} -l /opt/frida-scripts/universal-ssl-bypass.js --no-pause"
@@ -474,13 +482,17 @@ def run_ssl_pinning_bypass(
     elif method == "patch":
         cmd = f"python3 /opt/apk-patcher/ssl-patch.py {target_app}"
     elif method == "magisk":
-        cmd = f"adb shell su -c 'cp /data/local/tmp/cacert.pem /system/etc/security/cacerts/'"
+        cmd = "adb shell su -c 'cp /data/local/tmp/cacert.pem /system/etc/security/cacerts/'"
     else:
         cmd = f"frida -U -f {target_app} -l /opt/frida-scripts/universal-ssl-bypass.js --no-pause"
 
     logger.info("[%s] ssl-pinning-bypass (%s): %s", distro, method, cmd[:80])
-    return KALI.execute(container_id, cmd, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=True)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )
 
 
 @tool(requires_approval=True)
@@ -507,9 +519,6 @@ def run_root_detection_bypass(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     if method == "frida":
         cmd = f"frida -U -f {target_app} -l /opt/frida-scripts/root-detection-bypass.js --no-pause"
@@ -523,8 +532,12 @@ def run_root_detection_bypass(
         cmd = f"frida -U -f {target_app} -l /opt/frida-scripts/root-detection-bypass.js --no-pause"
 
     logger.info("[%s] root-detection-bypass (%s): %s", distro, method, cmd[:80])
-    return KALI.execute(container_id, cmd, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=True)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -556,9 +569,6 @@ def run_android_backup_extract(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     cmd = (
         f"adb backup -f /tmp/{target_app}.ab {target_app} && "
@@ -566,8 +576,12 @@ def run_android_backup_extract(
         f"dd if=/tmp/{target_app}.ab bs=24 skip=1 | openssl zlib -d | tar -xC {output_dir}"
     )
     logger.info("[%s] android-backup-extract: %s", distro, cmd[:80])
-    return KALI.execute(container_id, cmd, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=True)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )
 
 
 @tool(requires_approval=True)
@@ -591,15 +605,16 @@ def run_android_screenshot(
     Returns:
         Dict with exit_code, output (file path), and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     device_flag = f"-s {device_id}" if device_id else ""
     cmd = f"adb {device_flag} shell screencap -p {output_file}"
     logger.info("[%s] android-screenshot: %s", distro, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=True)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -634,15 +649,16 @@ def run_apk_patch(
     Returns:
         Dict with exit_code, output (new APK path), and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     out = output_apk or f"{apk_file}.patched.apk"
     cmd = f"python3 /opt/apk-patcher/patch.py -i {apk_file} -o {out} -t {patch_type}"
     logger.info("[%s] apk-patch (%s): %s", distro, patch_type, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=True)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )
 
 
 @tool(requires_approval=True)
@@ -669,11 +685,12 @@ def run_apk_repack(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
-    sign_cmd = "&& jarsigner -keystore /opt/android/debug.keystore -storepass android {output_apk} androiddebugkey" if sign else ""
+    sign_cmd = (
+        "&& jarsigner -keystore /opt/android/debug.keystore -storepass android {output_apk} androiddebugkey"
+        if sign
+        else ""
+    )
     cmd = (
         f"apktool b {smali_dir} -o {output_apk} "
         f"&& zipalign -v 4 {output_apk} {output_apk}.aligned "
@@ -681,8 +698,12 @@ def run_apk_repack(
         f"{sign_cmd}"
     )
     logger.info("[%s] apk-repack: %s", distro, cmd[:80])
-    return KALI.execute(container_id, cmd, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=True)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -710,14 +731,12 @@ def run_safetynet_check(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
-    cmd = (
-        f"python3 /opt/android-pentest/safetynet-check.py "
-        f"--app {target_app}"
-    )
+    cmd = f"python3 /opt/android-pentest/safetynet-check.py --app {target_app}"
     logger.info("[%s] safetynet-check: %s", distro, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=True)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )

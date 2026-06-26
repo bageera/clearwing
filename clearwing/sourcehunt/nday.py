@@ -6,13 +6,12 @@ Glasswing reference's N-day methodology.
 
 from __future__ import annotations
 
-import asyncio
 import logging
 import time
 from dataclasses import dataclass, field
 from typing import Any
 
-from .exploiter import EXPLOIT_BUDGET_BANDS, AgenticExploiter, ExploiterResult
+from .exploiter import AgenticExploiter, ExploiterResult
 from .nday_builder import NdayBuild, NdayBuilder
 from .nday_filter import NdayCandidate, NdayFilter
 from .retro_hunt import fetch_patch_diff
@@ -108,9 +107,12 @@ class NdayPipeline:
 
         for c in candidates:
             if c not in filtered:
-                pipeline_result.results.append(NdayResult(
-                    cve_id=c.cve_id, status="filtered",
-                ))
+                pipeline_result.results.append(
+                    NdayResult(
+                        cve_id=c.cve_id,
+                        status="filtered",
+                    )
+                )
 
         builder = NdayBuilder(
             sandbox_manager=self._sandbox_manager,
@@ -146,7 +148,8 @@ class NdayPipeline:
 
                 if exploit_result.success:
                     vuln_ok, patch_ok = await self._validate_exploit(
-                        exploit_result, build,
+                        exploit_result,
+                        build,
                     )
                     result.validated_vulnerable = vuln_ok
                     result.validated_patched = patch_ok
@@ -164,7 +167,9 @@ class NdayPipeline:
                     pipeline_result.failed += 1
             except Exception:
                 logger.warning(
-                    "N-day exploit failed for %s", candidate.cve_id, exc_info=True,
+                    "N-day exploit failed for %s",
+                    candidate.cve_id,
+                    exc_info=True,
                 )
                 result.status = "failed"
                 pipeline_result.failed += 1
@@ -173,6 +178,7 @@ class NdayPipeline:
                     try:
                         build.sandbox.stop()
                     except Exception:
+                        logger.debug("Silent exception in nday", exc_info=True)
                         pass
 
             result.duration_seconds = time.monotonic() - cve_start

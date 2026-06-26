@@ -48,9 +48,9 @@ def add_parser(subparsers):
         "--provider",
         metavar="KEY",
         help=(
-             "Skip the menu and configure this provider directly "
-             "(e.g. openrouter, ollama-cloud, ollama, lmstudio, anthropic, openai, "
-             "openai-oauth, together, groq, deepseek, fireworks, custom)"
+            "Skip the menu and configure this provider directly "
+            "(e.g. openrouter, ollama-cloud, ollama, lmstudio, anthropic, openai, "
+            "openai-oauth, together, groq, deepseek, fireworks, custom)"
         ),
     )
     parser.add_argument(

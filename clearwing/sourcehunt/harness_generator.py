@@ -287,6 +287,7 @@ class HarnessGenerator:
             try:
                 sandbox.stop()
             except Exception:
+                logger.debug("Silent exception in harness_generator", exc_info=True)
                 pass
 
     def _spawn_sandbox(self) -> Any:

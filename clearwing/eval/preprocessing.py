@@ -6,12 +6,10 @@ Runs the sourcehunt pipeline under different configurations for the same
 
 from __future__ import annotations
 
-import asyncio
 import json
 import logging
 import os
 import subprocess
-import tempfile
 import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -75,8 +73,7 @@ def resolve_config(name: str) -> EvalConfig:
     """Resolve a config name to an EvalConfig."""
     if name not in CONFIGURATIONS:
         raise ValueError(
-            f"Unknown eval config: {name!r}. "
-            f"Available: {', '.join(sorted(CONFIGURATIONS))}"
+            f"Unknown eval config: {name!r}. Available: {', '.join(sorted(CONFIGURATIONS))}"
         )
     cfg = CONFIGURATIONS[name]
     return EvalConfig(
@@ -120,7 +117,7 @@ class PreprocessingEval:
 
     async def arun(self) -> EvalResult:
         """Run evaluation across all configs."""
-        start_time = time.monotonic()
+        time.monotonic()
 
         result = EvalResult(
             project=self._project,
@@ -157,64 +154,89 @@ class PreprocessingEval:
                         run_data = json.loads(
                             run_file.read_text(encoding="utf-8"),
                         )
-                        metrics = EvalMetrics(**{
-                            k: v
-                            for k, v in run_data.get("metrics", {}).items()
-                            if k in EvalMetrics.__dataclass_fields__
-                        })
-                        config_result.runs.append(ConfigRunResult(
-                            run_index=run_idx,
-                            metrics=metrics,
-                            error=run_data.get("error"),
-                        ))
+                        metrics = EvalMetrics(
+                            **{
+                                k: v
+                                for k, v in run_data.get("metrics", {}).items()
+                                if k in EvalMetrics.__dataclass_fields__
+                            }
+                        )
+                        config_result.runs.append(
+                            ConfigRunResult(
+                                run_index=run_idx,
+                                metrics=metrics,
+                                error=run_data.get("error"),
+                            )
+                        )
                         logger.info(
                             "Loaded cached run %d for %s",
-                            run_idx, config_name,
+                            run_idx,
+                            config_name,
                         )
-                        bus.emit_eval_progress(EvalProgressPayload(
-                            project=self._project, config_name=config_name,
-                            run_index=run_idx, runs_total=self._runs,
-                            configs_completed=config_idx, configs_total=len(self._configs),
-                            status="cached", cost_usd=0.0,
-                        ))
+                        bus.emit_eval_progress(
+                            EvalProgressPayload(
+                                project=self._project,
+                                config_name=config_name,
+                                run_index=run_idx,
+                                runs_total=self._runs,
+                                configs_completed=config_idx,
+                                configs_total=len(self._configs),
+                                status="cached",
+                                cost_usd=0.0,
+                            )
+                        )
                         continue
                     except Exception:
+                        logger.warning("Silent exception in preprocessing", exc_info=True)
                         pass
 
-                bus.emit_eval_progress(EvalProgressPayload(
-                    project=self._project, config_name=config_name,
-                    run_index=run_idx, runs_total=self._runs,
-                    configs_completed=config_idx, configs_total=len(self._configs),
-                    status="running", cost_usd=0.0,
-                ))
+                bus.emit_eval_progress(
+                    EvalProgressPayload(
+                        project=self._project,
+                        config_name=config_name,
+                        run_index=run_idx,
+                        runs_total=self._runs,
+                        configs_completed=config_idx,
+                        configs_total=len(self._configs),
+                        status="running",
+                        cost_usd=0.0,
+                    )
+                )
                 run_result = await self._single_run(
-                    eval_config, local_path, run_idx,
+                    eval_config,
+                    local_path,
+                    run_idx,
                 )
                 config_result.runs.append(run_result)
-                bus.emit_eval_progress(EvalProgressPayload(
-                    project=self._project, config_name=config_name,
-                    run_index=run_idx, runs_total=self._runs,
-                    configs_completed=config_idx, configs_total=len(self._configs),
-                    status="error" if run_result.error else "completed",
-                    cost_usd=run_result.metrics.cost_usd if run_result.metrics and not run_result.error else 0.0,
-                ))
+                bus.emit_eval_progress(
+                    EvalProgressPayload(
+                        project=self._project,
+                        config_name=config_name,
+                        run_index=run_idx,
+                        runs_total=self._runs,
+                        configs_completed=config_idx,
+                        configs_total=len(self._configs),
+                        status="error" if run_result.error else "completed",
+                        cost_usd=run_result.metrics.cost_usd
+                        if run_result.metrics and not run_result.error
+                        else 0.0,
+                    )
+                )
 
                 try:
                     from dataclasses import asdict
+
                     run_file.write_text(
                         json.dumps(asdict(run_result), indent=2, default=str),
                         encoding="utf-8",
                     )
                 except Exception:
+                    logger.warning("Silent exception in preprocessing", exc_info=True)
                     pass
 
-            run_metrics = [
-                r.metrics for r in config_result.runs if r.error is None
-            ]
+            run_metrics = [r.metrics for r in config_result.runs if r.error is None]
             if run_metrics:
-                config_result.mean_metrics, config_result.stddev = (
-                    aggregate_runs(run_metrics)
-                )
+                config_result.mean_metrics, config_result.stddev = aggregate_runs(run_metrics)
 
             result.configs.append(config_result)
 
@@ -262,7 +284,9 @@ class PreprocessingEval:
         except Exception as e:
             logger.warning(
                 "Eval run %d for %s failed: %s",
-                run_idx, eval_config.name, e,
+                run_idx,
+                eval_config.name,
+                e,
             )
             return ConfigRunResult(
                 run_index=run_idx,
@@ -287,7 +311,8 @@ class PreprocessingEval:
             except subprocess.CalledProcessError:
                 logger.warning(
                     "Failed to checkout %s in %s",
-                    self._commit, self._project,
+                    self._commit,
+                    self._project,
                 )
             return self._project
 

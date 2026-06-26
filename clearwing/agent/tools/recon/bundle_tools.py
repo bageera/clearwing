@@ -179,12 +179,14 @@ def search_bundle_patterns(
         for url in script_urls[:15]:
             s, content, ms = _fetch_url(url)
             if s == 200:
-                bundles.append({
-                    "url": url,
-                    "filename": url.split("/")[-1].split("?")[0][:60],
-                    "content": content,
-                    "size_kb": round(len(content) / 1024, 1),
-                })
+                bundles.append(
+                    {
+                        "url": url,
+                        "filename": url.split("/")[-1].split("?")[0][:60],
+                        "content": content,
+                        "size_kb": round(len(content) / 1024, 1),
+                    }
+                )
 
     search_patterns = dict(_DEFAULT_PATTERNS)
     if patterns:
@@ -217,13 +219,15 @@ def search_bundle_patterns(
                 end = min(len(content), m.end() + context_chars)
                 ctx = content[start:end].replace("\n", " ").strip()
 
-                all_matches.append({
-                    "pattern": pat_name,
-                    "match": m.group(0)[:200],
-                    "context": ctx[:300],
-                    "bundle": filename[:60],
-                    "offset": m.start(),
-                })
+                all_matches.append(
+                    {
+                        "pattern": pat_name,
+                        "match": m.group(0)[:200],
+                        "context": ctx[:300],
+                        "bundle": filename[:60],
+                        "offset": m.start(),
+                    }
+                )
 
     return {
         "bundles_searched": len([b for b in bundles if b.get("content")]),
@@ -271,11 +275,13 @@ def extract_api_routes(  # noqa: C901
         for url in script_urls[:15]:
             s, content, _ = _fetch_url(url)
             if s == 200:
-                bundles.append({
-                    "url": url,
-                    "filename": url.split("/")[-1].split("?")[0][:60],
-                    "content": content,
-                })
+                bundles.append(
+                    {
+                        "url": url,
+                        "filename": url.split("/")[-1].split("?")[0][:60],
+                        "content": content,
+                    }
+                )
 
     routes: dict[str, dict[str, Any]] = {}
 
@@ -310,7 +316,11 @@ def extract_api_routes(  # noqa: C901
                     "sources": {filename},
                 }
 
-        for m in re.finditer(r"""\.(?:get|post|put|delete|patch)\s*\(\s*["'`]([^"'`]+)["'`]""", content, re.IGNORECASE):
+        for m in re.finditer(
+            r"""\.(?:get|post|put|delete|patch)\s*\(\s*["'`]([^"'`]+)["'`]""",
+            content,
+            re.IGNORECASE,
+        ):
             path = m.group(1).strip()
             method = content[m.start() + 1 : m.start() + 7].strip("(").upper()
             if path.startswith("/"):
@@ -323,11 +333,13 @@ def extract_api_routes(  # noqa: C901
     route_list = []
     for path in sorted(routes.keys()):
         entry = routes[path]
-        route_list.append({
-            "path": entry["path"],
-            "methods": entry["methods"],
-            "sources": sorted(entry["sources"]),
-        })
+        route_list.append(
+            {
+                "path": entry["path"],
+                "methods": entry["methods"],
+                "sources": sorted(entry["sources"]),
+            }
+        )
 
     api_prefixes: dict[str, int] = {}
     for r in route_list:

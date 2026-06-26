@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from .disclosure import DisclosureGenerator
-from .disclosure_db import DisclosureDB, _DAY
+from .disclosure_db import _DAY, DisclosureDB
 from .state import DisclosureState
 
 logger = logging.getLogger(__name__)
@@ -116,7 +116,10 @@ class DisclosureWorkflow:
     ) -> None:
         """Mark finding as validated by a human reviewer."""
         self._db.transition(
-            finding_id, DisclosureState.VALIDATED, reviewer, notes,
+            finding_id,
+            DisclosureState.VALIDATED,
+            reviewer,
+            notes,
         )
 
     def reject(
@@ -127,7 +130,10 @@ class DisclosureWorkflow:
     ) -> None:
         """Mark finding as rejected."""
         self._db.transition(
-            finding_id, DisclosureState.REJECTED, reviewer, reason,
+            finding_id,
+            DisclosureState.REJECTED,
+            reviewer,
+            reason,
         )
 
     def request_revision(
@@ -138,7 +144,10 @@ class DisclosureWorkflow:
     ) -> None:
         """Send finding back for revision."""
         self._db.transition(
-            finding_id, DisclosureState.NEEDS_REVISION, reviewer, reason,
+            finding_id,
+            DisclosureState.NEEDS_REVISION,
+            reviewer,
+            reason,
         )
 
     def prepare_disclosure_batch(
@@ -152,21 +161,16 @@ class DisclosureWorkflow:
         - Max 5 non-critical findings per batch
         """
         all_in_batch = self._db.get_batch(batch_key)
-        validated = [
-            f for f in all_in_batch
-            if f["state"] == DisclosureState.VALIDATED.value
-        ]
+        validated = [f for f in all_in_batch if f["state"] == DisclosureState.VALIDATED.value]
 
         critical = [
-            f for f in validated
+            f
+            for f in validated
             if (f.get("severity_verified") or f.get("severity") or "").lower() == "critical"
         ]
-        non_critical = [
-            f for f in validated
-            if f not in critical
-        ]
+        non_critical = [f for f in validated if f not in critical]
 
-        return critical + non_critical[:self._max_batch_size]
+        return critical + non_critical[: self._max_batch_size]
 
     def send_disclosure(
         self,
@@ -192,11 +196,15 @@ class DisclosureWorkflow:
             finding_dict = dict(finding_row)
 
         self._db.transition(
-            finding_id, DisclosureState.PENDING_DISCLOSURE, reviewer,
+            finding_id,
+            DisclosureState.PENDING_DISCLOSURE,
+            reviewer,
             "preparing disclosure",
         )
         self._db.transition(
-            finding_id, DisclosureState.DISCLOSED, reviewer,
+            finding_id,
+            DisclosureState.DISCLOSED,
+            reviewer,
             "disclosure sent",
         )
         self._db.start_timeline(finding_id)
@@ -241,18 +249,21 @@ class DisclosureWorkflow:
 
             for alert_day in _ALERT_DAYS:
                 if days_elapsed >= alert_day:
-                    alerts.append({
-                        "finding_id": row["id"],
-                        "repo_url": row["repo_url"],
-                        "severity": row.get("severity_verified") or row.get("severity"),
-                        "days_elapsed": int(days_elapsed),
-                        "days_remaining": int(days_remaining),
-                        "alert_day": alert_day,
-                        "state": row["state"],
-                        "deadline": datetime.fromtimestamp(
-                            deadline, tz=timezone.utc,
-                        ).strftime("%Y-%m-%d"),
-                    })
+                    alerts.append(
+                        {
+                            "finding_id": row["id"],
+                            "repo_url": row["repo_url"],
+                            "severity": row.get("severity_verified") or row.get("severity"),
+                            "days_elapsed": int(days_elapsed),
+                            "days_remaining": int(days_remaining),
+                            "alert_day": alert_day,
+                            "state": row["state"],
+                            "deadline": datetime.fromtimestamp(
+                                deadline,
+                                tz=timezone.utc,
+                            ).strftime("%Y-%m-%d"),
+                        }
+                    )
                     break
 
         return alerts

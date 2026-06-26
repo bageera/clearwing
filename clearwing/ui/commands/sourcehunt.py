@@ -4,6 +4,8 @@ import logging
 import os
 import sys
 
+DEFAULT_WEBHOOK_PORT = 8787
+
 
 def _format_budget(budget: float) -> str:
     if budget <= 0:
@@ -188,7 +190,7 @@ def add_parser(subparsers):
         default=None,
         dest="exploit_budget",
         help="Exploit development budget band (default: auto from --depth). "
-             "standard=$25/1hr, deep=$200/4hr, campaign=$2000/12hr.",
+        "standard=$25/1hr, deep=$200/4hr, campaign=$2000/12hr.",
     )
     parser.add_argument(
         "--elaborate",
@@ -254,15 +256,18 @@ def add_parser(subparsers):
         help="Disable the shared findings pool (dedup + cross-agent queries)",
     )
     parser.add_argument(
-        "--gvisor", action="store_true",
+        "--gvisor",
+        action="store_true",
         help="Use gVisor runtime for container isolation",
     )
     parser.add_argument(
-        "--encrypt-artifacts", action="store_true",
+        "--encrypt-artifacts",
+        action="store_true",
         help="Enable encrypted artifact storage",
     )
     parser.add_argument(
-        "--no-behavior-monitor", action="store_true",
+        "--no-behavior-monitor",
+        action="store_true",
         help="Disable behavioral monitoring",
     )
     parser.add_argument(
@@ -329,7 +334,10 @@ def add_parser(subparsers):
         "Complements --watch (poll-based).",
     )
     parser.add_argument(
-        "--webhook-port", type=int, default=8787, help="Webhook listen port (default: 8787)"
+        "--webhook-port",
+        type=int,
+        default=DEFAULT_WEBHOOK_PORT,
+        help=f"Webhook listen port (default: {DEFAULT_WEBHOOK_PORT})",
     )
     parser.add_argument(
         "--webhook-host", default="0.0.0.0", help="Webhook listen host (default: 0.0.0.0)"
@@ -372,27 +380,39 @@ def add_parser(subparsers):
         "(defaults to the retro-hunt target repo)",
     )
     parser.add_argument(
-        "--nday", action="store_true", default=False,
+        "--nday",
+        action="store_true",
+        default=False,
         help="N-day exploit pipeline mode",
     )
     parser.add_argument(
-        "--cve-list", metavar="PATH", default=None,
+        "--cve-list",
+        metavar="PATH",
+        default=None,
         help="File with CVE IDs for --nday (one per line: CVE-ID [commit_sha])",
     )
     parser.add_argument(
-        "--cve", metavar="CVE_ID", default=None,
+        "--cve",
+        metavar="CVE_ID",
+        default=None,
         help="Single CVE to exploit in --nday mode",
     )
     parser.add_argument(
-        "--patch-commit", metavar="SHA", default=None,
+        "--patch-commit",
+        metavar="SHA",
+        default=None,
         help="Git SHA of the patch commit for --nday --cve",
     )
     parser.add_argument(
-        "--recent-cves", action="store_true", default=False,
+        "--recent-cves",
+        action="store_true",
+        default=False,
         help="Auto-discover recent CVEs from git history for --nday",
     )
     parser.add_argument(
-        "--nday-days", type=int, default=90,
+        "--nday-days",
+        type=int,
+        default=90,
         help="Days to look back for --recent-cves (default: 90)",
     )
     parser.add_argument(
@@ -402,11 +422,15 @@ def add_parser(subparsers):
         help="Budget band per CVE in --nday mode (default: deep)",
     )
     parser.add_argument(
-        "--reveng", action="store_true", default=False,
+        "--reveng",
+        action="store_true",
+        default=False,
         help="Reverse engineering pipeline: decompile + reconstruct + hunt",
     )
     parser.add_argument(
-        "--arch", default="x86_64", choices=["x86_64"],
+        "--arch",
+        default="x86_64",
+        choices=["x86_64"],
         help="Target architecture for --reveng (default: x86_64; v1.0 supports x86_64 only)",
     )
     parser.add_argument(
@@ -451,11 +475,15 @@ def add_parser(subparsers):
 
 
 def handle(cli, args):
-    """Run the sourcehunt pipeline."""
+    """Run the sourcehunt pipeline.
+
+    Dispatches to one of several sub-mode handlers based on the CLI flags.
+    The sub-modes are mutually exclusive: retro-hunt, nday, reveng, elaborate,
+    calibrate, webhook, watch, and the default standard sourcehunt run.
+    """
     from ...core.config import default_results_dir
     from ...providers import ProviderManager, resolve_llm_endpoint
     from ...sourcehunt.pool import TierBudget
-    from ...sourcehunt.runner import SourceHuntRunner
 
     if args.output_dir is None:
         args.output_dir = default_results_dir("sourcehunt")
@@ -501,350 +529,382 @@ def handle(cli, args):
     if "all" in formats:
         formats = ["sarif", "markdown", "json"]
 
-    # Retro-hunt mode dispatches to the RetroHunter
+    # Dispatch to the appropriate sub-mode handler.  The first matching
+    # condition wins; the branches are mutually exclusive.
     if args.retro_hunt:
-        from ...sourcehunt.retro_hunt import RetroHunter
+        _run_retro_hunt(cli, args, provider_manager)
+    elif args.nday:
+        _run_nday(cli, args, provider_manager)
+    elif getattr(args, "reveng", False):
+        _run_reveng(cli, args, provider_manager)
+    elif args.elaborate or args.elaborate_auto:
+        _run_elaborate(cli, args, endpoint, provider_manager)
+    elif args.calibrate:
+        _run_calibrate(cli, args)
+    elif args.webhook:
+        _run_webhook(cli, args)
+    elif args.watch:
+        _run_watch(cli, args)
+    else:
+        _run_standard(cli, args, provider_manager, tier_budget, formats)
 
-        if not args.patch_source:
-            cli.console.print("[red]Error: --retro-hunt requires --patch-source[/red]")
-            sys.exit(1)
-        # Build an LLM for rule generation via the same resolved
-        # endpoint as the rest of the pipeline.
-        try:
-            llm = provider_manager.get_llm("default")
-        except Exception as e:
-            cli.console.print(f"[red]Could not build LLM: {e}[/red]")
+
+def _get_llm_or_exit(cli, provider_manager, hint=False):
+    """Build the default LLM via the provider manager, or print an error and exit.
+
+    When *hint* is true, emit the extra "set ANTHROPIC_API_KEY ..." guidance that
+    the retro-hunt branch historically printed.
+    """
+    try:
+        return provider_manager.get_llm("default")
+    except Exception as e:
+        cli.console.print(f"[red]Could not build LLM: {e}[/red]")
+        if hint:
             cli.console.print(
                 "[red]Set ANTHROPIC_API_KEY, CLEARWING_BASE_URL, "
                 "or pass --base-url/--api-key.[/red]"
             )
-            sys.exit(1)
+        sys.exit(1)
 
-        cli.console.print(f"[bold blue]Retro-hunting {args.retro_hunt} in {args.repo}[/bold blue]")
-        hunter = RetroHunter(llm=llm)
-        result = hunter.hunt(
-            cve_id=args.retro_hunt,
-            patch_source=args.patch_source,
-            target_repo_path=args.local_path or args.repo,
-            repo_path_for_git_source=args.patch_repo or args.local_path or args.repo,
-        )
-        cli.console.print("\n[bold]Retro-hunt complete[/bold]")
-        cli.console.print(f"  CVE: {result.cve_id}")
-        cli.console.print(f"  Rule: {result.rule_description}")
-        cli.console.print(f"  Findings: {len(result.findings)}")
-        if result.notes:
-            cli.console.print(f"  Notes: {result.notes}")
-        for f in result.findings[:5]:
-            cli.console.print(
-                f"  [{f['severity'].upper()}] {f['file']}:{f['line_number']} "
-                f"— {f['description'][:80]}"
-            )
-        sys.exit(0)
 
-    # N-day exploit pipeline
-    if args.nday:
-        import asyncio
+def _run_retro_hunt(cli, args, provider_manager):
+    """Retro-hunt mode: dispatch to the RetroHunter."""
+    from ...sourcehunt.retro_hunt import RetroHunter
 
-        from ...sourcehunt.nday import NdayPipeline
-        from ...sourcehunt.nday_filter import NdayCandidate, fetch_recent_cves, parse_cve_list
+    if not args.patch_source:
+        cli.console.print("[red]Error: --retro-hunt requires --patch-source[/red]")
+        sys.exit(1)
 
-        candidates: list[NdayCandidate] = []
-        if args.cve:
-            candidates = [NdayCandidate(
-                cve_id=args.cve, patch_source=args.patch_commit or "",
-            )]
-        elif args.cve_list:
-            candidates = parse_cve_list(args.cve_list)
-        elif args.recent_cves:
-            candidates = fetch_recent_cves(
-                args.local_path or args.repo, args.nday_days,
-            )
-        else:
-            cli.console.print(
-                "[red]Error: --nday requires --cve, --cve-list, or --recent-cves[/red]"
-            )
-            sys.exit(1)
+    llm = _get_llm_or_exit(cli, provider_manager, hint=True)
 
-        if not candidates:
-            cli.console.print("[yellow]No CVE candidates found.[/yellow]")
-            sys.exit(0)
-
-        try:
-            llm = provider_manager.get_llm("default")
-        except Exception as e:
-            cli.console.print(f"[red]Could not build LLM: {e}[/red]")
-            sys.exit(1)
-
+    cli.console.print(f"[bold blue]Retro-hunting {args.retro_hunt} in {args.repo}[/bold blue]")
+    hunter = RetroHunter(llm=llm)
+    result = hunter.hunt(
+        cve_id=args.retro_hunt,
+        patch_source=args.patch_source,
+        target_repo_path=args.local_path or args.repo,
+        repo_path_for_git_source=args.patch_repo or args.local_path or args.repo,
+    )
+    cli.console.print("\n[bold]Retro-hunt complete[/bold]")
+    cli.console.print(f"  CVE: {result.cve_id}")
+    cli.console.print(f"  Rule: {result.rule_description}")
+    cli.console.print(f"  Findings: {len(result.findings)}")
+    if result.notes:
+        cli.console.print(f"  Notes: {result.notes}")
+    for f in result.findings[:5]:
         cli.console.print(
-            f"[bold blue]N-day pipeline: {len(candidates)} CVEs "
-            f"(budget={args.nday_budget})[/bold blue]"
+            f"  [{f['severity'].upper()}] {f['file']}:{f['line_number']} — {f['description'][:80]}"
         )
+    sys.exit(0)
 
-        pipeline = NdayPipeline(
-            llm=llm,
-            repo_path=args.local_path or args.repo,
-            budget_band=args.nday_budget,
-            project=args.repo,
-            output_dir=args.output_dir,
+
+def _run_nday(cli, args, provider_manager):
+    """N-day exploit pipeline."""
+    import asyncio
+
+    from ...sourcehunt.nday import NdayPipeline
+    from ...sourcehunt.nday_filter import NdayCandidate, fetch_recent_cves, parse_cve_list
+
+    candidates: list[NdayCandidate] = []
+    if args.cve:
+        candidates = [
+            NdayCandidate(
+                cve_id=args.cve,
+                patch_source=args.patch_commit or "",
+            )
+        ]
+    elif args.cve_list:
+        candidates = parse_cve_list(args.cve_list)
+    elif args.recent_cves:
+        candidates = fetch_recent_cves(
+            args.local_path or args.repo,
+            args.nday_days,
         )
-        result = asyncio.run(pipeline.arun(candidates))
+    else:
+        cli.console.print("[red]Error: --nday requires --cve, --cve-list, or --recent-cves[/red]")
+        sys.exit(1)
 
-        cli.console.print("\n[bold]N-day pipeline complete[/bold]")
-        cli.console.print(f"  Total CVEs: {result.total_cves}")
-        cli.console.print(f"  Filtered: {result.filtered_cves}")
-        cli.console.print(f"  Attempted: {result.attempted}")
-        cli.console.print(f"  Exploited: {result.exploited}")
-        cli.console.print(f"  Partial: {result.partial}")
-        cli.console.print(f"  Failed: {result.failed}")
-        cli.console.print(f"  Build failed: {result.build_failed}")
-        cli.console.print(f"  Cost: ${result.total_cost_usd:.2f}")
-        cli.console.print(f"  Duration: {result.duration_seconds:.1f}s")
-
-        for r in result.results:
-            if r.status == "exploited":
-                cli.console.print(f"  [green]✓ {r.cve_id} — exploited[/green]")
-            elif r.status == "partial":
-                cli.console.print(f"  [yellow]~ {r.cve_id} — partial[/yellow]")
-            elif r.status == "filtered":
-                cli.console.print(f"  [dim]- {r.cve_id} — filtered[/dim]")
-
+    if not candidates:
+        cli.console.print("[yellow]No CVE candidates found.[/yellow]")
         sys.exit(0)
 
-    # Reverse engineering pipeline
-    if getattr(args, "reveng", False):
-        import asyncio
+    llm = _get_llm_or_exit(cli, provider_manager)
 
-        from ...sourcehunt.reveng import RevengPipeline
+    cli.console.print(
+        f"[bold blue]N-day pipeline: {len(candidates)} CVEs (budget={args.nday_budget})[/bold blue]"
+    )
 
-        binary_path = args.local_path or args.repo
-        if not os.path.isfile(binary_path):
-            cli.console.print(
-                f"[red]Error: --reveng requires a path to a binary file, "
-                f"got '{binary_path}'[/red]"
-            )
-            sys.exit(1)
+    pipeline = NdayPipeline(
+        llm=llm,
+        repo_path=args.local_path or args.repo,
+        budget_band=args.nday_budget,
+        project=args.repo,
+        output_dir=args.output_dir,
+    )
+    result = asyncio.run(pipeline.arun(candidates))
 
-        try:
-            llm = provider_manager.get_llm("default")
-        except Exception as e:
-            cli.console.print(f"[red]Could not build LLM: {e}[/red]")
-            sys.exit(1)
+    cli.console.print("\n[bold]N-day pipeline complete[/bold]")
+    cli.console.print(f"  Total CVEs: {result.total_cves}")
+    cli.console.print(f"  Filtered: {result.filtered_cves}")
+    cli.console.print(f"  Attempted: {result.attempted}")
+    cli.console.print(f"  Exploited: {result.exploited}")
+    cli.console.print(f"  Partial: {result.partial}")
+    cli.console.print(f"  Failed: {result.failed}")
+    cli.console.print(f"  Build failed: {result.build_failed}")
+    cli.console.print(f"  Cost: ${result.total_cost_usd:.2f}")
+    cli.console.print(f"  Duration: {result.duration_seconds:.1f}s")
 
+    for r in result.results:
+        if r.status == "exploited":
+            cli.console.print(f"  [green]✓ {r.cve_id} — exploited[/green]")
+        elif r.status == "partial":
+            cli.console.print(f"  [yellow]~ {r.cve_id} — partial[/yellow]")
+        elif r.status == "filtered":
+            cli.console.print(f"  [dim]- {r.cve_id} — filtered[/dim]")
+
+    sys.exit(0)
+
+
+def _run_reveng(cli, args, provider_manager):
+    """Reverse engineering pipeline."""
+    import asyncio
+
+    from ...sourcehunt.reveng import RevengPipeline
+
+    binary_path = args.local_path or args.repo
+    if not os.path.isfile(binary_path):
         cli.console.print(
-            f"[bold blue]Reveng pipeline: {binary_path} "
-            f"(arch={args.arch}, budget={args.reveng_budget})[/bold blue]"
+            f"[red]Error: --reveng requires a path to a binary file, got '{binary_path}'[/red]"
         )
+        sys.exit(1)
 
-        pipeline = RevengPipeline(
-            llm=llm,
-            binary_path=os.path.abspath(binary_path),
-            arch=args.arch,
-            budget_band=args.reveng_budget,
-            output_dir=args.output_dir,
-            project_name=os.path.basename(binary_path),
-        )
-        result = asyncio.run(pipeline.arun())
+    llm = _get_llm_or_exit(cli, provider_manager)
 
-        cli.console.print("\n[bold]Reveng pipeline complete[/bold]")
-        cli.console.print(f"  Binary: {result.binary_path}")
-        cli.console.print(f"  Status: {result.status}")
-        if result.decompilation:
-            cli.console.print(
-                f"  Functions decompiled: {result.decompilation.total_functions}"
-            )
-        if result.reconstruction:
-            cli.console.print(
-                f"  Functions reconstructed: {result.reconstruction.reconstructed_count}"
-            )
-            cli.console.print(
-                f"  Coverage: {result.reconstruction.validation.function_coverage:.0%}"
-            )
-        cli.console.print(f"  Findings: {len(result.findings)}")
-        exploited = sum(1 for r in result.exploit_results if r.success)
-        cli.console.print(f"  Exploits attempted: {len(result.exploit_results)}")
-        cli.console.print(f"  Exploited: {exploited}")
-        cli.console.print(f"  Cost: ${result.total_cost_usd:.2f}")
-        cli.console.print(f"  Duration: {result.duration_seconds:.1f}s")
+    cli.console.print(
+        f"[bold blue]Reveng pipeline: {binary_path} "
+        f"(arch={args.arch}, budget={args.reveng_budget})[/bold blue]"
+    )
 
-        for f in result.findings[:5]:
-            sev = (f.get("severity_verified") or f.get("severity", "info")).upper()
-            desc = f.get("description", "")[:80]
-            cli.console.print(f"  [{sev}] {desc}")
+    pipeline = RevengPipeline(
+        llm=llm,
+        binary_path=os.path.abspath(binary_path),
+        arch=args.arch,
+        budget_band=args.reveng_budget,
+        output_dir=args.output_dir,
+        project_name=os.path.basename(binary_path),
+    )
+    result = asyncio.run(pipeline.arun())
 
-        sys.exit(0)
+    cli.console.print("\n[bold]Reveng pipeline complete[/bold]")
+    cli.console.print(f"  Binary: {result.binary_path}")
+    cli.console.print(f"  Status: {result.status}")
+    if result.decompilation:
+        cli.console.print(f"  Functions decompiled: {result.decompilation.total_functions}")
+    if result.reconstruction:
+        cli.console.print(f"  Functions reconstructed: {result.reconstruction.reconstructed_count}")
+        cli.console.print(f"  Coverage: {result.reconstruction.validation.function_coverage:.0%}")
+    cli.console.print(f"  Findings: {len(result.findings)}")
+    exploited = sum(1 for r in result.exploit_results if r.success)
+    cli.console.print(f"  Exploits attempted: {len(result.exploit_results)}")
+    cli.console.print(f"  Exploited: {exploited}")
+    cli.console.print(f"  Cost: ${result.total_cost_usd:.2f}")
+    cli.console.print(f"  Duration: {result.duration_seconds:.1f}s")
 
-    # Elaborate mode: interactive HITL or autonomous agent
-    if args.elaborate or args.elaborate_auto:
-        from ...sourcehunt.elaboration import (
-            ElaborationAgent,
-            find_latest_session,
-            load_finding_from_session,
-            load_session_findings,
-            prioritize_for_elaboration,
-        )
+    for f in result.findings[:5]:
+        sev = (f.get("severity_verified") or f.get("severity", "info")).upper()
+        desc = f.get("description", "")[:80]
+        cli.console.print(f"  [{sev}] {desc}")
 
-        session_id = args.elaborate_session or find_latest_session(
+    sys.exit(0)
+
+
+def _run_elaborate(cli, args, endpoint, provider_manager):
+    """Elaborate mode: interactive HITL or autonomous agent."""
+    from ...sourcehunt.elaboration import (
+        find_latest_session,
+        load_finding_from_session,
+        load_session_findings,
+        prioritize_for_elaboration,
+    )
+
+    session_id = args.elaborate_session or find_latest_session(
+        args.output_dir,
+    )
+    if not session_id:
+        cli.console.print("[red]No session found. Use --elaborate-session SESSION_ID.[/red]")
+        sys.exit(1)
+
+    if args.elaborate:
+        finding = load_finding_from_session(
             args.output_dir,
+            session_id,
+            args.elaborate,
         )
-        if not session_id:
+        if finding is None:
             cli.console.print(
-                "[red]No session found. Use --elaborate-session SESSION_ID.[/red]"
+                f"[red]Finding {args.elaborate} not found in session {session_id}[/red]"
             )
             sys.exit(1)
-
-        if args.elaborate:
-            finding = load_finding_from_session(
-                args.output_dir, session_id, args.elaborate,
-            )
-            if finding is None:
-                cli.console.print(
-                    f"[red]Finding {args.elaborate} not found in session {session_id}[/red]"
-                )
-                sys.exit(1)
-            _run_elaborate_interactive(
-                cli, args, finding, session_id, endpoint, provider_manager,
-            )
-        else:
-            all_findings = load_session_findings(args.output_dir, session_id)
-            verified = [f for f in all_findings if f.get("verified")]
-            cap = args.elaborate_top or args.elaborate_cap or "10%"
-            targets = prioritize_for_elaboration(verified, cap)
-            if not targets:
-                cli.console.print("[yellow]No findings eligible for elaboration.[/yellow]")
-                sys.exit(0)
-            _run_elaborate_auto(
-                cli, args, targets, session_id, endpoint, provider_manager,
-            )
-        sys.exit(0)
-
-    # Calibrate mode: assign human severity ratings for calibration tracking
-    if args.calibrate:
-        from ...sourcehunt.calibration import CalibrationStore
-        from ...sourcehunt.elaboration import load_session_findings
-
-        session_id = args.calibrate
+        _run_elaborate_interactive(
+            cli,
+            args,
+            finding,
+            session_id,
+            endpoint,
+            provider_manager,
+        )
+    else:
         all_findings = load_session_findings(args.output_dir, session_id)
         verified = [f for f in all_findings if f.get("verified")]
-        if not verified:
-            cli.console.print(
-                f"[yellow]No verified findings in session {session_id}[/yellow]"
-            )
+        cap = args.elaborate_top or args.elaborate_cap or "10%"
+        targets = prioritize_for_elaboration(verified, cap)
+        if not targets:
+            cli.console.print("[yellow]No findings eligible for elaboration.[/yellow]")
             sys.exit(0)
-
-        store = CalibrationStore()
-        cli.console.print(
-            f"[bold blue]Calibrating {len(verified)} verified findings "
-            f"from session {session_id}[/bold blue]"
+        _run_elaborate_auto(
+            cli,
+            args,
+            targets,
+            session_id,
+            endpoint,
+            provider_manager,
         )
-        for f in verified:
-            fid = f.get("id", "?")
-            sev = (f.get("severity_verified") or f.get("severity") or "?").upper()
-            desc = f.get("description", "")[:80]
-            cli.console.print(f"\n  [{sev}] {fid}: {desc}")
-            human = input("  Human severity (critical/high/medium/low/info, or skip): ").strip().lower()
-            if human in ("critical", "high", "medium", "low", "info"):
-                store.record_human_verdict(fid, session_id, human)
-                cli.console.print(f"  Recorded: {human}")
-            else:
-                cli.console.print("  Skipped")
+    sys.exit(0)
 
-        stats = store.stats()
-        cli.console.print(f"\n[bold]Calibration stats:[/bold]")
-        cli.console.print(f"  Total records: {stats['total_records']}")
-        cli.console.print(f"  Human reviewed: {stats['human_reviewed']}")
-        cli.console.print(f"  Exact match rate: {stats['exact_match_rate']:.1%}")
-        cli.console.print(f"  Within-one rate: {stats['within_one_rate']:.1%}")
+
+def _run_calibrate(cli, args):
+    """Calibrate mode: assign human severity ratings for calibration tracking."""
+    from ...sourcehunt.calibration import CalibrationStore
+    from ...sourcehunt.elaboration import load_session_findings
+
+    session_id = args.calibrate
+    all_findings = load_session_findings(args.output_dir, session_id)
+    verified = [f for f in all_findings if f.get("verified")]
+    if not verified:
+        cli.console.print(f"[yellow]No verified findings in session {session_id}[/yellow]")
         sys.exit(0)
 
-    # Webhook mode: start an HTTP server that runs sourcehunt on each commit
-    if args.webhook:
-        from ...sourcehunt.commit_monitor import CommitMonitor, CommitMonitorConfig
-        from ...sourcehunt.webhook_server import (
-            WebhookConfig,
-            commit_monitor_on_push_factory,
-            serve_forever,
-        )
+    store = CalibrationStore()
+    cli.console.print(
+        f"[bold blue]Calibrating {len(verified)} verified findings "
+        f"from session {session_id}[/bold blue]"
+    )
+    for f in verified:
+        fid = f.get("id", "?")
+        sev = (f.get("severity_verified") or f.get("severity") or "?").upper()
+        desc = f.get("description", "")[:80]
+        cli.console.print(f"\n  [{sev}] {fid}: {desc}")
+        human = input("  Human severity (critical/high/medium/low/info, or skip): ").strip().lower()
+        if human in ("critical", "high", "medium", "low", "info"):
+            store.record_human_verdict(fid, session_id, human)
+            cli.console.print(f"  Recorded: {human}")
+        else:
+            cli.console.print("  Skipped")
 
-        local_path = args.local_path or args.repo
-        if not os.path.isdir(local_path):
-            cli.console.print(
-                f"[red]Error: webhook mode requires a local git clone path, got '{local_path}'[/red]"
-            )
-            sys.exit(1)
+    stats = store.stats()
+    cli.console.print("\n[bold]Calibration stats:[/bold]")
+    cli.console.print(f"  Total records: {stats['total_records']}")
+    cli.console.print(f"  Human reviewed: {stats['human_reviewed']}")
+    cli.console.print(f"  Exact match rate: {stats['exact_match_rate']:.1%}")
+    cli.console.print(f"  Within-one rate: {stats['within_one_rate']:.1%}")
+    sys.exit(0)
 
-        secret = args.webhook_secret or os.environ.get("GITHUB_WEBHOOK_SECRET", "")
-        if not secret:
-            cli.console.print(
-                "[red]Error: webhook mode requires a shared secret "
-                "(--webhook-secret or GITHUB_WEBHOOK_SECRET env)[/red]"
-            )
-            sys.exit(1)
 
-        monitor = CommitMonitor(
-            CommitMonitorConfig(
-                repo_path=os.path.abspath(local_path),
-                branch=args.branch,
-                depth=args.depth,
-                budget_usd=args.budget,
-                output_dir=args.output_dir,
-                enable_github_checks=args.github_checks,
-                github_check_name=args.github_check_name,
-            )
-        )
+def _run_webhook(cli, args):
+    """Webhook mode: start an HTTP server that runs sourcehunt on each commit."""
+    from ...sourcehunt.commit_monitor import CommitMonitor, CommitMonitorConfig
+    from ...sourcehunt.webhook_server import (
+        WebhookConfig,
+        commit_monitor_on_push_factory,
+        serve_forever,
+    )
+
+    local_path = args.local_path or args.repo
+    if not os.path.isdir(local_path):
         cli.console.print(
-            f"[bold blue]Webhook server: {args.webhook_host}:{args.webhook_port} "
-            f"(depth={args.depth}, budget={_format_budget(args.budget)})[/bold blue]"
+            f"[red]Error: webhook mode requires a local git clone path, got '{local_path}'[/red]"
         )
-        if args.webhook_allowed_repo:
-            cli.console.print(f"  allowed repos: {', '.join(args.webhook_allowed_repo)}")
-        if args.webhook_allowed_branch:
-            cli.console.print(f"  allowed branches: {', '.join(args.webhook_allowed_branch)}")
-        serve_forever(
-            WebhookConfig(
-                host=args.webhook_host,
-                port=args.webhook_port,
-                secret=secret,
-                allowed_repos=args.webhook_allowed_repo,
-                allowed_branches=args.webhook_allowed_branch,
-                on_push=commit_monitor_on_push_factory(monitor),
-            )
-        )
-        sys.exit(0)
+        sys.exit(1)
 
-    # Watch mode dispatches to the CommitMonitor instead of a one-shot runner
-    if args.watch:
-        from ...sourcehunt.commit_monitor import CommitMonitor, CommitMonitorConfig
-
-        local_path = args.local_path or args.repo
-        if not os.path.isdir(local_path):
-            cli.console.print(
-                f"[red]Error: watch mode requires a local git clone path, got '{local_path}'[/red]"
-            )
-            sys.exit(1)
-        monitor = CommitMonitor(
-            CommitMonitorConfig(
-                repo_path=os.path.abspath(local_path),
-                branch=args.branch,
-                poll_interval_seconds=args.poll_interval,
-                max_iterations=args.max_watch_iterations,
-                output_dir=args.output_dir,
-                depth=args.depth,
-                budget_usd=args.budget,
-                enable_github_checks=args.github_checks,
-                github_check_name=args.github_check_name,
-            )
-        )
+    secret = args.webhook_secret or os.environ.get("GITHUB_WEBHOOK_SECRET", "")
+    if not secret:
         cli.console.print(
-            f"[bold blue]Watching {local_path} every {args.poll_interval}s "
-            f"(depth={args.depth})[/bold blue]"
+            "[red]Error: webhook mode requires a shared secret "
+            "(--webhook-secret or GITHUB_WEBHOOK_SECRET env)[/red]"
         )
-        try:
-            results = monitor.run()
-        except KeyboardInterrupt:
-            cli.console.print("\n[yellow]Watch cancelled by user[/yellow]")
-            sys.exit(0)
-        cli.console.print(f"[bold]Watch complete. Processed {len(results)} commits.[/bold]")
+        sys.exit(1)
+
+    monitor = CommitMonitor(
+        CommitMonitorConfig(
+            repo_path=os.path.abspath(local_path),
+            branch=args.branch,
+            depth=args.depth,
+            budget_usd=args.budget,
+            output_dir=args.output_dir,
+            enable_github_checks=args.github_checks,
+            github_check_name=args.github_check_name,
+        )
+    )
+    cli.console.print(
+        f"[bold blue]Webhook server: {args.webhook_host}:{args.webhook_port} "
+        f"(depth={args.depth}, budget={_format_budget(args.budget)})[/bold blue]"
+    )
+    if args.webhook_allowed_repo:
+        cli.console.print(f"  allowed repos: {', '.join(args.webhook_allowed_repo)}")
+    if args.webhook_allowed_branch:
+        cli.console.print(f"  allowed branches: {', '.join(args.webhook_allowed_branch)}")
+    serve_forever(
+        WebhookConfig(
+            host=args.webhook_host,
+            port=args.webhook_port,
+            secret=secret,
+            allowed_repos=args.webhook_allowed_repo,
+            allowed_branches=args.webhook_allowed_branch,
+            on_push=commit_monitor_on_push_factory(monitor),
+        )
+    )
+    sys.exit(0)
+
+
+def _run_watch(cli, args):
+    """Watch mode: dispatch to the CommitMonitor instead of a one-shot runner."""
+    from ...sourcehunt.commit_monitor import CommitMonitor, CommitMonitorConfig
+
+    local_path = args.local_path or args.repo
+    if not os.path.isdir(local_path):
+        cli.console.print(
+            f"[red]Error: watch mode requires a local git clone path, got '{local_path}'[/red]"
+        )
+        sys.exit(1)
+    monitor = CommitMonitor(
+        CommitMonitorConfig(
+            repo_path=os.path.abspath(local_path),
+            branch=args.branch,
+            poll_interval_seconds=args.poll_interval,
+            max_iterations=args.max_watch_iterations,
+            output_dir=args.output_dir,
+            depth=args.depth,
+            budget_usd=args.budget,
+            enable_github_checks=args.github_checks,
+            github_check_name=args.github_check_name,
+        )
+    )
+    cli.console.print(
+        f"[bold blue]Watching {local_path} every {args.poll_interval}s "
+        f"(depth={args.depth})[/bold blue]"
+    )
+    try:
+        results = monitor.run()
+    except KeyboardInterrupt:
+        cli.console.print("\n[yellow]Watch cancelled by user[/yellow]")
         sys.exit(0)
+    cli.console.print(f"[bold]Watch complete. Processed {len(results)} commits.[/bold]")
+    sys.exit(0)
+
+
+def _run_standard(cli, args, provider_manager, tier_budget, formats):
+    """Default standard sourcehunt run via SourceHuntRunner."""
+    from ...sourcehunt.runner import SourceHuntRunner
 
     if args.no_per_file_hunt and not args.subsystem_hunt and not args.subsystem_paths:
         cli.console.print(
@@ -891,9 +951,7 @@ def handle(cli, args):
         redundancy_override=args.redundancy,
         shard_entry_points=True if args.shard_entry_points else None,
         min_shard_rank=args.min_shard_rank,
-        seed_corpus_sources=(
-            (["git_cve"] if args.seed_cves else []) or None
-        ),
+        seed_corpus_sources=(["git_cve"] if args.seed_cves else []) or None,
         enable_findings_pool=not args.no_findings_pool,
         enable_subsystem_hunt=args.subsystem_hunt or bool(args.subsystem_paths),
         subsystem_paths=args.subsystem_paths or None,
@@ -962,7 +1020,6 @@ def _run_elaborate_interactive(cli, args, finding, session_id, endpoint, provide
     from rich.prompt import Prompt
 
     from ...sourcehunt.elaboration import (
-        ElaborationAgent,
         _build_elaboration_prompt,
         build_elaboration_tools,
     )
@@ -971,8 +1028,7 @@ def _run_elaborate_interactive(cli, args, finding, session_id, endpoint, provide
     cli.console.print(f"  File: {finding.get('file', '?')}:{finding.get('line_number', '?')}")
     cli.console.print(f"  CWE: {finding.get('cwe', 'N/A')}")
     cli.console.print(
-        f"  Current impact: "
-        f"{finding.get('exploit_impact') or finding.get('impact') or 'unknown'}"
+        f"  Current impact: {finding.get('exploit_impact') or finding.get('impact') or 'unknown'}"
     )
     cli.console.print(
         f"  Primitive: "
@@ -988,11 +1044,14 @@ def _run_elaborate_interactive(cli, args, finding, session_id, endpoint, provide
 
     system_prompt = _build_elaboration_prompt(finding)
     messages: list[dict] = [
-        {"role": "user", "content": (
-            f"I'm working with you to upgrade the exploit for finding {finding.get('id', '?')}. "
-            f"The current impact is {finding.get('exploit_impact') or 'unknown'}. "
-            f"Let's start by reviewing what we have."
-        )},
+        {
+            "role": "user",
+            "content": (
+                f"I'm working with you to upgrade the exploit for finding {finding.get('id', '?')}. "
+                f"The current impact is {finding.get('exploit_impact') or 'unknown'}. "
+                f"Let's start by reviewing what we have."
+            ),
+        },
     ]
 
     from ...agent.tools.hunt.sandbox import HunterContext
@@ -1004,7 +1063,9 @@ def _run_elaborate_interactive(cli, args, finding, session_id, endpoint, provide
         specialist="elaboration",
     )
     tools = build_elaboration_tools(ctx, finding)
-    tool_schemas = [{"name": t.name, "description": t.description, "input_schema": t.schema} for t in tools]
+    tool_schemas = [
+        {"name": t.name, "description": t.description, "input_schema": t.schema} for t in tools
+    ]
     tool_handlers = {t.name: t.handler for t in tools}
 
     total_cost = 0.0
@@ -1095,9 +1156,7 @@ def _run_elaborate_auto(cli, args, targets, session_id, endpoint, provider_manag
 
     from ...sourcehunt.elaboration import ElaborationAgent
 
-    cli.console.print(
-        f"\n[bold blue]Autonomous elaboration: {len(targets)} findings[/bold blue]"
-    )
+    cli.console.print(f"\n[bold blue]Autonomous elaboration: {len(targets)} findings[/bold blue]")
 
     try:
         llm = provider_manager.get_llm("default")
@@ -1118,7 +1177,9 @@ def _run_elaborate_auto(cli, args, targets, session_id, endpoint, provider_manag
             cli.console.print(f"\n[bold]({i}/{len(targets)}) Elaborating {fid}...[/bold]")
             result = await agent.aattempt(finding)
             results.append(result)
-            status = "[green]UPGRADED[/green]" if result.elaborated else "[yellow]NOT UPGRADED[/yellow]"
+            status = (
+                "[green]UPGRADED[/green]" if result.elaborated else "[yellow]NOT UPGRADED[/yellow]"
+            )
             cli.console.print(f"  Result: {status}")
             if result.upgraded_impact:
                 cli.console.print(f"  Upgraded impact: {result.upgraded_impact}")

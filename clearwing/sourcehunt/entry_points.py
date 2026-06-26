@@ -9,9 +9,8 @@ from __future__ import annotations
 import logging
 import re
 from dataclasses import dataclass
-from typing import Any
 
-from .callgraph import CallGraph, FunctionInfo
+from .callgraph import CallGraph
 from .pool import _file_rank
 from .state import FileTarget
 
@@ -76,20 +75,24 @@ def extract_entry_points(
         if entry_type is None:
             entry_type = "exported_api"
         desc = _describe_entry_point(fi.name, entry_type)
-        entry_points.append(EntryPoint(
-            file_path=file_path,
-            function_name=fi.name,
-            start_line=fi.start_line,
-            end_line=fi.end_line,
-            entry_type=entry_type,
-            description=desc,
-        ))
+        entry_points.append(
+            EntryPoint(
+                file_path=file_path,
+                function_name=fi.name,
+                start_line=fi.start_line,
+                end_line=fi.end_line,
+                entry_type=entry_type,
+                description=desc,
+            )
+        )
 
     if len(entry_points) > max_per_file:
-        entry_points.sort(key=lambda ep: (
-            _TYPE_PRIORITY.get(ep.entry_type, 99),
-            -(ep.end_line - ep.start_line),
-        ))
+        entry_points.sort(
+            key=lambda ep: (
+                _TYPE_PRIORITY.get(ep.entry_type, 99),
+                -(ep.end_line - ep.start_line),
+            )
+        )
         entry_points = entry_points[:max_per_file]
 
     return entry_points
@@ -111,7 +114,8 @@ def extract_entry_points_batch(
     if total_loc < min_project_loc:
         logger.info(
             "Entry-point extraction skipped: total_loc=%d < %d",
-            total_loc, min_project_loc,
+            total_loc,
+            min_project_loc,
         )
         return {}
 
@@ -127,7 +131,8 @@ def extract_entry_points_batch(
     total_eps = sum(len(v) for v in result.values())
     logger.info(
         "Entry-point extraction: %d entry points from %d files",
-        total_eps, len(result),
+        total_eps,
+        len(result),
     )
     return result
 

@@ -274,20 +274,24 @@ def _rank_candidates(
     for c in candidates:
         raw = candidate_times[c]
         if len(raw) < 2:
-            results.append({"char": c, "mean_ms": 0, "median_ms": 0, "stdev_ms": 0, "n": len(raw), "rank": 0})
+            results.append(
+                {"char": c, "mean_ms": 0, "median_ms": 0, "stdev_ms": 0, "n": len(raw), "rank": 0}
+            )
             continue
         cleaned = apply_outlier_rejection(raw, outlier_method, outlier_threshold)
         if len(cleaned) < 2:
             cleaned = raw
         stats = compute_stats(cleaned, c)
-        results.append({
-            "char": c,
-            "mean_ms": stats["mean_ms"],
-            "median_ms": stats["median_ms"],
-            "stdev_ms": stats["stdev_ms"],
-            "n": stats["n"],
-            "rank": 0,
-        })
+        results.append(
+            {
+                "char": c,
+                "mean_ms": stats["mean_ms"],
+                "median_ms": stats["median_ms"],
+                "stdev_ms": stats["stdev_ms"],
+                "n": stats["n"],
+                "rank": 0,
+            }
+        )
 
     results.sort(key=lambda r: r["mean_ms"], reverse=(select == "max"))
     for i, r in enumerate(results):
@@ -299,15 +303,23 @@ def _rank_candidates(
     if not best or not second:
         return results, {}, ""
 
-    best_times = apply_outlier_rejection(candidate_times[best["char"]], outlier_method, outlier_threshold)
-    second_times = apply_outlier_rejection(candidate_times[second["char"]], outlier_method, outlier_threshold)
+    best_times = apply_outlier_rejection(
+        candidate_times[best["char"]], outlier_method, outlier_threshold
+    )
+    second_times = apply_outlier_rejection(
+        candidate_times[second["char"]], outlier_method, outlier_threshold
+    )
     if len(best_times) < 2:
         best_times = candidate_times[best["char"]]
     if len(second_times) < 2:
         second_times = candidate_times[second["char"]]
 
     if len(best_times) < 2 or len(second_times) < 2:
-        return results, {"char": best["char"], "mean_ms": best["mean_ms"]}, "Insufficient data for significance test."
+        return (
+            results,
+            {"char": best["char"], "mean_ms": best["mean_ms"]},
+            "Insufficient data for significance test.",
+        )
 
     t_stat, p_val = welch_t_test(best_times, second_times)
     d = cohens_d(best_times, second_times)
@@ -420,7 +432,12 @@ def timing_bitwise_probe(
                 candidate_times[c].append(ms)
 
     ranked, best_candidate, conclusion = _rank_candidates(
-        candidates, candidate_times, outlier_method, outlier_threshold, select, position,
+        candidates,
+        candidate_times,
+        outlier_method,
+        outlier_threshold,
+        select,
+        position,
     )
 
     return {

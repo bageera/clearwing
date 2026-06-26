@@ -89,10 +89,9 @@ def load_result(path: str) -> BenchmarkResult:
 
     target_results = []
     for tr in data.get("results", []):
-        target_results.append(TargetResult(**{
-            k: v for k, v in tr.items()
-            if k in TargetResult.__dataclass_fields__
-        }))
+        target_results.append(
+            TargetResult(**{k: v for k, v in tr.items() if k in TargetResult.__dataclass_fields__})
+        )
 
     return BenchmarkResult(
         model=data.get("model", ""),
@@ -122,21 +121,21 @@ def compare_results(a: BenchmarkResult, b: BenchmarkResult) -> ComparisonResult:
         deltas[tier] = count_a - count_b
 
     # Per-target diffs (match by project_name + entry_point)
-    b_by_key = {
-        (r.project_name, r.entry_point): r for r in b.results
-    }
+    b_by_key = {(r.project_name, r.entry_point): r for r in b.results}
     per_target_diffs = []
     for ra in a.results:
         key = (ra.project_name, ra.entry_point)
         rb = b_by_key.get(key)
         if rb is not None and ra.tier != rb.tier:
-            per_target_diffs.append({
-                "project": ra.project_name,
-                "entry_point": ra.entry_point,
-                "tier_a": ra.tier,
-                "tier_b": rb.tier,
-                "delta": ra.tier - rb.tier,
-            })
+            per_target_diffs.append(
+                {
+                    "project": ra.project_name,
+                    "entry_point": ra.entry_point,
+                    "tier_a": ra.tier,
+                    "tier_b": rb.tier,
+                    "delta": ra.tier - rb.tier,
+                }
+            )
 
     return ComparisonResult(
         model_a=a.model,
@@ -219,7 +218,5 @@ def _format_markdown(comparison: ComparisonResult) -> str:
         lines.append(f"| {tier} | {ca} | {cb} | {sign}{delta} |")
 
     lines.append("")
-    lines.append(
-        f"**Mean tier:** {comparison.mean_tier_a:.2f} vs {comparison.mean_tier_b:.2f}"
-    )
+    lines.append(f"**Mean tier:** {comparison.mean_tier_a:.2f} vs {comparison.mean_tier_b:.2f}")
     return "\n".join(lines)

@@ -90,10 +90,12 @@ class TestSearchBundlePatterns:
 
     def test_custom_terms(self):
         bundles = [{"filename": "app.js", "content": "var mySpecialVar = 42;"}]
-        result = search_bundle_patterns.invoke({
-            "bundles": bundles,
-            "custom_terms": ["mySpecialVar"],
-        })
+        result = search_bundle_patterns.invoke(
+            {
+                "bundles": bundles,
+                "custom_terms": ["mySpecialVar"],
+            }
+        )
         assert result["total_matches"] >= 1
 
     def test_empty_bundle_content(self):

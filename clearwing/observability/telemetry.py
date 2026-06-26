@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import logging
 import threading
 from dataclasses import dataclass
 
 from clearwing.core.events import EventBus, EventType
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -96,6 +99,7 @@ class CostTracker:
                 },
             )
         except Exception:
+            logger.warning("Silent exception in telemetry", exc_info=True)
             pass  # telemetry should never break the caller
 
     def record_tool_call(self, tool_name: str, duration_ms: int) -> None:

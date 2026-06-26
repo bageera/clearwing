@@ -32,10 +32,12 @@ class TestAnalyze2skdEntropy:
         assert result["combined_entropy_bits"] == 104.0
 
     def test_password_only_vs_2skd(self):
-        result = analyze_2skd_entropy.invoke({
-            "password_entropy_bits": 40.0,
-            "iterations": 650000,
-        })
+        result = analyze_2skd_entropy.invoke(
+            {
+                "password_entropy_bits": 40.0,
+                "iterations": 650000,
+            }
+        )
         profiles = result["cracking_profiles"]
         for p in profiles:
             pw_sec = p["password_only"]["seconds"]
@@ -65,11 +67,15 @@ class TestAnalyze2skdEntropy:
         assert "infeasible" in result["assessment"].lower()
 
     def test_secret_key_is_dominant(self):
-        result = analyze_2skd_entropy.invoke({"password_entropy_bits": 40.0, "secret_key_bits": 128})
+        result = analyze_2skd_entropy.invoke(
+            {"password_entropy_bits": 40.0, "secret_key_bits": 128}
+        )
         assert result["secret_key_is_dominant_factor"] is True
 
     def test_high_entropy_password_not_dominant(self):
-        result = analyze_2skd_entropy.invoke({"password_entropy_bits": 200.0, "secret_key_bits": 128})
+        result = analyze_2skd_entropy.invoke(
+            {"password_entropy_bits": 200.0, "secret_key_bits": 128}
+        )
         assert result["secret_key_is_dominant_factor"] is False
 
 
@@ -79,20 +85,24 @@ class TestAnalyze2skdEntropy:
 class TestSecretKeyValidation:
     def test_declined(self):
         with patch.object(cred_mod, "interrupt", return_value=False):
-            result = test_secret_key_validation.invoke({
-                "target": "http://example.com",
-                "username": "user@example.com",
-                "password": "test",
-            })
+            result = test_secret_key_validation.invoke(
+                {
+                    "target": "http://example.com",
+                    "username": "user@example.com",
+                    "password": "test",
+                }
+            )
         assert "error" in result
 
     def test_too_few_samples(self):
-        result = test_secret_key_validation.invoke({
-            "target": "http://example.com",
-            "username": "user@example.com",
-            "password": "test",
-            "samples": 4,
-        })
+        result = test_secret_key_validation.invoke(
+            {
+                "target": "http://example.com",
+                "username": "user@example.com",
+                "password": "test",
+                "samples": 4,
+            }
+        )
         assert "error" in result
 
     def test_connection_failure(self):
@@ -103,22 +113,26 @@ class TestSecretKeyValidation:
             patch.object(cred_mod, "interrupt", return_value=True),
             patch("clearwing.agent.tools.crypto.srp_tools._http_post", mock_http_post),
         ):
-            result = test_secret_key_validation.invoke({
-                "target": "http://example.com",
-                "username": "user@example.com",
-                "password": "test",
-            })
+            result = test_secret_key_validation.invoke(
+                {
+                    "target": "http://example.com",
+                    "username": "user@example.com",
+                    "password": "test",
+                }
+            )
         assert "error" in result
 
     def test_no_separation_detected(self):
         import json
 
-        server_response = json.dumps({
-            "salt": "aa" * 16,
-            "iterations": 100000,
-            "algorithm": "PBKDF2-HMAC-SHA256",
-            "B": "deadbeef" * 8,
-        })
+        server_response = json.dumps(
+            {
+                "salt": "aa" * 16,
+                "iterations": 100000,
+                "algorithm": "PBKDF2-HMAC-SHA256",
+                "B": "deadbeef" * 8,
+            }
+        )
 
         def mock_http_post(url, payload, **kwargs):
             return (200, {}, server_response, 5.0)
@@ -131,14 +145,16 @@ class TestSecretKeyValidation:
             patch("clearwing.agent.tools.crypto.srp_tools._http_post", mock_http_post),
             patch("clearwing.agent.tools.crypto.srp_tools._timed_post", mock_timed_post),
         ):
-            result = test_secret_key_validation.invoke({
-                "target": "http://example.com",
-                "username": "user@example.com",
-                "password": "test",
-                "secret_key": "A3-AABBCC-DDEEFF-112233-445566-778899-AABBCC-DDEEFF",
-                "samples": 20,
-                "warmup": 2,
-            })
+            result = test_secret_key_validation.invoke(
+                {
+                    "target": "http://example.com",
+                    "username": "user@example.com",
+                    "password": "test",
+                    "secret_key": "A3-AABBCC-DDEEFF-112233-445566-778899-AABBCC-DDEEFF",
+                    "samples": 20,
+                    "warmup": 2,
+                }
+            )
 
         assert result["factor_separation"] is False
         assert len(result["separation_signals"]) == 0
@@ -147,11 +163,13 @@ class TestSecretKeyValidation:
         import json
         import random
 
-        server_response = json.dumps({
-            "salt": "bb" * 16,
-            "iterations": 100000,
-            "B": "cafebabe" * 8,
-        })
+        server_response = json.dumps(
+            {
+                "salt": "bb" * 16,
+                "iterations": 100000,
+                "B": "cafebabe" * 8,
+            }
+        )
 
         def mock_http_post(url, payload, **kwargs):
             return (200, {}, server_response, 5.0)
@@ -174,13 +192,15 @@ class TestSecretKeyValidation:
             patch("clearwing.agent.tools.crypto.srp_tools._http_post", mock_http_post),
             patch("clearwing.agent.tools.crypto.srp_tools._timed_post", mock_timed_post),
         ):
-            result = test_secret_key_validation.invoke({
-                "target": "http://example.com",
-                "username": "user@example.com",
-                "password": "test",
-                "samples": 20,
-                "warmup": 0,
-            })
+            result = test_secret_key_validation.invoke(
+                {
+                    "target": "http://example.com",
+                    "username": "user@example.com",
+                    "password": "test",
+                    "samples": 20,
+                    "warmup": 0,
+                }
+            )
 
         assert result["factor_separation"] is True
         assert "timing" in result["separation_signals"]
@@ -188,11 +208,13 @@ class TestSecretKeyValidation:
     def test_response_separation_detected(self):
         import json
 
-        server_response = json.dumps({
-            "salt": "cc" * 16,
-            "iterations": 100000,
-            "B": "aabb" * 16,
-        })
+        server_response = json.dumps(
+            {
+                "salt": "cc" * 16,
+                "iterations": 100000,
+                "B": "aabb" * 16,
+            }
+        )
 
         def mock_http_post(url, payload, **kwargs):
             return (200, {}, server_response, 5.0)
@@ -210,13 +232,15 @@ class TestSecretKeyValidation:
             patch("clearwing.agent.tools.crypto.srp_tools._http_post", mock_http_post),
             patch("clearwing.agent.tools.crypto.srp_tools._timed_post", mock_timed_post),
         ):
-            result = test_secret_key_validation.invoke({
-                "target": "http://example.com",
-                "username": "user@example.com",
-                "password": "test",
-                "samples": 20,
-                "warmup": 2,
-            })
+            result = test_secret_key_validation.invoke(
+                {
+                    "target": "http://example.com",
+                    "username": "user@example.com",
+                    "password": "test",
+                    "samples": 20,
+                    "warmup": 2,
+                }
+            )
 
         assert result["factor_separation"] is True
         assert "response_body" in result["separation_signals"]
@@ -224,11 +248,13 @@ class TestSecretKeyValidation:
     def test_no_secret_key_provided(self):
         import json
 
-        server_response = json.dumps({
-            "salt": "dd" * 16,
-            "iterations": 100000,
-            "B": "1234" * 16,
-        })
+        server_response = json.dumps(
+            {
+                "salt": "dd" * 16,
+                "iterations": 100000,
+                "B": "1234" * 16,
+            }
+        )
 
         def mock_http_post(url, payload, **kwargs):
             return (200, {}, server_response, 5.0)
@@ -241,13 +267,15 @@ class TestSecretKeyValidation:
             patch("clearwing.agent.tools.crypto.srp_tools._http_post", mock_http_post),
             patch("clearwing.agent.tools.crypto.srp_tools._timed_post", mock_timed_post),
         ):
-            result = test_secret_key_validation.invoke({
-                "target": "http://example.com",
-                "username": "user@example.com",
-                "password": "test",
-                "samples": 20,
-                "warmup": 2,
-            })
+            result = test_secret_key_validation.invoke(
+                {
+                    "target": "http://example.com",
+                    "username": "user@example.com",
+                    "password": "test",
+                    "samples": 20,
+                    "warmup": 2,
+                }
+            )
 
         assert result["secret_key_provided"] is False
         assert "factor_separation" in result
@@ -259,9 +287,11 @@ class TestSecretKeyValidation:
 class TestEnumerateSecretKeyFormat:
     def test_declined(self):
         with patch.object(cred_mod, "interrupt", return_value=False):
-            result = enumerate_secret_key_format.invoke({
-                "target": "http://example.com",
-            })
+            result = enumerate_secret_key_format.invoke(
+                {
+                    "target": "http://example.com",
+                }
+            )
         assert "error" in result
 
     def test_known_format_parsing(self):
@@ -272,9 +302,11 @@ class TestEnumerateSecretKeyFormat:
             patch.object(cred_mod, "interrupt", return_value=True),
             patch("clearwing.agent.tools.crypto.srp_tools._http_post", mock_http_post),
         ):
-            result = enumerate_secret_key_format.invoke({
-                "target": "http://example.com",
-            })
+            result = enumerate_secret_key_format.invoke(
+                {
+                    "target": "http://example.com",
+                }
+            )
 
         fmt = result["format_analysis"]
         assert fmt["prefix"] == "A3"
@@ -284,15 +316,17 @@ class TestEnumerateSecretKeyFormat:
 
     def test_entropy_calculation(self):
         def mock_http_post(url, payload, **kwargs):
-            return (404, {}, '{}', 5.0)
+            return (404, {}, "{}", 5.0)
 
         with (
             patch.object(cred_mod, "interrupt", return_value=True),
             patch("clearwing.agent.tools.crypto.srp_tools._http_post", mock_http_post),
         ):
-            result = enumerate_secret_key_format.invoke({
-                "target": "http://example.com",
-            })
+            result = enumerate_secret_key_format.invoke(
+                {
+                    "target": "http://example.com",
+                }
+            )
 
         fmt = result["format_analysis"]
         assert fmt["total_entropy_bits"] > 100
@@ -306,10 +340,12 @@ class TestEnumerateSecretKeyFormat:
             patch.object(cred_mod, "interrupt", return_value=True),
             patch("clearwing.agent.tools.crypto.srp_tools._http_post", mock_http_post),
         ):
-            result = enumerate_secret_key_format.invoke({
-                "target": "http://example.com",
-                "username": "user@example.com",
-            })
+            result = enumerate_secret_key_format.invoke(
+                {
+                    "target": "http://example.com",
+                    "username": "user@example.com",
+                }
+            )
 
         assert "format_analysis" in result
         assert result["enrollment_probe"]["status"] == 0
@@ -317,17 +353,19 @@ class TestEnumerateSecretKeyFormat:
     def test_with_username_probes_auth(self):
         def mock_http_post(url, payload, **kwargs):
             if "enroll" in url:
-                return (404, {}, '{}', 5.0)
+                return (404, {}, "{}", 5.0)
             return (200, {}, '{"salt": "aa", "iterations": 100000}', 5.0)
 
         with (
             patch.object(cred_mod, "interrupt", return_value=True),
             patch("clearwing.agent.tools.crypto.srp_tools._http_post", mock_http_post),
         ):
-            result = enumerate_secret_key_format.invoke({
-                "target": "http://example.com",
-                "username": "user@example.com",
-            })
+            result = enumerate_secret_key_format.invoke(
+                {
+                    "target": "http://example.com",
+                    "username": "user@example.com",
+                }
+            )
 
         assert "auth_probe" in result
         assert result["auth_probe"]["status"] == 200
@@ -338,73 +376,89 @@ class TestEnumerateSecretKeyFormat:
 
 class TestOfflineCrackSetup:
     def test_hashcat_sha256_mode(self):
-        result = offline_crack_setup.invoke({
-            "salt_hex": "aa" * 16,
-            "iterations": 650000,
-            "algorithm": "PBKDF2-HMAC-SHA256",
-        })
+        result = offline_crack_setup.invoke(
+            {
+                "salt_hex": "aa" * 16,
+                "iterations": 650000,
+                "algorithm": "PBKDF2-HMAC-SHA256",
+            }
+        )
         assert result["hashcat"]["mode"] == 10900
 
     def test_hashcat_sha1_mode(self):
-        result = offline_crack_setup.invoke({
-            "salt_hex": "bb" * 16,
-            "iterations": 1300000,
-            "algorithm": "PBKDF2-HMAC-SHA1",
-        })
+        result = offline_crack_setup.invoke(
+            {
+                "salt_hex": "bb" * 16,
+                "iterations": 1300000,
+                "algorithm": "PBKDF2-HMAC-SHA1",
+            }
+        )
         assert result["hashcat"]["mode"] == 12000
 
     def test_hashcat_sha512_mode(self):
-        result = offline_crack_setup.invoke({
-            "salt_hex": "cc" * 16,
-            "iterations": 210000,
-            "algorithm": "PBKDF2-HMAC-SHA512",
-        })
+        result = offline_crack_setup.invoke(
+            {
+                "salt_hex": "cc" * 16,
+                "iterations": 210000,
+                "algorithm": "PBKDF2-HMAC-SHA512",
+            }
+        )
         assert result["hashcat"]["mode"] == 12100
 
     def test_hash_format_string(self):
-        result = offline_crack_setup.invoke({
-            "salt_hex": "aa" * 16,
-            "iterations": 650000,
-            "verifier_hex": "bb" * 32,
-        })
+        result = offline_crack_setup.invoke(
+            {
+                "salt_hex": "aa" * 16,
+                "iterations": 650000,
+                "verifier_hex": "bb" * 32,
+            }
+        )
         assert "hash_file_content" in result
         hash_str = result["hash_file_content"]
         assert hash_str.startswith("sha256:")
         assert ":650000:" in hash_str
 
     def test_john_command(self):
-        result = offline_crack_setup.invoke({
-            "salt_hex": "aa" * 16,
-            "iterations": 650000,
-        })
+        result = offline_crack_setup.invoke(
+            {
+                "salt_hex": "aa" * 16,
+                "iterations": 650000,
+            }
+        )
         assert "john" in result
         assert "PBKDF2-HMAC-SHA256" in result["john"]["format"]
         assert "--wordlist" in result["john"]["command"]
 
     def test_with_secret_key(self):
-        result = offline_crack_setup.invoke({
-            "salt_hex": "aa" * 16,
-            "iterations": 650000,
-            "secret_key_hex": "dd" * 32,
-        })
+        result = offline_crack_setup.invoke(
+            {
+                "salt_hex": "aa" * 16,
+                "iterations": 650000,
+                "secret_key_hex": "dd" * 32,
+            }
+        )
         assert result["2skd_active"] is True
         assert len(result["hashcat"]["notes"]) > 0
         assert "custom" in result["hashcat"]["notes"][0].lower()
         assert "INFEASIBLE" in result["feasibility"]
 
     def test_without_secret_key(self):
-        result = offline_crack_setup.invoke({
-            "salt_hex": "aa" * 16,
-            "iterations": 650000,
-        })
+        result = offline_crack_setup.invoke(
+            {
+                "salt_hex": "aa" * 16,
+                "iterations": 650000,
+            }
+        )
         assert result["2skd_active"] is False
         assert len(result["hashcat"]["notes"]) == 0
 
     def test_time_estimates(self):
-        result = offline_crack_setup.invoke({
-            "salt_hex": "aa" * 16,
-            "iterations": 650000,
-        })
+        result = offline_crack_setup.invoke(
+            {
+                "salt_hex": "aa" * 16,
+                "iterations": 650000,
+            }
+        )
         estimates = result["cracking_estimates"]
         assert "single_gpu_rtx4090" in estimates
         assert "gpu_cluster_8x" in estimates
@@ -414,10 +468,12 @@ class TestOfflineCrackSetup:
             assert "time_to_exhaust" in profile
 
     def test_no_hash_file_without_verifier(self):
-        result = offline_crack_setup.invoke({
-            "salt_hex": "aa" * 16,
-            "iterations": 650000,
-        })
+        result = offline_crack_setup.invoke(
+            {
+                "salt_hex": "aa" * 16,
+                "iterations": 650000,
+            }
+        )
         assert "hash_file_content" not in result
 
 

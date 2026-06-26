@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import threading
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
@@ -9,6 +10,8 @@ from typing import Any
 from urllib.parse import urlparse
 
 from clearwing.agent.tooling import tool
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -41,7 +44,14 @@ class AuthFlowRecord:
 class _RecordingState:
     """Internal watermark container for an active recording."""
 
-    __slots__ = ("name", "tab_name", "started_at", "proxy_watermark", "crypto_watermark", "cookies_at_start")
+    __slots__ = (
+        "name",
+        "tab_name",
+        "started_at",
+        "proxy_watermark",
+        "crypto_watermark",
+        "cookies_at_start",
+    )
 
     def __init__(
         self,
@@ -73,6 +83,7 @@ def _get_cookies() -> list[dict]:
         if ctx is not None:
             return ctx.cookies()
     except Exception:
+        logger.warning("Silent exception in auth_recorder", exc_info=True)
         pass
     return []
 
@@ -119,6 +130,7 @@ def start_auth_recording(name: str, tab_name: str = "default") -> dict:
         try:
             _flush_js_log(tab_name)
         except Exception:
+            logger.warning("Silent exception in auth_recorder", exc_info=True)
             pass
 
         if tab_name in _crypto_logs:
@@ -176,7 +188,9 @@ def stop_auth_recording() -> dict:
     crypto_entries = _collect_crypto_entries(state.tab_name, state.crypto_watermark)
     cookies_at_stop = _get_cookies()
 
-    events = _build_timeline(proxy_entries, crypto_entries, cookies_at_stop, state.cookies_at_start, stopped_at)
+    events = _build_timeline(
+        proxy_entries, crypto_entries, cookies_at_stop, state.cookies_at_start, stopped_at
+    )
 
     srp_values = _try_extract_srp(state.tab_name, crypto_entries)
 
@@ -196,7 +210,9 @@ def stop_auth_recording() -> dict:
     with _lock:
         _saved_flows[state.name] = record
 
-    new_cookie_names = {c.get("name") for c in cookies_at_stop} - {c.get("name") for c in state.cookies_at_start}
+    new_cookie_names = {c.get("name") for c in cookies_at_stop} - {
+        c.get("name") for c in state.cookies_at_start
+    }
 
     return {
         "status": "stopped",
@@ -269,6 +285,7 @@ def _collect_crypto_entries(tab_name: str, watermark: int) -> list[dict]:
         try:
             _flush_js_log(tab_name)
         except Exception:
+            logger.warning("Silent exception in auth_recorder", exc_info=True)
             pass
 
         if tab_name not in _crypto_logs:
@@ -289,43 +306,51 @@ def _build_timeline(
     events: list[AuthFlowEvent] = []
 
     for p in proxy_entries:
-        events.append(AuthFlowEvent(
-            source="proxy",
-            timestamp=p["timestamp"],
-            seq=p["id"],
-            event_type=f"{p['method']} {_extract_path(p['url'])}",
-            summary={
-                "status_code": p["status_code"],
-                "duration_ms": p["duration_ms"],
-                "url": p["url"],
-                "request_body_length": len(p.get("request_body", "")),
-                "response_body_snippet": p.get("response_body", "")[:200],
-            },
-        ))
+        events.append(
+            AuthFlowEvent(
+                source="proxy",
+                timestamp=p["timestamp"],
+                seq=p["id"],
+                event_type=f"{p['method']} {_extract_path(p['url'])}",
+                summary={
+                    "status_code": p["status_code"],
+                    "duration_ms": p["duration_ms"],
+                    "url": p["url"],
+                    "request_body_length": len(p.get("request_body", "")),
+                    "response_body_snippet": p.get("response_body", "")[:200],
+                },
+            )
+        )
 
     for c in crypto_entries:
         algo = c.get("algorithm") or {}
         km = c.get("key_material")
-        events.append(AuthFlowEvent(
-            source="crypto",
-            timestamp=c["timestamp"],
-            seq=c.get("seq", 0),
-            event_type=c["method"],
-            summary={
-                "algorithm": algo.get("name", str(algo)[:50]) if algo else "",
-                "key_material": km[:32] if km else None,
-                "duration_ms": c.get("duration_ms", 0),
-            },
-        ))
+        events.append(
+            AuthFlowEvent(
+                source="crypto",
+                timestamp=c["timestamp"],
+                seq=c.get("seq", 0),
+                event_type=c["method"],
+                summary={
+                    "algorithm": algo.get("name", str(algo)[:50]) if algo else "",
+                    "key_material": km[:32] if km else None,
+                    "duration_ms": c.get("duration_ms", 0),
+                },
+            )
+        )
 
-    new_cookie_names = {c.get("name") for c in cookies_at_stop} - {c.get("name") for c in cookies_at_start}
-    events.append(AuthFlowEvent(
-        source="cookie",
-        timestamp=stopped_at,
-        seq=0,
-        event_type="cookie_snapshot",
-        summary={"count": len(cookies_at_stop), "new_cookies": sorted(new_cookie_names)},
-    ))
+    new_cookie_names = {c.get("name") for c in cookies_at_stop} - {
+        c.get("name") for c in cookies_at_start
+    }
+    events.append(
+        AuthFlowEvent(
+            source="cookie",
+            timestamp=stopped_at,
+            seq=0,
+            event_type="cookie_snapshot",
+            summary={"count": len(cookies_at_stop), "new_cookies": sorted(new_cookie_names)},
+        )
+    )
 
     events.sort(key=lambda e: e.timestamp)
     return events
@@ -339,6 +364,7 @@ def _try_extract_srp(tab_name: str, crypto_entries: list[dict]) -> dict | None:
 
         return extract_srp_values.invoke({"tab_name": tab_name})
     except Exception:
+        logger.warning("Silent exception in auth_recorder", exc_info=True)
         return None
 
 
@@ -360,10 +386,24 @@ def _diff_responses(proxy_a: list[dict], proxy_b: list[dict]) -> list[dict]:
         a = proxy_a[i] if i < len(proxy_a) else None
         b = proxy_b[i] if i < len(proxy_b) else None
         if a is None:
-            diffs.append({"step": i, "note": "extra in flow_b", "url_b": _extract_path(b["url"]), "status_b": b["status_code"]})
+            diffs.append(
+                {
+                    "step": i,
+                    "note": "extra in flow_b",
+                    "url_b": _extract_path(b["url"]),
+                    "status_b": b["status_code"],
+                }
+            )
             continue
         if b is None:
-            diffs.append({"step": i, "note": "extra in flow_a", "url_a": _extract_path(a["url"]), "status_a": a["status_code"]})
+            diffs.append(
+                {
+                    "step": i,
+                    "note": "extra in flow_a",
+                    "url_a": _extract_path(a["url"]),
+                    "status_a": a["status_code"],
+                }
+            )
             continue
 
         body_a = a.get("response_body", "")
@@ -372,17 +412,19 @@ def _diff_responses(proxy_a: list[dict], proxy_b: list[dict]) -> list[dict]:
         body_diff = body_a != body_b
 
         if status_diff or body_diff:
-            diffs.append({
-                "step": i,
-                "url": _extract_path(a["url"]),
-                "method": a["method"],
-                "status_a": a["status_code"],
-                "status_b": b["status_code"],
-                "status_differs": status_diff,
-                "body_differs": body_diff,
-                "body_a_snippet": body_a[:200],
-                "body_b_snippet": body_b[:200],
-            })
+            diffs.append(
+                {
+                    "step": i,
+                    "url": _extract_path(a["url"]),
+                    "method": a["method"],
+                    "status_a": a["status_code"],
+                    "status_b": b["status_code"],
+                    "status_differs": status_diff,
+                    "body_differs": body_diff,
+                    "body_a_snippet": body_a[:200],
+                    "body_b_snippet": body_b[:200],
+                }
+            )
     return diffs
 
 
@@ -392,13 +434,15 @@ def _diff_timing(proxy_a: list[dict], proxy_b: list[dict]) -> dict:
     for i in range(paired):
         da = proxy_a[i].get("duration_ms", 0)
         db = proxy_b[i].get("duration_ms", 0)
-        steps.append({
-            "step": i,
-            "event_type": f"{proxy_a[i]['method']} {_extract_path(proxy_a[i]['url'])}",
-            "duration_a_ms": da,
-            "duration_b_ms": db,
-            "delta_ms": db - da,
-        })
+        steps.append(
+            {
+                "step": i,
+                "event_type": f"{proxy_a[i]['method']} {_extract_path(proxy_a[i]['url'])}",
+                "duration_a_ms": da,
+                "duration_b_ms": db,
+                "delta_ms": db - da,
+            }
+        )
 
     total_a = sum(p.get("duration_ms", 0) for p in proxy_a)
     total_b = sum(p.get("duration_ms", 0) for p in proxy_b)
@@ -428,12 +472,14 @@ def _diff_crypto_sequences(crypto_a: list[dict], crypto_b: list[dict]) -> dict:
         km_a = crypto_a[i].get("key_material")
         km_b = crypto_b[i].get("key_material")
         if km_a != km_b:
-            key_diffs.append({
-                "step": i,
-                "method": crypto_a[i]["method"],
-                "key_a_hex": (km_a or "")[:32],
-                "key_b_hex": (km_b or "")[:32],
-            })
+            key_diffs.append(
+                {
+                    "step": i,
+                    "method": crypto_a[i]["method"],
+                    "key_a_hex": (km_a or "")[:32],
+                    "key_b_hex": (km_b or "")[:32],
+                }
+            )
 
     return {
         "flow_a_methods": methods_a,

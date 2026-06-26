@@ -277,10 +277,9 @@ class FindingsPool:
                 continue
             try:
                 data = json.loads(line)
-                finding = Finding(**{
-                    k: v for k, v in data.items()
-                    if k in Finding.__dataclass_fields__
-                })
+                finding = Finding(
+                    **{k: v for k, v in data.items() if k in Finding.__dataclass_fields__}
+                )
                 fid = finding.get("id", "")
                 pool._findings[fid] = finding
                 cid = finding.get("cluster_id", "")
@@ -372,7 +371,10 @@ class FindingsPool:
         return cluster_id
 
     def _find_dedup_candidates(
-        self, file_path: str, cwe: str, primitive_type: str,
+        self,
+        file_path: str,
+        cwe: str,
+        primitive_type: str,
     ) -> list[FindingCluster]:
         candidates: list[FindingCluster] = []
         for cluster in self._clusters.values():
@@ -385,7 +387,9 @@ class FindingsPool:
         return candidates
 
     async def _dedup_check(
-        self, finding: Finding, candidates: list[FindingCluster],
+        self,
+        finding: Finding,
+        candidates: list[FindingCluster],
     ) -> str | None:
         from clearwing.llm.native import ChatMessage
 
@@ -423,7 +427,8 @@ class FindingsPool:
             return
         try:
             data = {
-                k: v for k, v in {
+                k: v
+                for k, v in {
                     "id": finding.get("id", ""),
                     "file": finding.get("file"),
                     "line_number": finding.get("line_number"),
@@ -440,7 +445,8 @@ class FindingsPool:
                     "algorithm": finding.get("algorithm"),
                     "crypto_attack_class": finding.get("crypto_attack_class"),
                     "ts": time.time(),
-                }.items() if v is not None
+                }.items()
+                if v is not None
             }
             with self._checkpoint_path.open("a", encoding="utf-8") as f:
                 f.write(json.dumps(data, sort_keys=True) + "\n")

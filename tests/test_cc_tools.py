@@ -50,9 +50,9 @@ class TestCcDiscoverSchema:
             call_count[0] += 1
             payload = json.loads(body)
             if "attestation" not in payload:
-                return (422, {}, 'missing field `attestation`', 5.0)
+                return (422, {}, "missing field `attestation`", 5.0)
             if "session_id" not in payload:
-                return (422, {}, 'missing field `session_id`', 5.0)
+                return (422, {}, "missing field `session_id`", 5.0)
             return (200, {}, '{"session": "created"}', 10.0)
 
         with (
@@ -72,10 +72,12 @@ class TestCcDiscoverSchema:
             patch.object(cc_mod, "interrupt", return_value=True),
             patch.object(cc_mod, "_http_post_raw", mock_post),
         ):
-            result = cc_discover_schema.invoke({
-                "target": "http://example.com",
-                "max_iterations": 5,
-            })
+            result = cc_discover_schema.invoke(
+                {
+                    "target": "http://example.com",
+                    "max_iterations": 5,
+                }
+            )
         assert result["schema_complete"] is False
         assert result["iterations"] <= 5
 
@@ -83,36 +85,42 @@ class TestCcDiscoverSchema:
         def mock_post(url, body, headers=None, timeout=30):
             payload = json.loads(body)
             if "known_field" in payload and "new_field" not in payload:
-                return (422, {}, 'missing field `new_field`', 5.0)
+                return (422, {}, "missing field `new_field`", 5.0)
             if "new_field" in payload:
-                return (200, {}, '{}', 5.0)
-            return (422, {}, 'missing field `known_field`', 5.0)
+                return (200, {}, "{}", 5.0)
+            return (422, {}, "missing field `known_field`", 5.0)
 
         with (
             patch.object(cc_mod, "interrupt", return_value=True),
             patch.object(cc_mod, "_http_post_raw", mock_post),
         ):
-            result = cc_discover_schema.invoke({
-                "target": "http://example.com",
-                "initial_fields": {"known_field": "value"},
-            })
+            result = cc_discover_schema.invoke(
+                {
+                    "target": "http://example.com",
+                    "initial_fields": {"known_field": "value"},
+                }
+            )
         assert "new_field" in result["discovered_fields"]
 
 
 class TestCcFuzzFields:
     def test_declined(self):
         with patch.object(cc_mod, "interrupt", return_value=False):
-            result = cc_fuzz_fields.invoke({
-                "target": "http://example.com",
-                "base_payload": {"field1": "value1"},
-            })
+            result = cc_fuzz_fields.invoke(
+                {
+                    "target": "http://example.com",
+                    "base_payload": {"field1": "value1"},
+                }
+            )
         assert "error" in result
 
     def test_no_fields(self):
-        result = cc_fuzz_fields.invoke({
-            "target": "http://example.com",
-            "base_payload": {},
-        })
+        result = cc_fuzz_fields.invoke(
+            {
+                "target": "http://example.com",
+                "base_payload": {},
+            }
+        )
         assert "error" in result
 
     def test_no_interesting_findings(self):
@@ -123,11 +131,13 @@ class TestCcFuzzFields:
             patch.object(cc_mod, "interrupt", return_value=True),
             patch.object(cc_mod, "_http_post_raw", mock_post),
         ):
-            result = cc_fuzz_fields.invoke({
-                "target": "http://example.com",
-                "base_payload": {"field1": "value1"},
-                "fields_to_fuzz": ["field1"],
-            })
+            result = cc_fuzz_fields.invoke(
+                {
+                    "target": "http://example.com",
+                    "base_payload": {"field1": "value1"},
+                    "fields_to_fuzz": ["field1"],
+                }
+            )
         assert len(result["interesting_findings"]) == 0
 
     def test_accepts_fuzz_value(self):
@@ -141,11 +151,13 @@ class TestCcFuzzFields:
             patch.object(cc_mod, "interrupt", return_value=True),
             patch.object(cc_mod, "_http_post_raw", mock_post),
         ):
-            result = cc_fuzz_fields.invoke({
-                "target": "http://example.com",
-                "base_payload": {"field1": "value1"},
-                "fields_to_fuzz": ["field1"],
-            })
+            result = cc_fuzz_fields.invoke(
+                {
+                    "target": "http://example.com",
+                    "base_payload": {"field1": "value1"},
+                    "fields_to_fuzz": ["field1"],
+                }
+            )
         assert len(result["interesting_findings"]) > 0
         assert any(f["severity"] == "HIGH" for f in result["interesting_findings"])
 

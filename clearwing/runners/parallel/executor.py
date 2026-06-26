@@ -135,6 +135,7 @@ class ParallelExecutor:
             try:
                 return str(self.config.item_key_fn(item))
             except Exception:
+                logger.warning("Silent exception in executor", exc_info=True)
                 pass
         if isinstance(item, str):
             return item
@@ -149,6 +150,7 @@ class ParallelExecutor:
         try:
             return str(self.config.item_tier_fn(item))
         except Exception:
+            logger.warning("Silent exception in executor", exc_info=True)
             return "C"
 
     # ------------------------------------------------------------------

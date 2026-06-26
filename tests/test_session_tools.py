@@ -62,8 +62,16 @@ class TestExtractSessionTokens:
 
     def test_url_filter(self):
         entries = [
-            FakeProxyEntry(id=1, url="http://example.com/api/auth", request_headers={"Authorization": "Bearer abc"}),
-            FakeProxyEntry(id=2, url="http://example.com/static/js", request_headers={"Authorization": "Bearer def"}),
+            FakeProxyEntry(
+                id=1,
+                url="http://example.com/api/auth",
+                request_headers={"Authorization": "Bearer abc"},
+            ),
+            FakeProxyEntry(
+                id=2,
+                url="http://example.com/static/js",
+                request_headers={"Authorization": "Bearer def"},
+            ),
         ]
         fake = FakeProxyHistory(entries=entries)
         with self._patch_history(fake):
@@ -74,10 +82,12 @@ class TestExtractSessionTokens:
 class TestReplayWithMutations:
     def test_declined(self):
         with patch.object(sess_mod, "interrupt", return_value=False):
-            result = replay_with_mutations.invoke({
-                "target_url": "http://example.com/api/test",
-                "token": "abc123",
-            })
+            result = replay_with_mutations.invoke(
+                {
+                    "target_url": "http://example.com/api/test",
+                    "token": "abc123",
+                }
+            )
         assert "error" in result
 
     def test_mutations_tested(self):
@@ -92,10 +102,12 @@ class TestReplayWithMutations:
             patch.object(sess_mod, "interrupt", return_value=True),
             patch.object(sess_mod, "_http_request", mock_request),
         ):
-            result = replay_with_mutations.invoke({
-                "target_url": "http://example.com/api",
-                "token": "AbC123",
-            })
+            result = replay_with_mutations.invoke(
+                {
+                    "target_url": "http://example.com/api",
+                    "token": "AbC123",
+                }
+            )
         assert result["baseline_status"] == 200
         assert result["mutations_tested"] >= 10
         assert any(r["mutation"] == "original" and r["status"] == 200 for r in result["results"])
@@ -108,10 +120,12 @@ class TestReplayWithMutations:
             patch.object(sess_mod, "interrupt", return_value=True),
             patch.object(sess_mod, "_http_request", mock_request),
         ):
-            result = replay_with_mutations.invoke({
-                "target_url": "http://example.com/api",
-                "token": "abc123",
-            })
+            result = replay_with_mutations.invoke(
+                {
+                    "target_url": "http://example.com/api",
+                    "token": "abc123",
+                }
+            )
         assert any("WARNING" in f for f in result["findings"])
 
 

@@ -8,7 +8,7 @@ import logging
 from typing import Any
 
 from clearwing.agent.tooling import tool
-from clearwing.agent.tools.ops.pentest_container import KALI, PARROT
+from clearwing.agent.tools.ops.pentest_container import run_in_pentest_container
 
 logger = logging.getLogger(__name__)
 
@@ -41,14 +41,15 @@ def run_modbus_scan(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     cmd = f"modbus-cli scan {target}:{port} {options}"
     logger.info("[%s] modbus scan: %s", distro, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=True)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )
 
 
 @tool(requires_approval=True)
@@ -74,14 +75,15 @@ def run_s7_scan(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     cmd = f"s7scan {target} -p {port} {options}"
     logger.info("[%s] s7scan: %s", distro, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=True)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )
 
 
 @tool(requires_approval=True)
@@ -108,14 +110,15 @@ def run_dnp3_scan(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     cmd = f"dnp3scan {target}:{port} {options}"
     logger.info("[%s] dnp3scan: %s", distro, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=True)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )
 
 
 @tool(requires_approval=True)
@@ -140,14 +143,15 @@ def run_ethernet_ip_scan(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     cmd = f"enipscan {target} {options}"
     logger.info("[%s] enipscan: %s", distro, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=True)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )
 
 
 @tool(requires_approval=True)
@@ -171,14 +175,15 @@ def run_bacnet_scan(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     cmd = f"bacnetscan {target} {options}"
     logger.info("[%s] bacnetscan: %s", distro, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=True)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )
 
 
 @tool(requires_approval=True)
@@ -206,14 +211,15 @@ def run_ics_fuzzer(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     cmd = f"icspuzzer -p {protocol} -t {target}:{port} {options}"
     logger.info("[%s] ics fuzzer (%s): %s", distro, protocol, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=True)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -245,14 +251,15 @@ def run_theharvester(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     cmd = f"theHarvester -d {domain} -b {sources} {options}"
     logger.info("[%s] theHarvester: %s", distro, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=False) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=False)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=False,
+    )
 
 
 @tool(requires_approval=False)
@@ -279,15 +286,16 @@ def run_maltego(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     transform_flag = f"-t {transform}" if transform else ""
     cmd = f"maltego {options} {transform_flag} -e {target}"
     logger.info("[%s] maltego: %s", distro, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=False) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=False)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=False,
+    )
 
 
 @tool(requires_approval=True)
@@ -300,7 +308,7 @@ def run_social_engineer_toolkit(
 ) -> dict[str, Any]:
     """Social Engineer Toolkit (SET) for phishing and credential harvesting.
 
-    SET automates spear-phishing, credential harvesting, and 
+    SET automates spear-phishing, credential harvesting, and
     mass-mailer attacks. Requires explicit approval for any
     email-sending or credential-collection operations.
 
@@ -314,14 +322,15 @@ def run_social_engineer_toolkit(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     cmd = f"setoolkit --attack {attack_type} --target {target} {options}"
     logger.info("[%s] SET (%s): %s", distro, attack_type, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=True)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )
 
 
 @tool(requires_approval=True)
@@ -348,14 +357,15 @@ def run_gophish(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     cmd = f"gophish {action} {campaign} {options}"
     logger.info("[%s] gophish (%s): %s", distro, action, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=True)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )
 
 
 @tool(requires_approval=False)
@@ -381,14 +391,15 @@ def run_osint_framework(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     cmd = f"recon-ng -r {target} -c {category} {options}"
     logger.info("[%s] recon-ng (%s): %s", distro, category, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=False) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=False)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=False,
+    )
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -420,14 +431,15 @@ def run_chipwhisperer(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     cmd = f"chipwhisperer {attack_type} {target} {options}"
     logger.info("[%s] chipwhisperer (%s): %s", distro, attack_type, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=True)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )
 
 
 @tool(requires_approval=True)
@@ -452,11 +464,12 @@ def run_jtag_enum(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     cmd = f"jtagenum {target} {options}"
     logger.info("[%s] jtagenum: %s", distro, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=True)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )

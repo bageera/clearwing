@@ -75,7 +75,11 @@ def extract_session_tokens(  # noqa: C901
     seen_values: set[str] = set()
 
     for entry in _proxy_history.entries:
-        entry_dict = entry if isinstance(entry, dict) else (entry.__dict__ if hasattr(entry, "__dict__") else {})
+        entry_dict = (
+            entry
+            if isinstance(entry, dict)
+            else (entry.__dict__ if hasattr(entry, "__dict__") else {})
+        )
         url = entry_dict.get("url", "")
         if url_filter and url_filter not in url:
             continue
@@ -89,12 +93,14 @@ def extract_session_tokens(  # noqa: C901
             if lower_name == "authorization" and hdr_value not in seen_values:
                 seen_values.add(hdr_value)
                 token_type = "bearer" if hdr_value.lower().startswith("bearer ") else "other"
-                bearer_tokens.append({
-                    "type": token_type,
-                    "value": hdr_value[:200],
-                    "request_id": req_id,
-                    "url": url,
-                })
+                bearer_tokens.append(
+                    {
+                        "type": token_type,
+                        "value": hdr_value[:200],
+                        "request_id": req_id,
+                        "url": url,
+                    }
+                )
             elif lower_name == "cookie":
                 for cookie_pair in hdr_value.split(";"):
                     cookie_pair = cookie_pair.strip()
@@ -103,33 +109,44 @@ def extract_session_tokens(  # noqa: C901
                         key = f"{name.strip()}={val.strip()[:50]}"
                         if key not in seen_values:
                             seen_values.add(key)
-                            session_cookies.append({
-                                "name": name.strip(),
-                                "value": val.strip()[:200],
-                                "request_id": req_id,
-                                "url": url,
-                            })
+                            session_cookies.append(
+                                {
+                                    "name": name.strip(),
+                                    "value": val.strip()[:200],
+                                    "request_id": req_id,
+                                    "url": url,
+                                }
+                            )
             elif lower_name in (
-                "x-csrf-token", "x-xsrf-token", "csrf-token",
-                "x-request-id", "x-session-id",
+                "x-csrf-token",
+                "x-xsrf-token",
+                "csrf-token",
+                "x-request-id",
+                "x-session-id",
             ):
                 if hdr_value not in seen_values:
                     seen_values.add(hdr_value)
-                    csrf_tokens.append({
-                        "header": hdr_name,
-                        "value": hdr_value[:200],
-                        "request_id": req_id,
-                        "url": url,
-                    })
-            elif lower_name.startswith("x-") and ("auth" in lower_name or "token" in lower_name or "session" in lower_name):
+                    csrf_tokens.append(
+                        {
+                            "header": hdr_name,
+                            "value": hdr_value[:200],
+                            "request_id": req_id,
+                            "url": url,
+                        }
+                    )
+            elif lower_name.startswith("x-") and (
+                "auth" in lower_name or "token" in lower_name or "session" in lower_name
+            ):
                 if hdr_value not in seen_values:
                     seen_values.add(hdr_value)
-                    auth_headers.append({
-                        "header": hdr_name,
-                        "value": hdr_value[:200],
-                        "request_id": req_id,
-                        "url": url,
-                    })
+                    auth_headers.append(
+                        {
+                            "header": hdr_name,
+                            "value": hdr_value[:200],
+                            "request_id": req_id,
+                            "url": url,
+                        }
+                    )
 
         for hdr_name, hdr_value in resp_headers.items():
             lower_name = hdr_name.lower()
@@ -142,23 +159,30 @@ def extract_session_tokens(  # noqa: C901
                         if key not in seen_values:
                             seen_values.add(key)
                             flags = [p.strip().lower() for p in parts[1:]]
-                            session_cookies.append({
-                                "name": name.strip(),
-                                "value": val.strip()[:200],
-                                "source": "set-cookie",
-                                "httponly": any("httponly" in f for f in flags),
-                                "secure": any("secure" in f for f in flags),
-                                "samesite": next((f.split("=")[-1] for f in flags if "samesite" in f), ""),
-                                "request_id": req_id,
-                                "url": url,
-                            })
+                            session_cookies.append(
+                                {
+                                    "name": name.strip(),
+                                    "value": val.strip()[:200],
+                                    "source": "set-cookie",
+                                    "httponly": any("httponly" in f for f in flags),
+                                    "secure": any("secure" in f for f in flags),
+                                    "samesite": next(
+                                        (f.split("=")[-1] for f in flags if "samesite" in f), ""
+                                    ),
+                                    "request_id": req_id,
+                                    "url": url,
+                                }
+                            )
 
     return {
         "bearer_tokens": bearer_tokens,
         "session_cookies": session_cookies,
         "auth_headers": auth_headers,
         "csrf_tokens": csrf_tokens,
-        "total_tokens": len(bearer_tokens) + len(session_cookies) + len(auth_headers) + len(csrf_tokens),
+        "total_tokens": len(bearer_tokens)
+        + len(session_cookies)
+        + len(auth_headers)
+        + len(csrf_tokens),
     }
 
 
@@ -209,7 +233,7 @@ def replay_with_mutations(
         flipped[mid] = chr((ord(flipped[mid]) + 1) % 128)
         mutations.append(("bit_flip_middle", "".join(flipped)))
 
-    mutations.append(("random_same_length", os.urandom(len(token) // 2).hex()[:len(token)]))
+    mutations.append(("random_same_length", os.urandom(len(token) // 2).hex()[: len(token)]))
 
     total = len(mutations)
     if not interrupt(f"About to send {total} token mutation requests to {target_url}"):
@@ -225,9 +249,7 @@ def replay_with_mutations(
         if mutated_token:
             headers[token_header] = f"{token_prefix}{mutated_token}"
 
-        status, resp_headers, resp_body, duration = _http_request(
-            target_url, method, None, headers
-        )
+        status, resp_headers, resp_body, duration = _http_request(target_url, method, None, headers)
 
         if label == "original":
             baseline_status = status
@@ -243,14 +265,20 @@ def replay_with_mutations(
 
     findings: list[str] = []
     for r in results:
-        if r["mutation"] != "original" and r["status"] == baseline_status and baseline_status in (200, 201):
+        if (
+            r["mutation"] != "original"
+            and r["status"] == baseline_status
+            and baseline_status in (200, 201)
+        ):
             findings.append(
                 f"WARNING: Mutation '{r['mutation']}' returned same success status "
                 f"({r['status']}) as original — token validation may be weak."
             )
 
     if not findings:
-        findings.append("All mutations properly rejected or returned different status than original.")
+        findings.append(
+            "All mutations properly rejected or returned different status than original."
+        )
 
     return {
         "target_url": target_url,
@@ -308,7 +336,9 @@ def test_session_fixation(  # noqa: C901
 
     login_payload = json.dumps({"email": username or "test@example.com"}).encode()
     login_status, login_headers, login_body, _ = _http_request(
-        f"{base}{login_path}", "POST", login_payload,
+        f"{base}{login_path}",
+        "POST",
+        login_payload,
         {"Content-Type": "application/json"},
         cookies=cookie_string,
     )
@@ -336,7 +366,8 @@ def test_session_fixation(  # noqa: C901
             new_cookies.append(name)
 
     session_like = [
-        n for n in unchanged_cookies
+        n
+        for n in unchanged_cookies
         if any(kw in n.lower() for kw in ("session", "sid", "token", "auth", "id"))
     ]
 

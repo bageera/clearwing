@@ -10,7 +10,6 @@ import hashlib
 import json
 import logging
 import os
-import platform
 import struct
 import tempfile
 from dataclasses import dataclass, field
@@ -200,6 +199,7 @@ class RevengSandbox:
     def _get_client(self):
         if self._client is None:
             import docker
+
             self._client = docker.from_env()
         return self._client
 
@@ -217,6 +217,7 @@ class RevengSandbox:
             self._image_tag = tag
             return tag
         except Exception:
+            logger.debug("Silent exception in reveng_decompiler", exc_info=True)
             pass
 
         with tempfile.TemporaryDirectory(prefix="clearwing-reveng-build-") as build_dir:
@@ -226,7 +227,9 @@ class RevengSandbox:
 
             logger.info("Building reveng sandbox image %s", tag)
             try:
-                client.images.build(path=build_dir, tag=tag, rm=True, forcerm=True, platform="linux/amd64")
+                client.images.build(
+                    path=build_dir, tag=tag, rm=True, forcerm=True, platform="linux/amd64"
+                )
             except Exception as e:
                 logger.warning("Reveng image build failed: %s", e)
                 raise RuntimeError(f"Failed to build reveng image: {e}") from e
@@ -282,6 +285,7 @@ class RevengSandbox:
             try:
                 container.stop()
             except Exception:
+                logger.debug("Silent exception in reveng_decompiler", exc_info=True)
                 pass
             return None
 
@@ -291,6 +295,7 @@ class RevengSandbox:
             try:
                 container.stop()
             except Exception:
+                logger.debug("Silent exception in reveng_decompiler", exc_info=True)
                 pass
         self._spawned.clear()
 
@@ -342,9 +347,7 @@ def run_static_analysis(container: Any, binary_name: str) -> StaticAnalysisResul
         timeout=10,
     )
     if r.exit_code == 0:
-        result.imports = [
-            line.strip() for line in r.stdout.splitlines() if line.strip()
-        ]
+        result.imports = [line.strip() for line in r.stdout.splitlines() if line.strip()]
 
     # sections
     r = container.exec(f"readelf -S {binary_path} 2>/dev/null", timeout=10)
@@ -405,13 +408,15 @@ def run_ghidra_decompilation(
             json_data = json_data.decode("utf-8")
         functions = json.loads(json_data)
         for func_dict in functions:
-            result.functions.append(DecompiledFunction(
-                name=func_dict.get("name", ""),
-                address=func_dict.get("address", 0),
-                decompiled_c=func_dict.get("decompiled_c", ""),
-                size=func_dict.get("size", 0),
-                calls=func_dict.get("calls", []),
-            ))
+            result.functions.append(
+                DecompiledFunction(
+                    name=func_dict.get("name", ""),
+                    address=func_dict.get("address", 0),
+                    decompiled_c=func_dict.get("decompiled_c", ""),
+                    size=func_dict.get("size", 0),
+                    calls=func_dict.get("calls", []),
+                )
+            )
         result.total_functions = len(result.functions)
     except (json.JSONDecodeError, Exception) as e:
         result.decompilation_errors.append(f"Failed to parse decompilation output: {e}")
@@ -428,9 +433,7 @@ def format_static_summary(analysis: StaticAnalysisResult) -> str:
     parts.append(f"Binary size: {analysis.binary_size} bytes")
 
     if analysis.checksec:
-        checksec_str = ", ".join(
-            f"{k}={v}" for k, v in analysis.checksec.items()
-        )
+        checksec_str = ", ".join(f"{k}={v}" for k, v in analysis.checksec.items())
         parts.append(f"Checksec: {checksec_str}")
 
     if analysis.imports:

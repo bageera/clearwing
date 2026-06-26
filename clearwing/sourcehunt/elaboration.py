@@ -23,7 +23,6 @@ from clearwing.llm import AsyncLLMClient, NativeToolSpec
 
 from .exploiter import EXPLOIT_BUDGET_BANDS
 from .state import (
-    EVIDENCE_LEVELS,
     ElaborationResult,
     EvidenceLevel,
     Finding,
@@ -103,11 +102,7 @@ def _build_elaboration_prompt(
 ) -> str:
     current_impact = finding.get("exploit_impact") or finding.get("impact") or "unknown"
     poc_summary = (finding.get("exploit") or finding.get("poc") or "none")[:4000]
-    primitive = (
-        finding.get("exploit_primitive_type")
-        or finding.get("primitive_type")
-        or "unknown"
-    )
+    primitive = finding.get("exploit_primitive_type") or finding.get("primitive_type") or "unknown"
 
     file_path = finding.get("file", "?")
     target_class = "userspace"
@@ -136,6 +131,7 @@ def _build_elaboration_prompt(
                     "Use query_findings_pool to find complementary primitives."
                 )
         except Exception:
+            logger.debug("Silent exception in elaboration", exc_info=True)
             pass
 
     return ELABORATION_AGENT_PROMPT.format(
@@ -246,26 +242,18 @@ def build_elaboration_tools(
 def _is_elaboration_eligible(finding: Finding) -> bool:
     if not finding.get("verified", False):
         return False
-    if not evidence_at_or_above(
-        finding.get("evidence_level", "suspicion"), "crash_reproduced"
-    ):
+    if not evidence_at_or_above(finding.get("evidence_level", "suspicion"), "crash_reproduced"):
         return False
     return bool(finding.get("exploit_partial")) or bool(finding.get("exploit_success"))
 
 
 def _severity_rank(finding: Finding) -> int:
-    sev = (
-        finding.get("severity_verified") or finding.get("severity") or "info"
-    ).lower()
+    sev = (finding.get("severity_verified") or finding.get("severity") or "info").lower()
     return _SEVERITY_ORDER.get(sev, 0)
 
 
 def _primitive_rank(finding: Finding) -> int:
-    prim = (
-        finding.get("exploit_primitive_type")
-        or finding.get("primitive_type")
-        or ""
-    ).lower()
+    prim = (finding.get("exploit_primitive_type") or finding.get("primitive_type") or "").lower()
     return PRIMITIVE_RANK.get(prim, 0)
 
 
@@ -392,9 +380,7 @@ class ElaborationAgent:
             self.ELABORATION_GATE,
         ):
             return False
-        return bool(finding.get("exploit_partial")) or bool(
-            finding.get("exploit_success")
-        )
+        return bool(finding.get("exploit_partial")) or bool(finding.get("exploit_success"))
 
     async def aattempt(self, finding: Finding) -> ElaborationResult:
         finding_id = finding.get("id", "unknown")
@@ -403,7 +389,7 @@ class ElaborationAgent:
             return ElaborationResult(
                 original_finding_id=finding_id,
                 elaborated=False,
-                upgrade_path=f"Skipped — not eligible for elaboration.",
+                upgrade_path="Skipped — not eligible for elaboration.",
             )
 
         if self.sandbox_manager is None and self.sandbox_factory is None:
@@ -420,9 +406,7 @@ class ElaborationAgent:
         start_time = time.monotonic()
         transcript_dir = None
         if self.output_dir:
-            transcript_dir = (
-                Path(self.output_dir) / "elaborations" / _safe_id(finding_id)
-            )
+            transcript_dir = Path(self.output_dir) / "elaborations" / _safe_id(finding_id)
             transcript_dir.mkdir(parents=True, exist_ok=True)
 
         try:
@@ -454,9 +438,7 @@ class ElaborationAgent:
             finding_file = finding.get("file", "?")
             finding_line = finding.get("line_number", "?")
             finding_cwe = finding.get("cwe", "?")
-            current_impact = (
-                finding.get("exploit_impact") or finding.get("impact") or "unknown"
-            )
+            current_impact = finding.get("exploit_impact") or finding.get("impact") or "unknown"
 
             hunter = NativeHunter(
                 llm=self.llm,
@@ -482,7 +464,7 @@ class ElaborationAgent:
             except asyncio.TimeoutError:
                 run_result = None
 
-            duration = time.monotonic() - start_time
+            time.monotonic() - start_time
             transcript_path = ""
             if transcript_dir is not None:
                 tp = transcript_dir / "transcript.jsonl"
@@ -509,7 +491,9 @@ class ElaborationAgent:
 
         except Exception as e:
             logger.warning(
-                "Elaboration agent error for %s", finding_id, exc_info=True,
+                "Elaboration agent error for %s",
+                finding_id,
+                exc_info=True,
             )
             return ElaborationResult(
                 original_finding_id=finding_id,
@@ -522,6 +506,7 @@ class ElaborationAgent:
                 try:
                     sandbox.stop()
                 except Exception:
+                    logger.debug("Silent exception in elaboration", exc_info=True)
                     pass
 
     def _spawn_sandbox(self):

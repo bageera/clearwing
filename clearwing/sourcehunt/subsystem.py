@@ -12,8 +12,9 @@ import asyncio
 import fnmatch
 import logging
 import uuid
-from dataclasses import dataclass, field
-from typing import Any, Callable
+from collections.abc import Callable
+from dataclasses import dataclass
+from typing import Any
 
 from clearwing.sourcehunt.state import FileTarget, Finding, SubsystemTarget
 
@@ -79,14 +80,16 @@ def identify_subsystems_auto(
                 fp = f.get("path", "")
                 eps.extend(entry_points_by_file.get(fp, []))
 
-        subsystems.append(SubsystemTarget(
-            name=prefix.replace("/", "_"),
-            root_path=prefix,
-            files=capped_files,
-            entry_points=eps,
-            priority=priority,
-            source="auto",
-        ))
+        subsystems.append(
+            SubsystemTarget(
+                name=prefix.replace("/", "_"),
+                root_path=prefix,
+                files=capped_files,
+                entry_points=eps,
+                priority=priority,
+                source="auto",
+            )
+        )
 
     subsystems.sort(key=lambda s: s.priority, reverse=True)
     return subsystems[:max_subsystems]
@@ -191,22 +194,24 @@ class SubsystemHuntRunner:
 
         async def _guarded_run(subsystem: SubsystemTarget) -> list[Finding]:
             async with sem:
-                if (
-                    self.config.total_budget_usd > 0
-                    and self._spent >= self.config.total_budget_usd
-                ):
+                if self.config.total_budget_usd > 0 and self._spent >= self.config.total_budget_usd:
                     logger.info(
-                        "Subsystem %s skipped: total budget exhausted", subsystem.name,
+                        "Subsystem %s skipped: total budget exhausted",
+                        subsystem.name,
                     )
                     return []
                 findings, cost, tokens, stop = await self._run_one_subsystem(
-                    subsystem, self.config.budget_per_subsystem_usd,
+                    subsystem,
+                    self.config.budget_per_subsystem_usd,
                 )
                 self._spent += cost
                 self._subsystems_completed += 1
                 logger.info(
                     "Subsystem %s completed: %d findings, $%.4f, stop=%s",
-                    subsystem.name, len(findings), cost, stop,
+                    subsystem.name,
+                    len(findings),
+                    cost,
+                    stop,
                 )
                 if self.config.findings_pool is not None:
                     for f in findings:
@@ -216,10 +221,7 @@ class SubsystemHuntRunner:
                             logger.debug("findings_pool.add failed", exc_info=True)
                 return findings
 
-        tasks = [
-            asyncio.create_task(_guarded_run(s))
-            for s in self.config.subsystems
-        ]
+        tasks = [asyncio.create_task(_guarded_run(s)) for s in self.config.subsystems]
 
         for coro in asyncio.as_completed(tasks):
             try:
@@ -244,7 +246,9 @@ class SubsystemHuntRunner:
                 sandbox = await asyncio.to_thread(self.config.sandbox_factory)
             except Exception as e:
                 logger.warning(
-                    "sandbox_factory failed for subsystem %s: %s", subsystem.name, e,
+                    "sandbox_factory failed for subsystem %s: %s",
+                    subsystem.name,
+                    e,
                 )
 
         session_id = f"{self.config.session_id_prefix}-{uuid.uuid4().hex[:8]}"
@@ -272,7 +276,9 @@ class SubsystemHuntRunner:
                 result.stop_reason,
             )
         except asyncio.TimeoutError:
-            logger.warning("Subsystem %s timed out after %ds", subsystem.name, self.config.timeout_seconds)
+            logger.warning(
+                "Subsystem %s timed out after %ds", subsystem.name, self.config.timeout_seconds
+            )
             if "ctx" in locals():
                 return (list(ctx.findings), 0.0, 0, "timeout")
             return ([], 0.0, 0, "timeout")
@@ -284,4 +290,5 @@ class SubsystemHuntRunner:
                 try:
                     await asyncio.to_thread(sandbox.stop)
                 except Exception:
+                    logger.debug("Silent exception in subsystem", exc_info=True)
                     pass

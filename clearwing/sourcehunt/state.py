@@ -244,7 +244,10 @@ class PipelineStatus:
         self.stages[name] = StageStatus(name=name, outcome=outcome, **kwargs)
 
     def record_degraded(
-        self, name: str, fallback: str, error: str = "",
+        self,
+        name: str,
+        fallback: str,
+        error: str = "",
     ) -> None:
         self.stages[name] = StageStatus(
             name=name,

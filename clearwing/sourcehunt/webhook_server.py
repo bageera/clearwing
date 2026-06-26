@@ -114,6 +114,7 @@ def parse_push_payload(payload: dict) -> dict | None:
             "branch": ref.split("/")[-1] if ref.startswith("refs/heads/") else "",
         }
     except Exception:
+        logger.debug("Silent exception in webhook_server", exc_info=True)
         return None
 
 

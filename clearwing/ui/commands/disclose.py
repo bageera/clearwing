@@ -14,8 +14,6 @@ Subcommands:
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
-
 from rich.table import Table
 
 from clearwing.core.event_payloads import DisclosureUpdatePayload
@@ -73,7 +71,9 @@ def add_parser(subparsers):
     # commitments (spec 014)
     cm = sub.add_parser("commitments", help="Show or export commitment log")
     cm.add_argument(
-        "--format", choices=["markdown", "json"], default="markdown",
+        "--format",
+        choices=["markdown", "json"],
+        default="markdown",
         dest="commitment_format",
         help="Output format (default: markdown)",
     )
@@ -160,7 +160,10 @@ def _handle_review(cli, args, db, workflow):
     if finding and finding["state"] == DisclosureState.PENDING_REVIEW.value:
         try:
             db.transition(
-                args.finding_id, DisclosureState.IN_REVIEW, "cli", "opened for review",
+                args.finding_id,
+                DisclosureState.IN_REVIEW,
+                "cli",
+                "opened for review",
             )
             cli.console.print("[green]Status: moved to in_review[/green]")
         except ValueError:
@@ -175,12 +178,20 @@ def _handle_validate(cli, args, db, workflow):
             return
         if finding["state"] == "pending_review":
             from clearwing.sourcehunt.state import DisclosureState
-            db.transition(args.finding_id, DisclosureState.IN_REVIEW, args.reviewer, "auto-claim for validate")
+
+            db.transition(
+                args.finding_id, DisclosureState.IN_REVIEW, args.reviewer, "auto-claim for validate"
+            )
         workflow.validate(args.finding_id, args.reviewer, args.notes)
-        EventBus().emit_disclosure_update(DisclosureUpdatePayload(
-            finding_id=args.finding_id, action="validated",
-            reviewer=args.reviewer, days_remaining=None, detail=args.notes or "",
-        ))
+        EventBus().emit_disclosure_update(
+            DisclosureUpdatePayload(
+                finding_id=args.finding_id,
+                action="validated",
+                reviewer=args.reviewer,
+                days_remaining=None,
+                detail=args.notes or "",
+            )
+        )
         cli.console.print(f"[green]Finding {args.finding_id} validated.[/green]")
     except ValueError as e:
         cli.console.print(f"[red]{e}[/red]")
@@ -193,10 +204,15 @@ def _handle_reject(cli, args, db, workflow):
             cli.console.print(f"[red]Finding {args.finding_id} not found.[/red]")
             return
         workflow.reject(args.finding_id, args.reviewer, args.reason)
-        EventBus().emit_disclosure_update(DisclosureUpdatePayload(
-            finding_id=args.finding_id, action="rejected",
-            reviewer=args.reviewer, days_remaining=None, detail=args.reason,
-        ))
+        EventBus().emit_disclosure_update(
+            DisclosureUpdatePayload(
+                finding_id=args.finding_id,
+                action="rejected",
+                reviewer=args.reviewer,
+                days_remaining=None,
+                detail=args.reason,
+            )
+        )
         cli.console.print(f"[green]Finding {args.finding_id} rejected.[/green]")
     except ValueError as e:
         cli.console.print(f"[red]{e}[/red]")
@@ -217,12 +233,18 @@ def _handle_send(cli, args, db, workflow):
             reporter_affiliation=args.reporter_affiliation,
             reporter_email=args.reporter_email,
         )
-        EventBus().emit_disclosure_update(DisclosureUpdatePayload(
-            finding_id=args.finding_id, action="sent",
-            reviewer=args.reviewer, days_remaining=90,
-            detail="CVD 90-day timeline started",
-        ))
-        cli.console.print(f"[green]Disclosure sent for {args.finding_id}. 90-day CVD clock started.[/green]")
+        EventBus().emit_disclosure_update(
+            DisclosureUpdatePayload(
+                finding_id=args.finding_id,
+                action="sent",
+                reviewer=args.reviewer,
+                days_remaining=90,
+                detail="CVD 90-day timeline started",
+            )
+        )
+        cli.console.print(
+            f"[green]Disclosure sent for {args.finding_id}. 90-day CVD clock started.[/green]"
+        )
         for fmt, body in templates.items():
             cli.console.print(f"\n[bold]--- {fmt.upper()} Template ---[/bold]")
             cli.console.print(body[:3000])
@@ -273,7 +295,6 @@ def _handle_timeline(cli, args, db, workflow):
 
     for a in alerts:
         remaining = a["days_remaining"]
-        style = "bold red" if remaining <= 0 else ("yellow" if remaining <= 15 else "")
         table.add_row(
             a["finding_id"][:20],
             a["repo_url"],
@@ -307,8 +328,7 @@ def _handle_verify(cli, args, db, workflow):
     document = doc_path.read_text(encoding="utf-8")
 
     cli.console.print(
-        f"[bold]Verifying {len(commitments)} commitment(s) "
-        f"for {args.finding_id}:[/bold]",
+        f"[bold]Verifying {len(commitments)} commitment(s) for {args.finding_id}:[/bold]",
     )
     for c in commitments:
         match = verify_commitment(document, c)

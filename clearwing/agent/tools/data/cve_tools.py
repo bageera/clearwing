@@ -3,12 +3,15 @@
 from __future__ import annotations
 
 import json
+import logging
 import sqlite3
 import zipfile
 from pathlib import Path
 from typing import Any
 
 from clearwing.agent.tooling import interrupt, tool
+
+logger = logging.getLogger(__name__)
 
 _CVE_ZIP_URL = "https://github.com/CVEProject/cvelistV5/archive/refs/heads/main.zip"
 _DB_NAME = "cve.db"
@@ -130,6 +133,7 @@ def _build_db(cve_dir: Path, db_path: Path) -> int:
                         batch.append(rec)
                         count += 1
                 except Exception:
+                    logger.warning("Silent exception in cve_tools", exc_info=True)
                     pass
 
                 if len(batch) >= 5000:
@@ -162,9 +166,7 @@ def _flush_batch(conn: sqlite3.Connection, batch: list[dict]) -> None:
 def _get_conn() -> sqlite3.Connection:
     db = _db_path()
     if not db.exists():
-        raise FileNotFoundError(
-            f"CVE database not found at {db}. Run cve_db_update first."
-        )
+        raise FileNotFoundError(f"CVE database not found at {db}. Run cve_db_update first.")
     conn = sqlite3.connect(str(db))
     conn.row_factory = sqlite3.Row
     return conn
@@ -216,9 +218,7 @@ def cve_db_update(zip_path: str = "") -> dict:
             if not src.exists():
                 return {"error": f"Zip file not found: {src}"}
         else:
-            if not interrupt(
-                f"Download CVE database (~550 MB) from GitHub to {db_dir}?"
-            ):
+            if not interrupt(f"Download CVE database (~550 MB) from GitHub to {db_dir}?"):
                 return {"error": "User declined download."}
 
             import urllib.request
@@ -242,7 +242,9 @@ def cve_db_update(zip_path: str = "") -> dict:
                 cve_dir = candidates[0] / "cves"
 
         if not cve_dir.is_dir():
-            return {"error": f"Could not find cves/ directory in extracted archive under {extract_dir}"}
+            return {
+                "error": f"Could not find cves/ directory in extracted archive under {extract_dir}"
+            }
 
         count = _build_db(cve_dir, db)
 
@@ -325,8 +327,12 @@ def cve_search(
     except Exception as e:
         conn.close()
         if "no such table" in str(e):
-            return {"error": "CVE database exists but is missing FTS index. Run cve_db_update to rebuild."}
-        return _format_results([], 0) if "fts5" in str(e).lower() else {"error": f"Search failed: {e}"}
+            return {
+                "error": "CVE database exists but is missing FTS index. Run cve_db_update to rebuild."
+            }
+        return (
+            _format_results([], 0) if "fts5" in str(e).lower() else {"error": f"Search failed: {e}"}
+        )
 
 
 @tool
@@ -347,9 +353,7 @@ def cve_lookup(cve_id: str) -> dict:
 
     try:
         cve_id_upper = cve_id.upper().strip()
-        row = conn.execute(
-            "SELECT * FROM cve WHERE cve_id = ?", (cve_id_upper,)
-        ).fetchone()
+        row = conn.execute("SELECT * FROM cve WHERE cve_id = ?", (cve_id_upper,)).fetchone()
         conn.close()
 
         if not row:

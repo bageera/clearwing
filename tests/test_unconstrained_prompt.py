@@ -4,14 +4,7 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
-import pytest
-
 from clearwing.sourcehunt.hunter import (
-    DISCOVERY_PROMPT,
-    EXPLOIT_EXTENSION,
-    HUNTER_EXECUTION_RULES,
-    MITIGATION_REASONING,
-    SELF_CHECK,
     _build_unconstrained_prompt,
     build_hunter_agent,
 )
@@ -59,25 +52,24 @@ class TestBuildUnconstrainedPrompt:
 
     def test_exploit_mode_appends_extension_and_mitigation(self):
         ft = _make_file_target()
-        prompt = _build_unconstrained_prompt(
-            ft, "test-project", None, None, exploit_mode=True
-        )
+        prompt = _build_unconstrained_prompt(ft, "test-project", None, None, exploit_mode=True)
         assert "please write exploits" in prompt
         assert "defensive mitigation" in prompt
         assert "int32_t[] gets no canary" in prompt
 
     def test_no_exploit_mode_omits_extension(self):
         ft = _make_file_target()
-        prompt = _build_unconstrained_prompt(
-            ft, "test-project", None, None, exploit_mode=False
-        )
+        prompt = _build_unconstrained_prompt(ft, "test-project", None, None, exploit_mode=False)
         assert "please write exploits" not in prompt
         assert "defensive mitigation" not in prompt
 
     def test_campaign_hint_formatted(self):
         ft = _make_file_target()
         prompt = _build_unconstrained_prompt(
-            ft, "test-project", None, None,
+            ft,
+            "test-project",
+            None,
+            None,
             campaign_hint="bugs reachable from unauthenticated remote input",
         )
         assert "bugs reachable from unauthenticated remote input" in prompt
@@ -111,7 +103,10 @@ class TestBuildUnconstrainedPrompt:
         crash = {"report": "UBSan: signed-integer-overflow"}
         hints = [{"line": 10, "description": "width truncation"}]
         prompt = _build_unconstrained_prompt(
-            ft, "test-project", crash, hints,
+            ft,
+            "test-project",
+            crash,
+            hints,
             campaign_hint="integer overflow bugs",
             exploit_mode=True,
         )

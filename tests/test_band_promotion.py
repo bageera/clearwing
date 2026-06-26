@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-import asyncio
-import json
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -13,7 +11,6 @@ from clearwing.sourcehunt.pool import (
     BandBudget,
     HunterPool,
     HuntPoolConfig,
-    WorkItem,
     _file_rank,
     _redundancy_for_rank,
     promotion_decision,
@@ -176,9 +173,7 @@ class TestBandBudget:
 class TestWorkItemExpansion:
     def test_rank_5_produces_3_work_items(self):
         ft = _make_file_target(priority=4.5)
-        pool = HunterPool(
-            HuntPoolConfig(files=[ft], repo_path="/tmp/repo", starting_band="fast")
-        )
+        pool = HunterPool(HuntPoolConfig(files=[ft], repo_path="/tmp/repo", starting_band="fast"))
         items = pool._expand_to_work_items([ft], "fast")
         assert len(items) == 3
         assert all(wi.band == "fast" for wi in items)
@@ -186,9 +181,7 @@ class TestWorkItemExpansion:
 
     def test_rank_3_produces_1_work_item(self):
         ft = _make_file_target(priority=2.5)
-        pool = HunterPool(
-            HuntPoolConfig(files=[ft], repo_path="/tmp/repo", starting_band="fast")
-        )
+        pool = HunterPool(HuntPoolConfig(files=[ft], repo_path="/tmp/repo", starting_band="fast"))
         items = pool._expand_to_work_items([ft], "standard")
         assert len(items) == 1
         assert items[0].band == "standard"
@@ -217,7 +210,6 @@ class TestHunterRunResult:
         from unittest.mock import patch as mock_patch
 
         from clearwing.agent.tools.hunt.sandbox import HunterContext
-        from clearwing.llm.native import NativeToolSpec
         from clearwing.sourcehunt.hunter import NativeHunter
 
         @dataclass
@@ -322,9 +314,7 @@ class TestBudgetEnforcement:
 
         with mock_patch("clearwing.sourcehunt.hunter.HunterTrajectoryLogger") as mock_traj:
             mock_traj.for_hunter.return_value = MagicMock()
-            with mock_patch(
-                "clearwing.sourcehunt.hunter._estimate_cost_usd", return_value=0.005
-            ):
+            with mock_patch("clearwing.sourcehunt.hunter._estimate_cost_usd", return_value=0.005):
                 result = await hunter.arun()
 
         assert result.stop_reason == "budget_exhausted"

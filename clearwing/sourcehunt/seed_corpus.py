@@ -59,7 +59,8 @@ def ingest_seed_corpus(
             if source == "git_cve":
                 file_paths = [ft.get("path", "") for ft in file_targets if ft.get("path")]
                 entries = _extract_git_cve_history(
-                    repo_path, file_paths,
+                    repo_path,
+                    file_paths,
                     max_entries_per_file=max_entries_per_file,
                     max_context_chars=max_context_chars,
                 )
@@ -97,9 +98,16 @@ def _extract_git_cve_history(
     try:
         proc = subprocess.run(
             [
-                "git", "log", "--all", "--oneline", "--grep=CVE-",
-                "--diff-filter=M", "--name-only", "--format=%H %s",
-                "--", *file_paths[:200],
+                "git",
+                "log",
+                "--all",
+                "--oneline",
+                "--grep=CVE-",
+                "--diff-filter=M",
+                "--name-only",
+                "--format=%H %s",
+                "--",
+                *file_paths[:200],
             ],
             cwd=repo_path,
             capture_output=True,
@@ -126,7 +134,11 @@ def _extract_git_cve_history(
             continue
 
         parts = line.split(" ", 1)
-        if len(parts) == 2 and len(parts[0]) == 40 and all(c in "0123456789abcdef" for c in parts[0]):
+        if (
+            len(parts) == 2
+            and len(parts[0]) == 40
+            and all(c in "0123456789abcdef" for c in parts[0])
+        ):
             current_sha = parts[0]
             current_message = parts[1]
             current_cves = _CVE_PATTERN.findall(current_message)
@@ -137,14 +149,16 @@ def _extract_git_cve_history(
                 if count >= max_entries_per_file:
                     continue
                 for cve_id in current_cves or [None]:
-                    entries.append(SeedCorpusEntry(
-                        file_path=file_path,
-                        function_name=None,
-                        source="git_cve",
-                        cve_id=cve_id,
-                        commit_sha=current_sha[:12],
-                        summary=current_message[:200],
-                    ))
+                    entries.append(
+                        SeedCorpusEntry(
+                            file_path=file_path,
+                            function_name=None,
+                            source="git_cve",
+                            cve_id=cve_id,
+                            commit_sha=current_sha[:12],
+                            summary=current_message[:200],
+                        )
+                    )
                     counts_per_file[file_path] = count + 1
                     if counts_per_file[file_path] >= max_entries_per_file:
                         break

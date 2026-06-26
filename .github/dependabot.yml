@@ -16,15 +16,6 @@ updates:
       prefix: "deps"
       include: "scope"
     groups:
-      # Batch minor/patch bumps of the langchain stack together — they
-      # release in lockstep and individual bumps churn the PR queue.
-      langchain:
-        patterns:
-          - "langchain-*"
-          - "langgraph*"
-        update-types:
-          - "minor"
-          - "patch"
       # tree-sitter grammar bumps almost always move together.
       tree-sitter:
         patterns:

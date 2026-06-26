@@ -2,7 +2,7 @@ import logging
 from typing import Any
 
 from clearwing.agent.tooling import tool
-from clearwing.agent.tools.ops.pentest_container import KALI, PARROT
+from clearwing.agent.tools.ops.pentest_container import run_in_pentest_container
 
 logger = logging.getLogger(__name__)
 
@@ -36,17 +36,14 @@ def run_nmap_scan(
             - output: XML string from nmap.
             - error: stderr if any.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        setup_result = manager.setup()
-        container_id = setup_result["container_id"]
 
     cmd = f"nmap {options} {target}"
     logger.info("Executing nmap in %s container: %s", distro, cmd)
-    return KALI.execute(
-        container_id, cmd, requires_approval=False
-    ) if distro == "kali" else PARROT.execute(
-        container_id, cmd, requires_approval=False
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=False,
     )
 
 
@@ -71,18 +68,15 @@ def run_gobuster(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        setup_result = manager.setup()
-        container_id = setup_result["container_id"]
 
     ext_flag = f" -x {extensions}" if extensions else ""
     cmd = f"gobuster dir -u {url} -w {wordlist_path}{ext_flag} -k -e"
     logger.info("Executing gobuster in %s container: %s", distro, cmd)
-    return KALI.execute(
-        container_id, cmd, requires_approval=False
-    ) if distro == "kali" else PARROT.execute(
-        container_id, cmd, requires_approval=False
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=False,
     )
 
 
@@ -108,17 +102,14 @@ def run_sqlmap(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        setup_result = manager.setup()
-        container_id = setup_result["container_id"]
 
     cmd = f"sqlmap -u '{url}' {options}"
     logger.info("Executing sqlmap in %s container: %s", distro, cmd)
-    return KALI.execute(
-        container_id, cmd, requires_approval=False
-    ) if distro == "kali" else PARROT.execute(
-        container_id, cmd, requires_approval=False
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=False,
     )
 
 
@@ -140,17 +131,14 @@ def run_enum4linux(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        setup_result = manager.setup()
-        container_id = setup_result["container_id"]
 
     cmd = f"enum4linux {options} {target}"
     logger.info("Executing enum4linux in %s container: %s", distro, cmd)
-    return KALI.execute(
-        container_id, cmd, requires_approval=False
-    ) if distro == "kali" else PARROT.execute(
-        container_id, cmd, requires_approval=False
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=False,
     )
 
 
@@ -172,17 +160,14 @@ def run_nikto(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        setup_result = manager.setup()
-        container_id = setup_result["container_id"]
 
     cmd = f"nikto {options} {target}"
     logger.info("Executing nikto in %s container: %s", distro, cmd)
-    return KALI.execute(
-        container_id, cmd, requires_approval=False
-    ) if distro == "kali" else PARROT.execute(
-        container_id, cmd, requires_approval=False
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=False,
     )
 
 
@@ -212,15 +197,12 @@ def run_hydra(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        setup_result = manager.setup()
-        container_id = setup_result["container_id"]
 
     cmd = f"hydra -l {user_list} -P {wordlist_path} {target} {service}"
     logger.info("Executing hydra in %s container: %s", distro, cmd)
-    mgr = KALI if distro == "kali" else PARROT
-    return mgr.execute(container_id, cmd, requires_approval=requires_approval)
+    return run_in_pentest_container(
+        cmd, container_id=container_id, distro=distro, requires_approval=requires_approval
+    )
 
 
 @tool(requires_approval=False)
@@ -241,17 +223,14 @@ def run_snmpwalk(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        setup_result = manager.setup()
-        container_id = setup_result["container_id"]
 
     cmd = f"snmpwalk -v2c -c {community} {target}"
     logger.info("Executing snmpwalk in %s container: %s", distro, cmd)
-    return KALI.execute(
-        container_id, cmd, requires_approval=False
-    ) if distro == "kali" else PARROT.execute(
-        container_id, cmd, requires_approval=False
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=False,
     )
 
 
@@ -273,21 +252,19 @@ def run_whatweb(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        setup_result = manager.setup()
-        container_id = setup_result["container_id"]
 
     cmd = f"whatweb {options} {target}"
     logger.info("Executing whatweb in %s container: %s", distro, cmd)
-    return KALI.execute(
-        container_id, cmd, requires_approval=False
-    ) if distro == "kali" else PARROT.execute(
-        container_id, cmd, requires_approval=False
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=False,
     )
 
 
 # ─── Phase 4: API Pentest Tools ────────────────────────────────────────────
+
 
 @tool(requires_approval=False)
 def run_ffuf(
@@ -322,10 +299,6 @@ def run_ffuf(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        setup_result = manager.setup()
-        container_id = setup_result["container_id"]
 
     ext_flag = f" -e {extensions}" if extensions else ""
     method_flag = f" -X {method}" if method != "GET" else ""
@@ -337,10 +310,11 @@ def run_ffuf(
 
     cmd = f'ffuf -u "{target}" -w {wordlist_path}{ext_flag}{method_flag}{header_flags}{data_flag} -mc all -fc 404'
     logger.info("Executing ffuf in %s container: %s", distro, cmd)
-    return KALI.execute(
-        container_id, cmd, requires_approval=False
-    ) if distro == "kali" else PARROT.execute(
-        container_id, cmd, requires_approval=False
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=False,
     )
 
 
@@ -368,17 +342,14 @@ def run_httpx(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        setup_result = manager.setup()
-        container_id = setup_result["container_id"]
 
     cmd = f'httpx -u "{targets}" {options}'
     logger.info("Executing httpx in %s container: %s", distro, cmd)
-    return KALI.execute(
-        container_id, cmd, requires_approval=False
-    ) if distro == "kali" else PARROT.execute(
-        container_id, cmd, requires_approval=False
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=False,
     )
 
 
@@ -406,17 +377,14 @@ def run_jwt_tool(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        setup_result = manager.setup()
-        container_id = setup_result["container_id"]
 
     cmd = f"jwt_tool.py '{target_jwt}' {options}"
     logger.info("Executing jwt_tool in %s container: %s", distro, cmd)
-    return KALI.execute(
-        container_id, cmd, requires_approval=False
-    ) if distro == "kali" else PARROT.execute(
-        container_id, cmd, requires_approval=False
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=False,
     )
 
 
@@ -441,17 +409,14 @@ def run_arjun(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        setup_result = manager.setup()
-        container_id = setup_result["container_id"]
 
     cmd = f"arjun -u '{target}' -m {method}"
     logger.info("Executing arjun in %s container: %s", distro, cmd)
-    return KALI.execute(
-        container_id, cmd, requires_approval=False
-    ) if distro == "kali" else PARROT.execute(
-        container_id, cmd, requires_approval=False
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=False,
     )
 
 
@@ -476,21 +441,19 @@ def run_dalfox(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        setup_result = manager.setup()
-        container_id = setup_result["container_id"]
 
     cmd = f"dalfox url '{target}' {options}"
     logger.info("Executing dalfox in %s container: %s", distro, cmd)
-    return KALI.execute(
-        container_id, cmd, requires_approval=False
-    ) if distro == "kali" else PARROT.execute(
-        container_id, cmd, requires_approval=False
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=False,
     )
 
 
 # ─── Phase 4: Database Pentest Tools ───────────────────────────────────────
+
 
 @tool(requires_approval=False)
 def run_nosqlmap(
@@ -514,17 +477,14 @@ def run_nosqlmap(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        setup_result = manager.setup()
-        container_id = setup_result["container_id"]
 
     cmd = f"nosqlmap.py {options} {target}"
     logger.info("Executing nosqlmap in %s container: %s", distro, cmd)
-    return KALI.execute(
-        container_id, cmd, requires_approval=False
-    ) if distro == "kali" else PARROT.execute(
-        container_id, cmd, requires_approval=False
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=False,
     )
 
 
@@ -550,17 +510,14 @@ def run_oscanner(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        setup_result = manager.setup()
-        container_id = setup_result["container_id"]
 
     cmd = f"oscanner {options} {target}"
     logger.info("Executing oscanner in %s container: %s", distro, cmd)
-    return KALI.execute(
-        container_id, cmd, requires_approval=False
-    ) if distro == "kali" else PARROT.execute(
-        container_id, cmd, requires_approval=False
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=False,
     )
 
 
@@ -585,17 +542,14 @@ def run_sqlninja(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        setup_result = manager.setup()
-        container_id = setup_result["container_id"]
 
     cmd = f"sqlninja {options} -u '{target}'"
     logger.info("Executing sqlninja in %s container: %s", distro, cmd)
-    return KALI.execute(
-        container_id, cmd, requires_approval=False
-    ) if distro == "kali" else PARROT.execute(
-        container_id, cmd, requires_approval=False
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=False,
     )
 
 
@@ -620,17 +574,14 @@ def run_sqlsus(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        setup_result = manager.setup()
-        container_id = setup_result["container_id"]
 
     cmd = f"sqlsus {options} '{target}'"
     logger.info("Executing sqlsus in %s container: %s", distro, cmd)
-    return KALI.execute(
-        container_id, cmd, requires_approval=False
-    ) if distro == "kali" else PARROT.execute(
-        container_id, cmd, requires_approval=False
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=False,
     )
 
 
@@ -656,15 +607,12 @@ def run_sqlmate(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        setup_result = manager.setup()
-        container_id = setup_result["container_id"]
 
     cmd = f"sqlmate {options} -u '{target}'"
     logger.info("Executing sqlmate in %s container: %s", distro, cmd)
-    return KALI.execute(
-        container_id, cmd, requires_approval=False
-    ) if distro == "kali" else PARROT.execute(
-        container_id, cmd, requires_approval=False
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=False,
     )

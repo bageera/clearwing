@@ -1,38 +1,30 @@
 """Unit tests for Phase 4 enumeration tools (API + Database)."""
 
+from unittest.mock import patch
+
 import pytest
-from unittest.mock import MagicMock, patch
 
 from clearwing.agent.tools.scan.enumeration_tools import (
     run_arjun,
     run_dalfox,
-    run_enum4linux,
     run_ffuf,
-    run_gobuster,
-    run_hydra,
     run_httpx,
     run_jwt_tool,
-    run_nikto,
-    run_nmap_scan,
     run_nosqlmap,
     run_oscanner,
-    run_snmpwalk,
-    run_sqlmap,
     run_sqlmate,
     run_sqlninja,
     run_sqlsus,
-    run_whatweb,
 )
 
 
 @pytest.fixture
 def mock_container():
     """Return a mocked container manager that captures executed commands."""
-    with patch(
-        "clearwing.agent.tools.scan.enumeration_tools.KALI"
-    ) as mock_kali, patch(
-        "clearwing.agent.tools.scan.enumeration_tools.PARROT"
-    ) as mock_parrot:
+    with (
+        patch("clearwing.agent.tools.scan.enumeration_tools.KALI") as mock_kali,
+        patch("clearwing.agent.tools.scan.enumeration_tools.PARROT") as mock_parrot,
+    ):
         mock_kali.setup.return_value = {"container_id": "test-cid"}
         mock_kali.execute.return_value = {
             "exit_code": 0,
@@ -78,7 +70,7 @@ class TestPhase4APITools:
 
     def test_ffuf_extensions(self, mock_container):
         mock_kali, _ = mock_container
-        result = run_ffuf(
+        run_ffuf(
             "https://api.example.com/FUZZ",
             extensions="json,php,bak,txt",
         )
@@ -101,7 +93,7 @@ class TestPhase4APITools:
 
     def test_httpx_custom_options(self, mock_container):
         mock_kali, _ = mock_container
-        result = run_httpx(
+        run_httpx(
             "https://api.example.com",
             options="-status-code -web-server -ip -cdn",
         )
@@ -120,7 +112,7 @@ class TestPhase4APITools:
 
     def test_jwt_tool_custom_options(self, mock_container):
         mock_kali, _ = mock_container
-        result = run_jwt_tool(
+        run_jwt_tool(
             "eyJhbGciOiJIUzI1NiIs...",
             options="-C /usr/share/wordlists/rockyou.txt",
         )
@@ -139,7 +131,7 @@ class TestPhase4APITools:
 
     def test_arjun_post(self, mock_container):
         mock_kali, _ = mock_container
-        result = run_arjun(
+        run_arjun(
             "https://api.example.com/search",
             method="POST",
         )
@@ -158,7 +150,7 @@ class TestPhase4APITools:
 
     def test_dalfox_custom_options(self, mock_container):
         mock_kali, _ = mock_container
-        result = run_dalfox(
+        run_dalfox(
             "https://example.com?q=test",
             options="--mining-dom --follow-redirects",
         )
@@ -180,7 +172,7 @@ class TestPhase4DatabaseTools:
 
     def test_nosqlmap_options(self, mock_container):
         mock_kali, _ = mock_container
-        result = run_nosqlmap(
+        run_nosqlmap(
             "http://target.com/api/user",
             options="--attack --dbs",
         )
@@ -199,7 +191,7 @@ class TestPhase4DatabaseTools:
 
     def test_oscanner_custom_options(self, mock_container):
         mock_kali, _ = mock_container
-        result = run_oscanner("10.0.0.1", options="-P 1521")
+        run_oscanner("10.0.0.1", options="-P 1521")
         cmd = mock_kali.execute.call_args[0][1]
         assert "-P 1521" in cmd
 
@@ -215,7 +207,7 @@ class TestPhase4DatabaseTools:
 
     def test_sqlninja_exploit_mode(self, mock_container):
         mock_kali, _ = mock_container
-        result = run_sqlninja(
+        run_sqlninja(
             "http://target.com/search?id=1",
             options="-m fingerprint",
         )
@@ -234,7 +226,7 @@ class TestPhase4DatabaseTools:
 
     def test_sqlsus_custom_options(self, mock_container):
         mock_kali, _ = mock_container
-        result = run_sqlsus(
+        run_sqlsus(
             "http://target.com/login",
             options="--interactive",
         )
@@ -253,7 +245,7 @@ class TestPhase4DatabaseTools:
 
     def test_sqlmate_custom_options(self, mock_container):
         mock_kali, _ = mock_container
-        result = run_sqlmate(
+        run_sqlmate(
             "http://target.com/page?id=1",
             options="--level 3 --risk 2",
         )
@@ -284,9 +276,7 @@ class TestToolSignatures:
 
     @pytest.mark.parametrize("tool", tools)
     def test_tool_returns_dict(self, tool):
-        with patch(
-            "clearwing.agent.tools.scan.enumeration_tools.KALI"
-        ) as mock_kali:
+        with patch("clearwing.agent.tools.scan.enumeration_tools.KALI") as mock_kali:
             mock_kali.setup.return_value = {"container_id": "cid"}
             mock_kali.execute.return_value = {
                 "exit_code": 0,
@@ -305,6 +295,7 @@ class TestAllToolsRegistered:
 
     def test_tools_in_get_all_tools(self):
         from clearwing.agent.tools import get_all_tools
+
         tools = get_all_tools()
         tool_names = {t.name for t in tools}
 

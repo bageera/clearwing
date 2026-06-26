@@ -193,13 +193,10 @@ class DisclosureGenerator:
         if finding.get("stability_classification"):
             rate = (finding.get("stability_success_rate") or 0) * 100
             lines.append(
-                f"  - Reproduction stability: {finding['stability_classification']} "
-                f"({rate:.0f}%)"
+                f"  - Reproduction stability: {finding['stability_classification']} ({rate:.0f}%)"
             )
         if finding.get("severity_disagreement"):
-            lines.append(
-                f"  - Severity note: {finding['severity_disagreement']}"
-            )
+            lines.append(f"  - Severity note: {finding['severity_disagreement']}")
         lines += [
             "",
             "## Code snippet",

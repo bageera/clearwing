@@ -8,7 +8,7 @@ import logging
 from typing import Any
 
 from clearwing.agent.tooling import tool
-from clearwing.agent.tools.ops.pentest_container import KALI, PARROT
+from clearwing.agent.tools.ops.pentest_container import run_in_pentest_container
 
 logger = logging.getLogger(__name__)
 
@@ -42,14 +42,15 @@ def run_netdiscover(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     cmd = f"netdiscover -r {target_range} -i {interface} {options}"
     logger.info("[%s] netdiscover: %s", distro, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=True)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )
 
 
 @tool(requires_approval=True)
@@ -78,14 +79,15 @@ def run_masscan(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     cmd = f"masscan {target} -p{ports} --rate {rate} {options}"
     logger.info("[%s] masscan: %s", distro, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=True)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )
 
 
 @tool(requires_approval=True)
@@ -109,14 +111,15 @@ def run_arp_scan(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     cmd = f"arp-scan {target_range} {options}"
     logger.info("[%s] arp-scan: %s", distro, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=True)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )
 
 
 @tool(requires_approval=False)
@@ -142,15 +145,16 @@ def run_traceroute(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     proto_flag = {"icmp": "-I", "udp": "-U", "tcp": "-T"}.get(protocol, "-I")
     cmd = f"traceroute {proto_flag} {options} {target}"
     logger.info("[%s] traceroute: %s", distro, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=False) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=False)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=False,
+    )
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -181,14 +185,15 @@ def run_aircrack_ng(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     cmd = f"aircrack-ng {options} -w {wordlist} {pcap_file}"
     logger.info("[%s] aircrack-ng: %s", distro, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=True)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )
 
 
 @tool(requires_approval=True)
@@ -214,14 +219,15 @@ def run_airodump_ng(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     cmd = f"timeout {duration} airodump-ng {options} {interface}"
     logger.info("[%s] airodump-ng: %s", distro, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=True)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )
 
 
 @tool(requires_approval=True)
@@ -245,14 +251,15 @@ def run_wifite(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     cmd = f"timeout {duration} wifite {options}"
     logger.info("[%s] wifite: %s", distro, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=True)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )
 
 
 @tool(requires_approval=True)
@@ -280,14 +287,15 @@ def run_reaver(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     cmd = f"timeout {duration} reaver -i {interface} -b {bssid} {options}"
     logger.info("[%s] reaver: %s", distro, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=True)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )
 
 
 @tool(requires_approval=True)
@@ -315,14 +323,15 @@ def run_bully(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     cmd = f"timeout {duration} bully -b {bssid} -i {interface} {options}"
     logger.info("[%s] bully: %s", distro, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=True)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -353,15 +362,16 @@ def run_frida(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     script_flag = f"-l {script}" if script else ""
     cmd = f"frida {options} {script_flag} -f {target_app}"
     logger.info("[%s] frida: %s", distro, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=True)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )
 
 
 @tool(requires_approval=True)
@@ -388,14 +398,15 @@ def run_objection(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     cmd = f"objection {options} --gadget {target_app} {command}"
     logger.info("[%s] objection: %s", distro, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=True)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )
 
 
 @tool(requires_approval=True)
@@ -420,14 +431,15 @@ def run_mobsf(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     cmd = f"mobsf {options} {apk_file}"
     logger.info("[%s] mobsf: %s", distro, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=True)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )
 
 
 @tool(requires_approval=True)
@@ -453,15 +465,16 @@ def run_apktool(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     out_flag = f"-o {output_dir}" if output_dir else ""
     cmd = f"apktool d {options} {out_flag} {apk_file}"
     logger.info("[%s] apktool: %s", distro, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=True)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )
 
 
 @tool(requires_approval=True)
@@ -487,15 +500,16 @@ def run_jadx(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     out_flag = f"-d {output_dir}" if output_dir else ""
     cmd = f"jadx {options} {out_flag} {apk_file}"
     logger.info("[%s] jadx: %s", distro, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=True)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )
 
 
 @tool(requires_approval=True)
@@ -522,14 +536,15 @@ def run_drozer(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     cmd = f"drozer {options} console connect -c 'run {command} {package}'"
     logger.info("[%s] drozer: %s", distro, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=True)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -558,14 +573,15 @@ def run_bettercap_bluetooth(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     cmd = f"timeout {duration} bettercap {options} -eval 'ble.recon on; sleep {duration}'"
     logger.info("[%s] bettercap BLE: %s", distro, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=True)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )
 
 
 @tool(requires_approval=True)
@@ -591,14 +607,15 @@ def run_ubertooth(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     cmd = f"timeout {duration} ubertooth-{command} {options}"
     logger.info("[%s] ubertooth: %s", distro, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=True)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -627,14 +644,15 @@ def run_firmwalker(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     cmd = f"firmwalker {options} {firmware_path}"
     logger.info("[%s] firmwalker: %s", distro, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=True)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )
 
 
 @tool(requires_approval=True)
@@ -658,11 +676,12 @@ def run_binwalk(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     cmd = f"binwalk {options} {firmware_file}"
     logger.info("[%s] binwalk: %s", distro, cmd)
-    return KALI.execute(container_id, cmd, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, cmd, requires_approval=True)
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )

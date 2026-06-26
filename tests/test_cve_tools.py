@@ -250,7 +250,9 @@ class TestCveSearch:
         assert result["count"] == 0
 
     def test_missing_database(self, tmp_path):
-        with patch("clearwing.agent.tools.data.cve_tools._db_path", return_value=tmp_path / "noexist.db"):
+        with patch(
+            "clearwing.agent.tools.data.cve_tools._db_path", return_value=tmp_path / "noexist.db"
+        ):
             result = cve_search.func(query="test")
         assert "error" in result
 
@@ -281,7 +283,9 @@ class TestCveLookup:
         assert "error" in result
 
     def test_missing_database(self, tmp_path):
-        with patch("clearwing.agent.tools.data.cve_tools._db_path", return_value=tmp_path / "noexist.db"):
+        with patch(
+            "clearwing.agent.tools.data.cve_tools._db_path", return_value=tmp_path / "noexist.db"
+        ):
             result = cve_lookup.func(cve_id="CVE-2024-0001")
         assert "error" in result
 
@@ -309,7 +313,9 @@ class TestCveDbUpdate:
 
         db_dir = tmp_path / "cve_db"
         with patch("clearwing.agent.tools.data.cve_tools._db_dir", return_value=db_dir):
-            with patch("clearwing.agent.tools.data.cve_tools._db_path", return_value=db_dir / "cve.db"):
+            with patch(
+                "clearwing.agent.tools.data.cve_tools._db_path", return_value=db_dir / "cve.db"
+            ):
                 result = cve_db_update.func(zip_path=str(zip_path))
 
         assert result["status"] == "success"
@@ -346,9 +352,7 @@ class TestBuildDb:
 
         conn = sqlite3.connect(str(db_file))
         conn.row_factory = sqlite3.Row
-        rows = conn.execute(
-            "SELECT * FROM cve_fts WHERE cve_fts MATCH '1Password'"
-        ).fetchall()
+        rows = conn.execute("SELECT * FROM cve_fts WHERE cve_fts MATCH '1Password'").fetchall()
         assert len(rows) == 1
         assert rows[0]["cve_id"] == "CVE-2024-1234"
         conn.close()

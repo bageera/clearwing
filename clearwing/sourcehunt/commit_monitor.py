@@ -200,6 +200,7 @@ class CommitMonitor:
             out = self._run_git(["rev-parse", f"{commit_sha}^"])
             return out.strip()
         except Exception:
+            logger.debug("Silent exception in commit_monitor", exc_info=True)
             return ""
 
     def _changed_files(self, parent: str, commit: str) -> list[str]:

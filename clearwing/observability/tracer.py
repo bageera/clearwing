@@ -207,6 +207,7 @@ class Tracer:
             try:
                 exporter.shutdown()
             except Exception:
+                logger.warning("Silent exception in tracer", exc_info=True)
                 pass
 
     @property

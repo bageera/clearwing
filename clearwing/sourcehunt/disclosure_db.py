@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import json
 import logging
-import os
 import sqlite3
 import time
 from pathlib import Path
@@ -299,9 +298,7 @@ class DisclosureDB:
 
     def get_finding(self, finding_id: str) -> dict | None:
         """Get a single finding by ID."""
-        row = self._conn.execute(
-            "SELECT * FROM findings WHERE id = ?", (finding_id,)
-        ).fetchone()
+        row = self._conn.execute("SELECT * FROM findings WHERE id = ?", (finding_id,)).fetchone()
         return dict(row) if row else None
 
     def get_reviews(self, finding_id: str) -> list[dict]:

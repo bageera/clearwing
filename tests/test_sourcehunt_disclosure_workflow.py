@@ -8,8 +8,6 @@ Covers:
 
 from __future__ import annotations
 
-import json
-import sqlite3
 import tempfile
 import time
 from pathlib import Path
@@ -208,7 +206,8 @@ class TestDashboard:
         try:
             db.queue_findings(
                 [_make_finding(id="f1"), _make_finding(id="f2")],
-                "https://repo", "s",
+                "https://repo",
+                "s",
             )
             db.transition("f1", DisclosureState.IN_REVIEW)
             stats = db.get_dashboard_stats()
@@ -226,7 +225,8 @@ class TestBatch:
         try:
             db.queue_findings(
                 [_make_finding(id="f1"), _make_finding(id="f2")],
-                "https://repo", "s",
+                "https://repo",
+                "s",
             )
             batch = db.get_batch("https://repo")
             assert len(batch) == 2
@@ -265,12 +265,15 @@ class TestDisclosureWorkflow:
         db = _tmp_db()
         try:
             db.queue_findings(
-                [_make_finding(
-                    id="f1",
-                    stability_classification="stable",
-                    stability_success_rate=0.95,
-                )],
-                "https://repo", "s",
+                [
+                    _make_finding(
+                        id="f1",
+                        stability_classification="stable",
+                        stability_success_rate=0.95,
+                    )
+                ],
+                "https://repo",
+                "s",
             )
             wf = DisclosureWorkflow(db)
             ctx = wf.format_review_context("f1")
@@ -295,7 +298,8 @@ class TestDisclosureWorkflow:
         try:
             db.queue_findings(
                 [_make_finding(id="f1", evidence_level="root_cause_explained")],
-                "https://repo", "s",
+                "https://repo",
+                "s",
             )
             db.transition("f1", DisclosureState.IN_REVIEW)
             db.transition("f1", DisclosureState.VALIDATED)
@@ -327,9 +331,7 @@ class TestDisclosureWorkflow:
     def test_critical_not_batched(self):
         db = _tmp_db()
         try:
-            findings = [
-                _make_finding(id=f"crit{i}", severity="critical") for i in range(7)
-            ]
+            findings = [_make_finding(id=f"crit{i}", severity="critical") for i in range(7)]
             db.queue_findings(findings, "https://repo", "s")
             for f in findings:
                 db.transition(f["id"], DisclosureState.IN_REVIEW)
@@ -346,7 +348,8 @@ class TestDisclosureWorkflow:
         try:
             db.queue_findings(
                 [_make_finding(id="f1"), _make_finding(id="f2")],
-                "https://repo", "s",
+                "https://repo",
+                "s",
             )
             wf = DisclosureWorkflow(db)
             dash = wf.get_dashboard()
@@ -407,10 +410,12 @@ class TestTimelineAlerts:
 class TestCLIRegistration:
     def test_disclose_in_all_commands(self):
         from clearwing.ui.commands import ALL_COMMANDS, disclose
+
         assert disclose in ALL_COMMANDS
 
     def test_add_parser(self):
         import argparse
+
         from clearwing.ui.commands import disclose
 
         parser = argparse.ArgumentParser()
@@ -421,6 +426,7 @@ class TestCLIRegistration:
 
     def test_validate_subcommand(self):
         import argparse
+
         from clearwing.ui.commands import disclose
 
         parser = argparse.ArgumentParser()
@@ -433,6 +439,7 @@ class TestCLIRegistration:
 
     def test_timeline_subcommand(self):
         import argparse
+
         from clearwing.ui.commands import disclose
 
         parser = argparse.ArgumentParser()

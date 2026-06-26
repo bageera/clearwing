@@ -185,7 +185,11 @@ class TestScanTlsConfig:
 
         with (
             patch.object(tls_mod, "_tls_connect", return_value=(mock_ssock, mock_cert)),
-            patch.object(tls_mod, "_fetch_security_headers", return_value={"strict-transport-security": "max-age=31536000"}),
+            patch.object(
+                tls_mod,
+                "_fetch_security_headers",
+                return_value={"strict-transport-security": "max-age=31536000"},
+            ),
         ):
             result = scan_tls_config.invoke({"host": "example.com"})
 
@@ -307,7 +311,11 @@ class TestInspectCertificate:
 
         with (
             patch.object(tls_mod, "_tls_connect", return_value=(mock_ssock, mock_cert)),
-            patch.object(tls_mod, "_parse_cert_der", return_value={"key_bits": 2048, "signature_algorithm": "sha256WithRSAEncryption"}),
+            patch.object(
+                tls_mod,
+                "_parse_cert_der",
+                return_value={"key_bits": 2048, "signature_algorithm": "sha256WithRSAEncryption"},
+            ),
         ):
             result = inspect_certificate.invoke({"host": "example.com"})
 
@@ -330,7 +338,11 @@ class TestInspectCertificate:
 
         with (
             patch.object(tls_mod, "_tls_connect", return_value=(mock_ssock, mock_cert)),
-            patch.object(tls_mod, "_parse_cert_der", return_value={"key_bits": 2048, "signature_algorithm": "sha256WithRSAEncryption"}),
+            patch.object(
+                tls_mod,
+                "_parse_cert_der",
+                return_value={"key_bits": 2048, "signature_algorithm": "sha256WithRSAEncryption"},
+            ),
         ):
             result = inspect_certificate.invoke({"host": "example.com"})
 
@@ -351,7 +363,11 @@ class TestInspectCertificate:
 
         with (
             patch.object(tls_mod, "_tls_connect", return_value=(mock_ssock, mock_cert)),
-            patch.object(tls_mod, "_parse_cert_der", return_value={"key_bits": 2048, "signature_algorithm": "sha256WithRSAEncryption"}),
+            patch.object(
+                tls_mod,
+                "_parse_cert_der",
+                return_value={"key_bits": 2048, "signature_algorithm": "sha256WithRSAEncryption"},
+            ),
         ):
             result = inspect_certificate.invoke({"host": "example.com"})
 
@@ -371,7 +387,11 @@ class TestInspectCertificate:
 
         with (
             patch.object(tls_mod, "_tls_connect", return_value=(mock_ssock, mock_cert)),
-            patch.object(tls_mod, "_parse_cert_der", return_value={"key_bits": 512, "signature_algorithm": "sha1WithRSAEncryption"}),
+            patch.object(
+                tls_mod,
+                "_parse_cert_der",
+                return_value={"key_bits": 512, "signature_algorithm": "sha1WithRSAEncryption"},
+            ),
         ):
             result = inspect_certificate.invoke({"host": "example.com"})
 
@@ -395,4 +415,9 @@ class TestGetTlsTools:
     def test_tool_names(self):
         tools = get_tls_tools()
         names = [t.name for t in tools]
-        assert names == ["scan_tls_config", "enumerate_cipher_suites", "test_tls_downgrade", "inspect_certificate"]
+        assert names == [
+            "scan_tls_config",
+            "enumerate_cipher_suites",
+            "test_tls_downgrade",
+            "inspect_certificate",
+        ]

@@ -38,7 +38,9 @@ def test_build_authorize_url_contains_expected_params():
 
 
 def test_parse_authorization_input_url():
-    code, state = parse_authorization_input("http://localhost:1455/auth/callback?code=abc&state=xyz")
+    code, state = parse_authorization_input(
+        "http://localhost:1455/auth/callback?code=abc&state=xyz"
+    )
     assert code == "abc"
     assert state == "xyz"
 

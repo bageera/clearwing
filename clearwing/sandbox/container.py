@@ -377,6 +377,7 @@ class SandboxContainer:
                 logger.debug("Container kill after failed remove", exc_info=True)
         except Exception:
             # Expected: reload raises when the container no longer exists
+            logger.warning("Silent exception in container", exc_info=True)
             pass
 
         self._container = None

@@ -10,14 +10,11 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from clearwing.bench.crash_classifier import (
-    CrashClassification,
     CrashClassifier,
 )
 from clearwing.bench.ossfuzz import (
     BENCHMARK_MODES,
-    BenchmarkMode,
     BenchmarkTarget,
-    OssFuzzBenchmark,
     load_corpus_dir,
     load_targets_file,
 )
@@ -33,7 +30,6 @@ from clearwing.bench.results import (
     save_result,
 )
 
-
 # --- CrashClassifier tests ---------------------------------------------------
 
 
@@ -48,7 +44,9 @@ class TestCrashClassifier:
     def test_tier_1_basic_crash(self):
         classifier = CrashClassifier()
         result = classifier.classify_automated(
-            exit_code=139, stdout="", stderr="Segmentation fault",
+            exit_code=139,
+            stdout="",
+            stderr="Segmentation fault",
         )
         assert result.tier == 1
         assert result.automated_tier == 1
@@ -70,8 +68,7 @@ class TestCrashClassifier:
     def test_tier_2_ubsan_report(self):
         classifier = CrashClassifier()
         stderr = (
-            "==999== ERROR: UndefinedBehaviorSanitizer: signed-integer-overflow\n"
-            "in /src/calc.c:42"
+            "==999== ERROR: UndefinedBehaviorSanitizer: signed-integer-overflow\nin /src/calc.c:42"
         )
         result = classifier.classify_automated(exit_code=1, stdout="", stderr=stderr)
         assert result.tier == 2
@@ -81,8 +78,7 @@ class TestCrashClassifier:
     def test_classify_returns_crash_kind(self):
         classifier = CrashClassifier()
         stderr = (
-            "==1== ERROR: AddressSanitizer: use-after-free on address 0x60300000\n"
-            "READ of size 8"
+            "==1== ERROR: AddressSanitizer: use-after-free on address 0x60300000\nREAD of size 8"
         )
         result = classifier.classify_automated(exit_code=1, stdout="", stderr=stderr)
         assert result.crash_kind == "use-after-free"
@@ -91,7 +87,9 @@ class TestCrashClassifier:
     async def test_llm_tier_3_controlled(self):
         mock_llm = AsyncMock()
         mock_response = MagicMock()
-        mock_response.first_text.return_value = '{"tier": 3, "rationale": "user input in crash address"}'
+        mock_response.first_text.return_value = (
+            '{"tier": 3, "rationale": "user input in crash address"}'
+        )
         mock_response.cost_usd = 0.01
         mock_llm.aask = AsyncMock(return_value=mock_response)
 
@@ -206,10 +204,13 @@ class TestBenchmarkResult:
 
     def test_format_comparison_table(self):
         comp = ComparisonResult(
-            model_a="a", model_b="b",
-            tier_dist_a={"0": 5}, tier_dist_b={"0": 3},
+            model_a="a",
+            model_b="b",
+            tier_dist_a={"0": 5},
+            tier_dist_b={"0": 3},
             tier_deltas={"0": 2},
-            mean_tier_a=0.0, mean_tier_b=0.0,
+            mean_tier_a=0.0,
+            mean_tier_b=0.0,
         )
         output = format_comparison(comp, fmt="table")
         assert "a" in output
@@ -217,10 +218,13 @@ class TestBenchmarkResult:
 
     def test_format_comparison_json(self):
         comp = ComparisonResult(
-            model_a="a", model_b="b",
-            tier_dist_a={}, tier_dist_b={},
+            model_a="a",
+            model_b="b",
+            tier_dist_a={},
+            tier_dist_b={},
             tier_deltas={},
-            mean_tier_a=0.0, mean_tier_b=0.0,
+            mean_tier_a=0.0,
+            mean_tier_b=0.0,
         )
         output = format_comparison(comp, fmt="json")
         data = json.loads(output)
@@ -228,10 +232,13 @@ class TestBenchmarkResult:
 
     def test_format_comparison_markdown(self):
         comp = ComparisonResult(
-            model_a="a", model_b="b",
-            tier_dist_a={"0": 1}, tier_dist_b={"0": 2},
+            model_a="a",
+            model_b="b",
+            tier_dist_a={"0": 1},
+            tier_dist_b={"0": 2},
             tier_deltas={"0": -1},
-            mean_tier_a=0.0, mean_tier_b=0.0,
+            mean_tier_a=0.0,
+            mean_tier_b=0.0,
         )
         output = format_comparison(comp, fmt="markdown")
         assert "| Tier |" in output
@@ -300,7 +307,9 @@ class TestOssFuzzBenchmark:
             },
         ]
         with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".json", delete=False,
+            mode="w",
+            suffix=".json",
+            delete=False,
         ) as f:
             json.dump(data, f)
             f.flush()
@@ -314,6 +323,7 @@ class TestOssFuzzBenchmark:
 
     def test_benchmark_prompt_has_placeholders(self):
         from clearwing.bench.ossfuzz import BENCHMARK_HUNT_PROMPT
+
         assert "{project_name}" in BENCHMARK_HUNT_PROMPT
         assert "{entry_point_line}" in BENCHMARK_HUNT_PROMPT
 
@@ -364,9 +374,16 @@ class TestBenchCLI:
         parser = argparse.ArgumentParser()
         subs = parser.add_subparsers()
         bench.add_parser(subs)
-        args = parser.parse_args([
-            "bench", "compare", "a.json", "b.json", "--format", "json",
-        ])
+        args = parser.parse_args(
+            [
+                "bench",
+                "compare",
+                "a.json",
+                "b.json",
+                "--format",
+                "json",
+            ]
+        )
         assert args.output_format == "json"
 
     def test_bench_no_llm_classify(self):

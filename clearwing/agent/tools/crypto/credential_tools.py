@@ -91,11 +91,17 @@ def analyze_2skd_entropy(
         _crack_profile("cloud_100_gpu", gpu_data.get("cloud_100_gpu", 300_000_000)),
     ]
 
-    cloud_keys_sec = gpu_data.get("cloud_100_gpu", 300_000_000) / iterations if iterations > 0 else 0
+    cloud_keys_sec = (
+        gpu_data.get("cloud_100_gpu", 300_000_000) / iterations if iterations > 0 else 0
+    )
     cloud_pw_seconds = password_space / cloud_keys_sec if cloud_keys_sec > 0 else float("inf")
     cloud_combined_seconds = combined_space / cloud_keys_sec if cloud_keys_sec > 0 else float("inf")
 
-    pw_cost_usd = (cloud_pw_seconds / 3600) * _A100_USD_PER_HOUR * 100 if not math.isinf(cloud_pw_seconds) else None
+    pw_cost_usd = (
+        (cloud_pw_seconds / 3600) * _A100_USD_PER_HOUR * 100
+        if not math.isinf(cloud_pw_seconds)
+        else None
+    )
     combined_cost_usd = (
         (cloud_combined_seconds / 3600) * _A100_USD_PER_HOUR * 100
         if not math.isinf(cloud_combined_seconds)
@@ -136,12 +142,16 @@ def analyze_2skd_entropy(
         "password_entropy_bits": password_entropy_bits,
         "secret_key_bits": secret_key_bits,
         "combined_entropy_bits": combined_bits,
-        "password_space": int(password_space) if password_entropy_bits <= 64 else f"2^{password_entropy_bits:.0f}",
+        "password_space": int(password_space)
+        if password_entropy_bits <= 64
+        else f"2^{password_entropy_bits:.0f}",
         "combined_space": f"2^{combined_bits:.0f}",
         "cracking_profiles": profiles,
         "cost_estimate_usd": {
             "password_only_100gpu": round(pw_cost_usd, 2) if pw_cost_usd is not None else None,
-            "with_2skd_100gpu": round(combined_cost_usd, 2) if combined_cost_usd is not None else None,
+            "with_2skd_100gpu": round(combined_cost_usd, 2)
+            if combined_cost_usd is not None
+            else None,
             "rate": f"${_A100_USD_PER_HOUR}/hr per GPU x 100 GPUs",
         },
         "assessment": assessment,
@@ -326,7 +336,9 @@ def test_secret_key_validation(
         wrong_sk = os.urandom(32)
         _timed_post(verify_url, _make_verify_payload(password, wrong_sk))
         wrong_pw = os.urandom(16).hex()
-        _timed_post(verify_url, _make_verify_payload(wrong_pw, sk_bytes if sk_bytes else os.urandom(32)))
+        _timed_post(
+            verify_url, _make_verify_payload(wrong_pw, sk_bytes if sk_bytes else os.urandom(32))
+        )
 
     samples_per_group = samples // 2
     times_wrong_key: list[float] = []
@@ -435,7 +447,9 @@ def enumerate_secret_key_format(
     if status and status < 500:
         try:
             enroll_data = json.loads(body)
-            if any(k in enroll_data for k in ("secretKey", "secret_key", "key_format", "account_key")):
+            if any(
+                k in enroll_data for k in ("secretKey", "secret_key", "key_format", "account_key")
+            ):
                 enrollment_result["reveals_format"] = True
                 enrollment_result["leaked_fields"] = [
                     k for k in enroll_data if "key" in k.lower() or "secret" in k.lower()
@@ -457,7 +471,9 @@ def enumerate_secret_key_format(
             try:
                 auth_data = json.loads(body)
                 key_hints = [
-                    k for k in auth_data if "key" in k.lower() or "secret" in k.lower() or "format" in k.lower()
+                    k
+                    for k in auth_data
+                    if "key" in k.lower() or "secret" in k.lower() or "format" in k.lower()
                 ]
                 auth_result["key_related_fields"] = key_hints
                 auth_result["reveals_key_info"] = len(key_hints) > 0
@@ -470,9 +486,7 @@ def enumerate_secret_key_format(
     )
     predictability_risks.append(first_segment_note)
     if enrollment_result.get("reveals_format") or enrollment_result.get("reveals_generation"):
-        predictability_risks.append(
-            "Enrollment endpoint leaks key format or generation details."
-        )
+        predictability_risks.append("Enrollment endpoint leaks key format or generation details.")
 
     effective_entropy = format_analysis["total_entropy_bits"]
     if effective_entropy >= 128:
@@ -570,9 +584,7 @@ def offline_crack_setup(
             "(3) splits into AUK + SRP-x, "
             "(4) computes SRP verifier from x and compares."
         )
-        hashcat_notes.append(
-            f"Secret Key (hex): {secret_key_hex}"
-        )
+        hashcat_notes.append(f"Secret Key (hex): {secret_key_hex}")
 
     john_cmd = f"john --format={john_format} --wordlist={wordlist} hash.txt"
     john_notes: list[str] = []

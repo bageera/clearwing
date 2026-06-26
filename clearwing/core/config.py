@@ -1,7 +1,7 @@
 import os
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import yaml  # type: ignore[import-untyped]
 
@@ -86,8 +86,8 @@ class ScanConfig:
     vulnerability_scan: bool = True
     exploit: bool = False
     output_format: str = "text"
-    output_file: Optional[str] = None
-    log_file: Optional[str] = None
+    output_file: str | None = None
+    log_file: str | None = None
     verbose: bool = False
     stealth_mode: bool = False
     decoy_count: int = 0
@@ -141,7 +141,7 @@ class Config:
     #: they persist across sessions.
     DEFAULT_CONFIG_PATH = clearwing_home() / "config.yaml"
 
-    def __init__(self, config_file: Optional[str] = None):
+    def __init__(self, config_file: str | None = None):
         self.config = self.DEFAULT_CONFIG.copy()
         # Always try the default path first — users expect
         # `~/.clearwing/config.yaml` to be auto-discovered.

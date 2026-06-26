@@ -12,7 +12,7 @@ import logging
 import os
 import re
 import subprocess
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -70,11 +70,13 @@ def parse_cve_list(path: str) -> list[NdayCandidate]:
         cve_id = parts[0]
         patch_source = parts[1] if len(parts) > 1 else ""
         description = parts[2] if len(parts) > 2 else ""
-        candidates.append(NdayCandidate(
-            cve_id=cve_id,
-            patch_source=patch_source,
-            description=description,
-        ))
+        candidates.append(
+            NdayCandidate(
+                cve_id=cve_id,
+                patch_source=patch_source,
+                description=description,
+            )
+        )
     return candidates
 
 
@@ -85,16 +87,25 @@ def fetch_recent_cves(repo_path: str, days: int = 90) -> list[NdayCandidate]:
     try:
         proc = subprocess.run(
             [
-                "git", "-C", repo_path, "log",
+                "git",
+                "-C",
+                repo_path,
+                "log",
                 f"--since={days} days ago",
-                "--all", "--oneline", "--grep=CVE-",
+                "--all",
+                "--oneline",
+                "--grep=CVE-",
                 "--format=%H %s",
             ],
-            capture_output=True, text=True, check=False, timeout=30,
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=30,
         )
         if proc.returncode != 0:
             return []
     except Exception:
+        logger.debug("Silent exception in nday_filter", exc_info=True)
         return []
 
     cve_pattern = re.compile(r"(CVE-\d{4}-\d{4,})")
@@ -112,11 +123,13 @@ def fetch_recent_cves(repo_path: str, days: int = 90) -> list[NdayCandidate]:
             if cve_id in seen:
                 continue
             seen.add(cve_id)
-            candidates.append(NdayCandidate(
-                cve_id=cve_id,
-                patch_source=commit_sha,
-                description=message,
-            ))
+            candidates.append(
+                NdayCandidate(
+                    cve_id=cve_id,
+                    patch_source=commit_sha,
+                    description=message,
+                )
+            )
     return candidates
 
 
@@ -131,11 +144,12 @@ class NdayFilter:
             return []
 
         for i in range(0, len(candidates), FILTER_BATCH_SIZE):
-            batch = candidates[i:i + FILTER_BATCH_SIZE]
+            batch = candidates[i : i + FILTER_BATCH_SIZE]
             await self._filter_batch(batch)
 
         return [
-            c for c in candidates
+            c
+            for c in candidates
             if c.exploitability in ("LIKELY_EXPLOITABLE", "POSSIBLY_EXPLOITABLE")
         ]
 
@@ -152,7 +166,8 @@ class NdayFilter:
 
         try:
             response = await self._llm.aask(
-                user_msg, system=FILTER_SYSTEM_PROMPT,
+                user_msg,
+                system=FILTER_SYSTEM_PROMPT,
             )
             text = response.first_text() if hasattr(response, "first_text") else str(response)
             results = self._parse_response(text)

@@ -194,28 +194,30 @@ def load_eval_result(path: str) -> EvalResult:
         runs = []
         for rr in cr.get("runs", []):
             metrics_data = rr.get("metrics", {})
-            metrics = EvalMetrics(**{
-                k: v for k, v in metrics_data.items()
-                if k in EvalMetrics.__dataclass_fields__
-            })
-            runs.append(ConfigRunResult(
-                run_index=rr.get("run_index", 0),
-                metrics=metrics,
-                error=rr.get("error"),
-            ))
+            metrics = EvalMetrics(
+                **{k: v for k, v in metrics_data.items() if k in EvalMetrics.__dataclass_fields__}
+            )
+            runs.append(
+                ConfigRunResult(
+                    run_index=rr.get("run_index", 0),
+                    metrics=metrics,
+                    error=rr.get("error"),
+                )
+            )
 
         mean_data = cr.get("mean_metrics", {})
-        mean_metrics = EvalMetrics(**{
-            k: v for k, v in mean_data.items()
-            if k in EvalMetrics.__dataclass_fields__
-        })
+        mean_metrics = EvalMetrics(
+            **{k: v for k, v in mean_data.items() if k in EvalMetrics.__dataclass_fields__}
+        )
 
-        configs.append(ConfigResult(
-            config_name=cr.get("config_name", ""),
-            runs=runs,
-            mean_metrics=mean_metrics,
-            stddev=cr.get("stddev", {}),
-        ))
+        configs.append(
+            ConfigResult(
+                config_name=cr.get("config_name", ""),
+                runs=runs,
+                mean_metrics=mean_metrics,
+                stddev=cr.get("stddev", {}),
+            )
+        )
 
     return EvalResult(
         project=data.get("project", ""),

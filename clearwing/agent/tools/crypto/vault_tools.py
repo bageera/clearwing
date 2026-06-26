@@ -44,6 +44,7 @@ def _detect_blob_format(data: str) -> str:
             _base64url_decode(parts[0])
             return "jwe_compact"
         except Exception:
+            logger.warning("Silent exception in vault_tools", exc_info=True)
             pass
 
     try:
@@ -57,6 +58,7 @@ def _detect_blob_format(data: str) -> str:
         if len(data) >= 2 and all(c in "0123456789abcdefABCDEF" for c in data):
             return "hex"
     except Exception:
+        logger.warning("Silent exception in vault_tools", exc_info=True)
         pass
 
     try:
@@ -64,6 +66,7 @@ def _detect_blob_format(data: str) -> str:
         if len(data) > 20:
             return "base64"
     except Exception:
+        logger.warning("Silent exception in vault_tools", exc_info=True)
         pass
 
     return "unknown"
@@ -138,9 +141,7 @@ def _parse_binary_blob(data: bytes) -> dict:
     }
 
 
-def _reassemble_jwe(
-    header_b64: str, ek_b64: str, iv_b64: str, ct_b64: str, tag_b64: str
-) -> str:
+def _reassemble_jwe(header_b64: str, ek_b64: str, iv_b64: str, ct_b64: str, tag_b64: str) -> str:
     return f"{header_b64}.{ek_b64}.{iv_b64}.{ct_b64}.{tag_b64}"
 
 
@@ -202,18 +203,18 @@ def _detect_iv_reuse(encryption_ops: list[dict]) -> list[dict]:
     for key, indices in seen.items():
         if len(indices) > 1:
             algo, iv_hex = key.split(":", 1)
-            reuse.append({
-                "iv_hex": iv_hex,
-                "algorithm": algo,
-                "operation_indices": indices,
-                "count": len(indices),
-            })
+            reuse.append(
+                {
+                    "iv_hex": iv_hex,
+                    "algorithm": algo,
+                    "operation_indices": indices,
+                    "count": len(indices),
+                }
+            )
     return reuse
 
 
-def _detect_key_reuse(
-    captured_keys: list[dict], encryption_ops: list[dict]
-) -> list[dict]:
+def _detect_key_reuse(captured_keys: list[dict], encryption_ops: list[dict]) -> list[dict]:
     key_uses: dict[str, int] = {}
     for key_entry in captured_keys:
         hex_val = key_entry.get("hex", "")
@@ -226,9 +227,7 @@ def _detect_key_reuse(
             key_uses[key_hex] = key_uses.get(key_hex, 0) + 1
 
     return [
-        {"key_hex_preview": k[:16] + "...", "usage_count": v}
-        for k, v in key_uses.items()
-        if v > 1
+        {"key_hex_preview": k[:16] + "...", "usage_count": v} for k, v in key_uses.items() if v > 1
     ]
 
 
@@ -432,15 +431,16 @@ def analyze_key_hierarchy(session_data: dict) -> dict:
         if op in ("importKey", "generateKey"):
             key_hex = step.get("output_key_hex", "[non-extractable]")
             if key_hex != "[non-extractable]":
-                extractable_keys.append({
-                    "step": step.get("step", 0),
-                    "algorithm": step.get("algorithm", ""),
-                    "key_hex_preview": key_hex[:16] + "..." if len(key_hex) > 16 else key_hex,
-                })
+                extractable_keys.append(
+                    {
+                        "step": step.get("step", 0),
+                        "algorithm": step.get("algorithm", ""),
+                        "key_hex_preview": key_hex[:16] + "..." if len(key_hex) > 16 else key_hex,
+                    }
+                )
 
     raw_captured = [
-        k for k in captured_keys
-        if k.get("hex", "[non-extractable]") != "[non-extractable]"
+        k for k in captured_keys if k.get("hex", "[non-extractable]") != "[non-extractable]"
     ]
 
     if extractable_keys:
@@ -471,19 +471,20 @@ def analyze_key_hierarchy(session_data: dict) -> dict:
 
     key_reuse = _detect_key_reuse(captured_keys, encryption_ops)
     if key_reuse:
-        findings.append(
-            f"Key reuse detected: {len(key_reuse)} key(s) used in multiple contexts"
-        )
+        findings.append(f"Key reuse detected: {len(key_reuse)} key(s) used in multiple contexts")
         recommendations.append("Use distinct keys per vault or per item")
         if risk == "LOW":
             risk = "MEDIUM"
 
     wrapping_ops = [s for s in hierarchy if s.get("operation") in ("wrapKey", "unwrapKey")]
     wrapping_algos = list({s.get("algorithm", "") for s in wrapping_ops})
-    derivation_algos = list({
-        s.get("algorithm", "") for s in hierarchy
-        if s.get("operation") in ("deriveBits", "deriveKey")
-    })
+    derivation_algos = list(
+        {
+            s.get("algorithm", "")
+            for s in hierarchy
+            if s.get("operation") in ("deriveBits", "deriveKey")
+        }
+    )
 
     has_derivation = any(s.get("operation") in ("deriveBits", "deriveKey") for s in hierarchy)
     has_encryption = bool(encryption_ops) or any(
@@ -499,24 +500,22 @@ def analyze_key_hierarchy(session_data: dict) -> dict:
             risk = "MEDIUM"
 
     layer_mapping = _map_to_1password_layers(hierarchy)
-    missing_layers = [
-        name for name, info in layer_mapping.items() if not info["found"]
-    ]
+    missing_layers = [name for name, info in layer_mapping.items() if not info["found"]]
     if missing_layers:
-        findings.append(
-            f"Expected 1Password layers not found: {', '.join(missing_layers)}"
-        )
+        findings.append(f"Expected 1Password layers not found: {', '.join(missing_layers)}")
 
     key_chain = []
     for step in hierarchy:
         key_hex = step.get("output_key_hex", "[non-extractable]")
-        key_chain.append({
-            "step": step.get("step", 0),
-            "operation": step.get("operation", ""),
-            "algorithm": step.get("algorithm", ""),
-            "extractable": key_hex != "[non-extractable]",
-            "key_captured": bool(key_hex and key_hex != "[non-extractable]"),
-        })
+        key_chain.append(
+            {
+                "step": step.get("step", 0),
+                "operation": step.get("operation", ""),
+                "algorithm": step.get("algorithm", ""),
+                "extractable": key_hex != "[non-extractable]",
+                "key_captured": bool(key_hex and key_hex != "[non-extractable]"),
+            }
+        )
 
     if not findings:
         findings.append("Key hierarchy appears well-structured with no detected weaknesses")
@@ -529,7 +528,11 @@ def analyze_key_hierarchy(session_data: dict) -> dict:
         "extractable_keys": extractable_keys,
         "non_extractable_keys_count": len(captured_keys) - len(raw_captured),
         "wrapping_operations": [
-            {"step": s.get("step", 0), "operation": s.get("operation", ""), "algorithm": s.get("algorithm", "")}
+            {
+                "step": s.get("step", 0),
+                "operation": s.get("operation", ""),
+                "algorithm": s.get("algorithm", ""),
+            }
             for s in wrapping_ops
         ],
         "wrapping_algorithms": wrapping_algos,
@@ -584,13 +587,22 @@ def _collect_baseline(http_post, url: str, blob: str, template: str, samples: in
 
 
 def _test_single_modification(
-    http_post, url: str, parsed: dict, mod_type: str, template: str,
-    samples: int, baseline: dict,
+    http_post,
+    url: str,
+    parsed: dict,
+    mod_type: str,
+    template: str,
+    samples: int,
+    baseline: dict,
 ) -> tuple[dict, dict | None]:
     try:
         modified_blob, desc = _apply_modification(parsed, mod_type)
     except Exception as exc:
-        return {"modification": mod_type, "description": f"Failed to apply: {exc}", "error": str(exc)}, None
+        return {
+            "modification": mod_type,
+            "description": f"Failed to apply: {exc}",
+            "error": str(exc),
+        }, None
 
     statuses, bodies, times = [], [], []
     for _ in range(samples):
@@ -613,7 +625,11 @@ def _test_single_modification(
     vuln = None
     if accepted:
         sev = _SEVERITY_MAP.get(mod_type, "HIGH")
-        vuln = {"modification": mod_type, "severity": sev, "description": f"Server accepted {desc} — {mod_type} bypass"}
+        vuln = {
+            "modification": mod_type,
+            "severity": sev,
+            "description": f"Server accepted {desc} — {mod_type} bypass",
+        }
     return result, vuln
 
 
@@ -639,7 +655,11 @@ def test_aead_integrity(
     request_template: str = "",
     samples: int = 3,
 ) -> dict:
-    mods = _ALL_MODIFICATIONS if modifications == "all" else [m.strip() for m in modifications.split(",")]
+    mods = (
+        _ALL_MODIFICATIONS
+        if modifications == "all"
+        else [m.strip() for m in modifications.split(",")]
+    )
 
     if not interrupt(
         f"About to send {(len(mods) + 1) * samples} requests to {target}{endpoint_path} "
@@ -666,7 +686,13 @@ def test_aead_integrity(
 
     for mod_type in mods:
         result, vuln = _test_single_modification(
-            _http_post, url, parsed, mod_type, request_template, samples, baseline,
+            _http_post,
+            url,
+            parsed,
+            mod_type,
+            request_template,
+            samples,
+            baseline,
         )
         results.append(result)
         if vuln:
@@ -791,8 +817,12 @@ def _analyze_algo_group(
 def _analyze_unwrap_ops(unwrap_operations: list[dict]) -> dict:
     return {
         "total_unwraps": len(unwrap_operations),
-        "extractable_after_unwrap": sum(1 for op in unwrap_operations if op.get("extractable") is True),
-        "non_extractable_after_unwrap": sum(1 for op in unwrap_operations if op.get("extractable") is False),
+        "extractable_after_unwrap": sum(
+            1 for op in unwrap_operations if op.get("extractable") is True
+        ),
+        "non_extractable_after_unwrap": sum(
+            1 for op in unwrap_operations if op.get("extractable") is False
+        ),
         "formats_used": list({op.get("format", "unknown") for op in unwrap_operations}),
     }
 
@@ -854,7 +884,9 @@ def key_wrap_analysis(
             aes_kw_result = aes_kw
             if aes_kw["size_anomalies"]:
                 findings.append(f"AES-KW size anomalies: {'; '.join(aes_kw['size_anomalies'])}")
-                recommendations.append("Ensure wrapped key sizes are multiples of 8 bytes and ≥ 24 bytes")
+                recommendations.append(
+                    "Ensure wrapped key sizes are multiples of 8 bytes and ≥ 24 bytes"
+                )
                 risk = _escalate_risk(risk, "MEDIUM")
         elif rsa_oaep:
             rsa_oaep_result = rsa_oaep

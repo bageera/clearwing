@@ -2,7 +2,7 @@ import logging
 from typing import Any
 
 from clearwing.agent.tooling import tool
-from clearwing.agent.tools.ops.pentest_container import KALI, PARROT
+from clearwing.agent.tools.ops.pentest_container import run_in_pentest_container
 
 logger = logging.getLogger(__name__)
 
@@ -33,10 +33,6 @@ def run_chisel(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        setup_result = manager.setup()
-        container_id = setup_result["container_id"]
 
     if action == "server":
         cmd = f"chisel server --host {target} --port {port} {options}"
@@ -44,10 +40,11 @@ def run_chisel(
         cmd = f"chisel client {target}:{port} {options}"
 
     logger.info("Executing chisel (%s) in %s container: %s", action, distro, cmd)
-    return KALI.execute(
-        container_id, cmd, requires_approval=True
-    ) if distro == "kali" else PARROT.execute(
-        container_id, cmd, requires_approval=True
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
     )
 
 
@@ -75,17 +72,14 @@ def run_crackmapexec(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        setup_result = manager.setup()
-        container_id = setup_result["container_id"]
 
     cmd = f"crackmapexec {protocol} {target} {options}"
     logger.info("Executing crackmapexec in %s container: %s", distro, cmd)
-    return KALI.execute(
-        container_id, cmd, requires_approval=True
-    ) if distro == "kali" else PARROT.execute(
-        container_id, cmd, requires_approval=True
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
     )
 
 
@@ -110,15 +104,12 @@ def run_bloodhound(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        setup_result = manager.setup()
-        container_id = setup_result["container_id"]
 
     cmd = f"bloodhound-python -d {domain} {options}"
     logger.info("Executing bloodhound-python in %s container: %s", distro, cmd)
-    return KALI.execute(
-        container_id, cmd, requires_approval=True
-    ) if distro == "kali" else PARROT.execute(
-        container_id, cmd, requires_approval=True
+    return run_in_pentest_container(
+        cmd,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
     )

@@ -67,13 +67,15 @@ class TestFormatDuration:
 
 class TestAnalyzeKdfParameters:
     def test_compliant_params(self):
-        result = analyze_kdf_parameters.invoke({
-            "algorithm": "PBKDF2-HMAC-SHA256",
-            "iterations": 650_000,
-            "salt_hex": "aa" * 16,
-            "output_length": 32,
-            "hash_function": "sha256",
-        })
+        result = analyze_kdf_parameters.invoke(
+            {
+                "algorithm": "PBKDF2-HMAC-SHA256",
+                "iterations": 650_000,
+                "salt_hex": "aa" * 16,
+                "output_length": 32,
+                "hash_function": "sha256",
+            }
+        )
         assert result["iterations_compliant"] is True
         assert result["salt_compliant"] is True
         assert result["output_length_compliant"] is True
@@ -81,66 +83,80 @@ class TestAnalyzeKdfParameters:
         assert result["risk_level"] == "LOW"
 
     def test_low_iterations(self):
-        result = analyze_kdf_parameters.invoke({
-            "algorithm": "PBKDF2-HMAC-SHA256",
-            "iterations": 100_000,
-            "salt_hex": "aa" * 16,
-        })
+        result = analyze_kdf_parameters.invoke(
+            {
+                "algorithm": "PBKDF2-HMAC-SHA256",
+                "iterations": 100_000,
+                "salt_hex": "aa" * 16,
+            }
+        )
         assert result["iterations_compliant"] is False
         assert result["risk_level"] == "HIGH"
 
     def test_very_low_iterations(self):
-        result = analyze_kdf_parameters.invoke({
-            "algorithm": "PBKDF2-HMAC-SHA256",
-            "iterations": 1000,
-            "salt_hex": "aa" * 16,
-        })
+        result = analyze_kdf_parameters.invoke(
+            {
+                "algorithm": "PBKDF2-HMAC-SHA256",
+                "iterations": 1000,
+                "salt_hex": "aa" * 16,
+            }
+        )
         assert result["iterations_compliant"] is False
         assert result["risk_level"] == "CRITICAL"
 
     def test_short_salt(self):
-        result = analyze_kdf_parameters.invoke({
-            "algorithm": "PBKDF2-HMAC-SHA256",
-            "iterations": 650_000,
-            "salt_hex": "aa" * 8,
-        })
+        result = analyze_kdf_parameters.invoke(
+            {
+                "algorithm": "PBKDF2-HMAC-SHA256",
+                "iterations": 650_000,
+                "salt_hex": "aa" * 8,
+            }
+        )
         assert result["salt_compliant"] is False
         assert result["salt_length_bytes"] == 8
 
     def test_empty_salt(self):
-        result = analyze_kdf_parameters.invoke({
-            "algorithm": "PBKDF2-HMAC-SHA256",
-            "iterations": 650_000,
-            "salt_hex": "",
-        })
+        result = analyze_kdf_parameters.invoke(
+            {
+                "algorithm": "PBKDF2-HMAC-SHA256",
+                "iterations": 650_000,
+                "salt_hex": "",
+            }
+        )
         assert result["salt_compliant"] is False
         assert result["risk_level"] == "CRITICAL"
 
     def test_output_exceeds_hash(self):
-        result = analyze_kdf_parameters.invoke({
-            "algorithm": "PBKDF2-HMAC-SHA256",
-            "iterations": 650_000,
-            "salt_hex": "aa" * 16,
-            "output_length": 64,
-            "hash_function": "sha256",
-        })
+        result = analyze_kdf_parameters.invoke(
+            {
+                "algorithm": "PBKDF2-HMAC-SHA256",
+                "iterations": 650_000,
+                "salt_hex": "aa" * 16,
+                "output_length": 64,
+                "hash_function": "sha256",
+            }
+        )
         assert result["output_length_compliant"] is False
 
     def test_sha1_flagged(self):
-        result = analyze_kdf_parameters.invoke({
-            "algorithm": "PBKDF2-HMAC-SHA1",
-            "iterations": 1_300_000,
-            "salt_hex": "aa" * 16,
-            "hash_function": "sha1",
-        })
+        result = analyze_kdf_parameters.invoke(
+            {
+                "algorithm": "PBKDF2-HMAC-SHA1",
+                "iterations": 1_300_000,
+                "salt_hex": "aa" * 16,
+                "hash_function": "sha1",
+            }
+        )
         assert result["hash_function_compliant"] is False
 
     def test_findings_populated_on_issues(self):
-        result = analyze_kdf_parameters.invoke({
-            "algorithm": "PBKDF2",
-            "iterations": 10_000,
-            "salt_hex": "aa" * 4,
-        })
+        result = analyze_kdf_parameters.invoke(
+            {
+                "algorithm": "PBKDF2",
+                "iterations": 10_000,
+                "salt_hex": "aa" * 4,
+            }
+        )
         assert len(result["findings"]) >= 2
         assert len(result["recommendations"]) >= 2
 
@@ -150,11 +166,13 @@ class TestAnalyzeKdfParameters:
 
 class TestBenchmarkKdfCracking:
     def test_returns_all_profiles(self):
-        result = benchmark_kdf_cracking.invoke({
-            "algorithm": "PBKDF2-HMAC-SHA256",
-            "iterations": 650_000,
-            "calibration_rounds": 10,
-        })
+        result = benchmark_kdf_cracking.invoke(
+            {
+                "algorithm": "PBKDF2-HMAC-SHA256",
+                "iterations": 650_000,
+                "calibration_rounds": 10,
+            }
+        )
         assert "local_cpu" in result
         assert "single_gpu" in result
         assert "gpu_cluster_8x" in result
@@ -163,35 +181,48 @@ class TestBenchmarkKdfCracking:
         assert "assessment" in result
 
     def test_higher_iterations_slower(self):
-        fast = benchmark_kdf_cracking.invoke({
-            "iterations": 100_000,
-            "calibration_rounds": 10,
-        })
-        slow = benchmark_kdf_cracking.invoke({
-            "iterations": 650_000,
-            "calibration_rounds": 10,
-        })
+        fast = benchmark_kdf_cracking.invoke(
+            {
+                "iterations": 100_000,
+                "calibration_rounds": 10,
+            }
+        )
+        slow = benchmark_kdf_cracking.invoke(
+            {
+                "iterations": 650_000,
+                "calibration_rounds": 10,
+            }
+        )
         fast_sec = fast["single_gpu"]["time_to_exhaust_seconds"]
         slow_sec = slow["single_gpu"]["time_to_exhaust_seconds"]
         assert slow_sec > fast_sec
 
     def test_higher_entropy_slower(self):
-        low = benchmark_kdf_cracking.invoke({
-            "iterations": 650_000,
-            "password_entropy_bits": 30.0,
-            "calibration_rounds": 10,
-        })
-        high = benchmark_kdf_cracking.invoke({
-            "iterations": 650_000,
-            "password_entropy_bits": 60.0,
-            "calibration_rounds": 10,
-        })
-        assert high["single_gpu"]["time_to_exhaust_seconds"] > low["single_gpu"]["time_to_exhaust_seconds"]
+        low = benchmark_kdf_cracking.invoke(
+            {
+                "iterations": 650_000,
+                "password_entropy_bits": 30.0,
+                "calibration_rounds": 10,
+            }
+        )
+        high = benchmark_kdf_cracking.invoke(
+            {
+                "iterations": 650_000,
+                "password_entropy_bits": 60.0,
+                "calibration_rounds": 10,
+            }
+        )
+        assert (
+            high["single_gpu"]["time_to_exhaust_seconds"]
+            > low["single_gpu"]["time_to_exhaust_seconds"]
+        )
 
     def test_calibration_data(self):
-        result = benchmark_kdf_cracking.invoke({
-            "calibration_rounds": 50,
-        })
+        result = benchmark_kdf_cracking.invoke(
+            {
+                "calibration_rounds": 50,
+            }
+        )
         cal = result["calibration"]
         assert cal["rounds"] == 50
         assert cal["duration_ms"] > 0
@@ -204,11 +235,13 @@ class TestBenchmarkKdfCracking:
 class TestTest2skdImplementation:
     def test_declined(self):
         with patch.object(kdf_mod, "interrupt", return_value=False):
-            result = test_2skd_implementation.invoke({
-                "target": "http://example.com",
-                "username": "user@example.com",
-                "password": "test",
-            })
+            result = test_2skd_implementation.invoke(
+                {
+                    "target": "http://example.com",
+                    "username": "user@example.com",
+                    "password": "test",
+                }
+            )
         assert "error" in result
 
     def test_connection_failure(self):
@@ -219,22 +252,26 @@ class TestTest2skdImplementation:
             patch.object(kdf_mod, "interrupt", return_value=True),
             patch("clearwing.agent.tools.crypto.srp_tools._http_post", mock_http_post),
         ):
-            result = test_2skd_implementation.invoke({
-                "target": "http://example.com",
-                "username": "user@example.com",
-                "password": "test",
-            })
+            result = test_2skd_implementation.invoke(
+                {
+                    "target": "http://example.com",
+                    "username": "user@example.com",
+                    "password": "test",
+                }
+            )
         assert "error" in result
 
     def test_successful_verification(self):
         import json
 
-        server_response = json.dumps({
-            "salt": "aa" * 16,
-            "iterations": 100000,
-            "algorithm": "PBKDF2-HMAC-SHA256",
-            "B": "deadbeef" * 8,
-        })
+        server_response = json.dumps(
+            {
+                "salt": "aa" * 16,
+                "iterations": 100000,
+                "algorithm": "PBKDF2-HMAC-SHA256",
+                "B": "deadbeef" * 8,
+            }
+        )
 
         def mock_http_post(url, payload, **kwargs):
             return (200, {}, server_response, 10.0)
@@ -243,12 +280,14 @@ class TestTest2skdImplementation:
             patch.object(kdf_mod, "interrupt", return_value=True),
             patch("clearwing.agent.tools.crypto.srp_tools._http_post", mock_http_post),
         ):
-            result = test_2skd_implementation.invoke({
-                "target": "http://example.com",
-                "username": "user@example.com",
-                "password": "testpassword",
-                "secret_key": "A3-AABBCC-DDEEFF-112233-445566-778899-AABBCC-DDEEFF",
-            })
+            result = test_2skd_implementation.invoke(
+                {
+                    "target": "http://example.com",
+                    "username": "user@example.com",
+                    "password": "testpassword",
+                    "secret_key": "A3-AABBCC-DDEEFF-112233-445566-778899-AABBCC-DDEEFF",
+                }
+            )
 
         assert "checks" in result
         assert result["checks"]["key_split_correct"] is True
@@ -259,12 +298,14 @@ class TestTest2skdImplementation:
     def test_no_secret_key(self):
         import json
 
-        server_response = json.dumps({
-            "salt": "bb" * 16,
-            "iterations": 100000,
-            "algorithm": "PBKDF2-HMAC-SHA256",
-            "B": "cafebabe" * 8,
-        })
+        server_response = json.dumps(
+            {
+                "salt": "bb" * 16,
+                "iterations": 100000,
+                "algorithm": "PBKDF2-HMAC-SHA256",
+                "B": "cafebabe" * 8,
+            }
+        )
 
         def mock_http_post(url, payload, **kwargs):
             return (200, {}, server_response, 10.0)
@@ -273,11 +314,13 @@ class TestTest2skdImplementation:
             patch.object(kdf_mod, "interrupt", return_value=True),
             patch("clearwing.agent.tools.crypto.srp_tools._http_post", mock_http_post),
         ):
-            result = test_2skd_implementation.invoke({
-                "target": "http://example.com",
-                "username": "user@example.com",
-                "password": "testpassword",
-            })
+            result = test_2skd_implementation.invoke(
+                {
+                    "target": "http://example.com",
+                    "username": "user@example.com",
+                    "password": "testpassword",
+                }
+            )
 
         assert result["checks"]["secret_key_incorporated"] is None
         assert any("not provided" in f for f in result["findings"])
@@ -289,28 +332,34 @@ class TestTest2skdImplementation:
 class TestKdfOracleTest:
     def test_declined(self):
         with patch.object(kdf_mod, "interrupt", return_value=False):
-            result = kdf_oracle_test.invoke({
-                "target": "http://example.com",
-                "username": "user@example.com",
-            })
+            result = kdf_oracle_test.invoke(
+                {
+                    "target": "http://example.com",
+                    "username": "user@example.com",
+                }
+            )
         assert "error" in result
 
     def test_rejects_too_few_samples(self):
-        result = kdf_oracle_test.invoke({
-            "target": "http://example.com",
-            "username": "user@example.com",
-            "samples": 5,
-        })
+        result = kdf_oracle_test.invoke(
+            {
+                "target": "http://example.com",
+                "username": "user@example.com",
+                "samples": 5,
+            }
+        )
         assert "error" in result
 
     def test_no_oracle_detected(self):
         import json
 
-        init_response = json.dumps({
-            "salt": "cc" * 16,
-            "iterations": 100000,
-            "B": "aabb" * 32,
-        })
+        init_response = json.dumps(
+            {
+                "salt": "cc" * 16,
+                "iterations": 100000,
+                "B": "aabb" * 32,
+            }
+        )
 
         def mock_http_post(url, payload, **kwargs):
             return (200, {}, init_response, 5.0)
@@ -323,23 +372,27 @@ class TestKdfOracleTest:
             patch("clearwing.agent.tools.crypto.srp_tools._http_post", mock_http_post),
             patch("clearwing.agent.tools.crypto.srp_tools._timed_post", mock_timed_post),
         ):
-            result = kdf_oracle_test.invoke({
-                "target": "http://example.com",
-                "username": "user@example.com",
-                "samples": 20,
-                "warmup": 2,
-            })
+            result = kdf_oracle_test.invoke(
+                {
+                    "target": "http://example.com",
+                    "username": "user@example.com",
+                    "samples": 20,
+                    "warmup": 2,
+                }
+            )
 
         assert result["oracle_detected"] is False
 
     def test_timing_oracle_detected(self):
         import json
 
-        init_response = json.dumps({
-            "salt": "dd" * 16,
-            "iterations": 100000,
-            "B": "aabb" * 32,
-        })
+        init_response = json.dumps(
+            {
+                "salt": "dd" * 16,
+                "iterations": 100000,
+                "B": "aabb" * 32,
+            }
+        )
 
         def mock_http_post(url, payload, **kwargs):
             return (200, {}, init_response, 5.0)
@@ -357,12 +410,14 @@ class TestKdfOracleTest:
             patch("clearwing.agent.tools.crypto.srp_tools._http_post", mock_http_post),
             patch("clearwing.agent.tools.crypto.srp_tools._timed_post", mock_timed_post),
         ):
-            result = kdf_oracle_test.invoke({
-                "target": "http://example.com",
-                "username": "user@example.com",
-                "samples": 20,
-                "warmup": 2,
-            })
+            result = kdf_oracle_test.invoke(
+                {
+                    "target": "http://example.com",
+                    "username": "user@example.com",
+                    "samples": 20,
+                    "warmup": 2,
+                }
+            )
 
         assert result["oracle_detected"] is True
         assert "timing" in result["oracle_type"] or "response_structure" in result["oracle_type"]
@@ -383,4 +438,9 @@ class TestGetKdfTools:
     def test_tool_names(self):
         tools = get_kdf_tools()
         names = [t.name for t in tools]
-        assert names == ["analyze_kdf_parameters", "benchmark_kdf_cracking", "test_2skd_implementation", "kdf_oracle_test"]
+        assert names == [
+            "analyze_kdf_parameters",
+            "benchmark_kdf_cracking",
+            "test_2skd_implementation",
+            "kdf_oracle_test",
+        ]

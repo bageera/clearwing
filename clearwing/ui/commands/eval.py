@@ -24,11 +24,13 @@ def add_parser(subparsers):
         help="A/B test the preprocessing pipeline",
     )
     pp.add_argument(
-        "--project", required=True,
+        "--project",
+        required=True,
         help="Git URL or local path to a repository",
     )
     pp.add_argument(
-        "--commit", default="",
+        "--commit",
+        default="",
         help="Git commit to check out before evaluation",
     )
     pp.add_argument(
@@ -40,28 +42,39 @@ def add_parser(subparsers):
     pp.add_argument("--base-url", default=None, help="LLM API base URL")
     pp.add_argument("--api-key", default=None, help="LLM API key")
     pp.add_argument(
-        "--budget-per-config", type=float, default=500.0,
+        "--budget-per-config",
+        type=float,
+        default=500.0,
         help="USD budget per config per run (default: $500)",
     )
     pp.add_argument(
-        "--runs", type=int, default=1,
+        "--runs",
+        type=int,
+        default=1,
         help="Runs per config for statistical significance (default: 1)",
     )
     pp.add_argument(
-        "--depth", choices=["quick", "standard", "deep"],
-        default="standard", help="Hunt depth (default: standard)",
+        "--depth",
+        choices=["quick", "standard", "deep"],
+        default="standard",
+        help="Hunt depth (default: standard)",
     )
     pp.add_argument(
-        "--output-dir", default=None,
+        "--output-dir",
+        default=None,
         help="Output directory (default: ./results/eval or ~/.clearwing/results/eval)",
     )
     pp.add_argument(
-        "--ground-truth", nargs="*", default=None,
+        "--ground-truth",
+        nargs="*",
+        default=None,
         help="Known CVE IDs for recall measurement",
     )
     pp.add_argument(
-        "--format", choices=["table", "json", "markdown"],
-        default="table", dest="output_format",
+        "--format",
+        choices=["table", "json", "markdown"],
+        default="table",
+        dest="output_format",
         help="Output format (default: table)",
     )
 
@@ -70,12 +83,16 @@ def add_parser(subparsers):
         help="Compare two eval result files",
     )
     compare.add_argument(
-        "results", nargs=2, metavar="FILE",
+        "results",
+        nargs=2,
+        metavar="FILE",
         help="Two eval result JSON files to compare",
     )
     compare.add_argument(
-        "--format", choices=["table", "json", "markdown"],
-        default="table", dest="output_format",
+        "--format",
+        choices=["table", "json", "markdown"],
+        default="table",
+        dest="output_format",
         help="Output format (default: table)",
     )
 
@@ -112,7 +129,9 @@ def _handle_preprocessing(cli, args):
         args.output_dir = default_results_dir("eval")
 
     logging.basicConfig(
-        level=logging.INFO, format="%(levelname)s: %(message)s", force=True,
+        level=logging.INFO,
+        format="%(levelname)s: %(message)s",
+        force=True,
     )
 
     endpoint = resolve_llm_endpoint(

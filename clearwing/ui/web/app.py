@@ -4,9 +4,8 @@ import asyncio
 import json
 import logging
 import uuid
-from typing import Any
-
 from pathlib import Path
+from typing import Any
 
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
@@ -201,6 +200,7 @@ def create_app():
     @app.get("/api/disclosure/queue")
     async def disclosure_queue(state: str | None = None, repo: str | None = None):
         from clearwing.sourcehunt.disclosure_db import DisclosureDB
+
         db = DisclosureDB()
         try:
             return db.get_queue(state=state, repo_url=repo)
@@ -211,6 +211,7 @@ def create_app():
     async def disclosure_validate(finding_id: str, body: dict):
         from clearwing.sourcehunt.disclosure_db import DisclosureDB
         from clearwing.sourcehunt.disclosure_workflow import DisclosureWorkflow
+
         db = DisclosureDB()
         try:
             wf = DisclosureWorkflow(db)
@@ -225,6 +226,7 @@ def create_app():
     async def disclosure_reject(finding_id: str, body: dict):
         from clearwing.sourcehunt.disclosure_db import DisclosureDB
         from clearwing.sourcehunt.disclosure_workflow import DisclosureWorkflow
+
         db = DisclosureDB()
         try:
             wf = DisclosureWorkflow(db)
@@ -239,6 +241,7 @@ def create_app():
     async def disclosure_send(finding_id: str, body: dict):
         from clearwing.sourcehunt.disclosure_db import DisclosureDB
         from clearwing.sourcehunt.disclosure_workflow import DisclosureWorkflow
+
         db = DisclosureDB()
         try:
             wf = DisclosureWorkflow(db)
@@ -257,6 +260,7 @@ def create_app():
     async def disclosure_status():
         from clearwing.sourcehunt.disclosure_db import DisclosureDB
         from clearwing.sourcehunt.disclosure_workflow import DisclosureWorkflow
+
         db = DisclosureDB()
         try:
             wf = DisclosureWorkflow(db)
@@ -307,12 +311,11 @@ def create_app():
                             serializable = data
                         elif hasattr(data, "__dataclass_fields__"):
                             from dataclasses import asdict
+
                             serializable = asdict(data)
                         else:
                             serializable = str(data)
-                        message_queue.put_nowait(
-                            {"type": event_type_name, "data": serializable}
-                        )
+                        message_queue.put_nowait({"type": event_type_name, "data": serializable})
                     except Exception:
                         logger.debug("Failed to enqueue event", exc_info=True)
 

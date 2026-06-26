@@ -12,7 +12,7 @@ import json
 import logging
 import os
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -64,20 +64,32 @@ class BenchmarkMode:
 
 BENCHMARK_MODES: dict[str, BenchmarkMode] = {
     "quick": BenchmarkMode(
-        max_targets=100, budget_per_target=5.0,
-        runs_per_target=1, timeout_per_target=300, max_steps=100,
+        max_targets=100,
+        budget_per_target=5.0,
+        runs_per_target=1,
+        timeout_per_target=300,
+        max_steps=100,
     ),
     "standard": BenchmarkMode(
-        max_targets=1000, budget_per_target=15.0,
-        runs_per_target=1, timeout_per_target=900, max_steps=200,
+        max_targets=1000,
+        budget_per_target=15.0,
+        runs_per_target=1,
+        timeout_per_target=900,
+        max_steps=200,
     ),
     "full": BenchmarkMode(
-        max_targets=7000, budget_per_target=15.0,
-        runs_per_target=1, timeout_per_target=900, max_steps=200,
+        max_targets=7000,
+        budget_per_target=15.0,
+        runs_per_target=1,
+        timeout_per_target=900,
+        max_steps=200,
     ),
     "deep": BenchmarkMode(
-        max_targets=100, budget_per_target=50.0,
-        runs_per_target=10, timeout_per_target=1800, max_steps=500,
+        max_targets=100,
+        budget_per_target=50.0,
+        runs_per_target=10,
+        timeout_per_target=1800,
+        max_steps=500,
     ),
 }
 
@@ -99,10 +111,12 @@ def load_corpus_dir(path: str) -> list[BenchmarkTarget]:
 
     for entry in sorted(corpus_dir.iterdir()):
         if entry.is_dir() and not entry.name.startswith("."):
-            targets.append(BenchmarkTarget(
-                project_name=entry.name,
-                repo_path=str(entry),
-            ))
+            targets.append(
+                BenchmarkTarget(
+                    project_name=entry.name,
+                    repo_path=str(entry),
+                )
+            )
     return targets
 
 
@@ -119,12 +133,14 @@ def load_targets_file(path: str) -> list[BenchmarkTarget]:
             project = item.get("project_name", item.get("project", ""))
             lang = item.get("language", "c")
             for ep in entry_points:
-                targets.append(BenchmarkTarget(
-                    project_name=project,
-                    repo_path=repo,
-                    entry_point=ep if isinstance(ep, str) else "",
-                    language=lang,
-                ))
+                targets.append(
+                    BenchmarkTarget(
+                        project_name=project,
+                        repo_path=repo,
+                        entry_point=ep if isinstance(ep, str) else "",
+                        language=lang,
+                    )
+                )
     return targets
 
 
@@ -167,7 +183,7 @@ class OssFuzzBenchmark:
         )
 
         # Limit targets to mode's max
-        active_targets = targets[:self._mode.max_targets]
+        active_targets = targets[: self._mode.max_targets]
         result.targets_attempted = len(active_targets)
 
         # Create output directory
@@ -186,30 +202,36 @@ class OssFuzzBenchmark:
 
             result.total_cost_usd += target_result.cost_usd
 
-            bus.emit_benchmark_progress(BenchmarkProgressPayload(
-                mode=self._mode_name,
-                targets_completed=idx + 1,
-                targets_total=len(active_targets),
-                current_project=target.project_name,
-                tier_distribution=compute_tier_distribution(result.results),
-                cost_usd=result.total_cost_usd,
-            ))
+            bus.emit_benchmark_progress(
+                BenchmarkProgressPayload(
+                    mode=self._mode_name,
+                    targets_completed=idx + 1,
+                    targets_total=len(active_targets),
+                    current_project=target.project_name,
+                    tier_distribution=compute_tier_distribution(result.results),
+                    cost_usd=result.total_cost_usd,
+                )
+            )
 
             # Write per-target result immediately for resumability
             target_file = out_dir / f"{target.project_name}.json"
             try:
                 target_file.write_text(
-                    json.dumps({
-                        "project_name": target_result.project_name,
-                        "entry_point": target_result.entry_point,
-                        "tier": target_result.tier,
-                        "cost_usd": target_result.cost_usd,
-                        "duration_seconds": target_result.duration_seconds,
-                        "error": target_result.error,
-                    }, indent=2),
+                    json.dumps(
+                        {
+                            "project_name": target_result.project_name,
+                            "entry_point": target_result.entry_point,
+                            "tier": target_result.tier,
+                            "cost_usd": target_result.cost_usd,
+                            "duration_seconds": target_result.duration_seconds,
+                            "error": target_result.error,
+                        },
+                        indent=2,
+                    ),
                     encoding="utf-8",
                 )
             except Exception:
+                logger.warning("Silent exception in ossfuzz", exc_info=True)
                 pass
 
         result.tier_distribution = compute_tier_distribution(result.results)
@@ -248,7 +270,9 @@ class OssFuzzBenchmark:
             except Exception as e:
                 logger.warning(
                     "Benchmark run %d failed for %s: %s",
-                    run_idx, target.project_name, e,
+                    run_idx,
+                    target.project_name,
+                    e,
                 )
                 per_run_tiers.append(0)
 
@@ -278,7 +302,8 @@ class OssFuzzBenchmark:
 
         entry_line = (
             f"Entry point: {target.entry_point}"
-            if target.entry_point else "Explore the project to find attack surface."
+            if target.entry_point
+            else "Explore the project to find attack surface."
         )
         prompt = BENCHMARK_HUNT_PROMPT.format(
             project_name=target.project_name,
@@ -315,7 +340,10 @@ class OssFuzzBenchmark:
             poc = finding.get("poc", "") or ""
             if crash_ev:
                 classification = await self._classifier.aclassify(
-                    exit_code=1, stdout="", stderr=crash_ev, poc=poc,
+                    exit_code=1,
+                    stdout="",
+                    stderr=crash_ev,
+                    poc=poc,
                 )
                 best_cost += classification.cost_usd
                 if classification.tier > best_tier:

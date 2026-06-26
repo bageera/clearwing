@@ -14,7 +14,7 @@ import os
 import tempfile
 import time
 import uuid
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
@@ -91,8 +91,7 @@ def save_checkpoint(
         "timestamp": checkpoint.timestamp,
         "completed_projects": checkpoint.completed_projects,
         "per_project_state": {
-            repo: asdict(ps)
-            for repo, ps in checkpoint.per_project_state.items()
+            repo: asdict(ps) for repo, ps in checkpoint.per_project_state.items()
         },
         "budget_spent": checkpoint.budget_spent,
         "findings_pool_path": checkpoint.findings_pool_path,
@@ -102,7 +101,8 @@ def save_checkpoint(
     }
 
     fd, tmp_path = tempfile.mkstemp(
-        dir=str(checkpoint_dir), suffix=".tmp",
+        dir=str(checkpoint_dir),
+        suffix=".tmp",
     )
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as f:
@@ -172,31 +172,38 @@ class CampaignRunner:
         self._recent_runs: int = 0
         self._recent_new_findings: int = 0
         self._start_time: float = 0.0
-        self._checkpoint_dir = Path(
-            config.output_dir,
-        ) / self._session_id
+        self._checkpoint_dir = (
+            Path(
+                config.output_dir,
+            )
+            / self._session_id
+        )
 
         for target in config.targets:
             self._project_states[target.repo] = ProjectState(repo=target.repo)
 
     def _emit_progress(
-        self, current_project: str = "", status: str = "running",
+        self,
+        current_project: str = "",
+        status: str = "running",
     ) -> None:
         total_findings = sum(ps.findings_count for ps in self._project_states.values())
         total_verified = sum(ps.verified_count for ps in self._project_states.values())
         projects_completed = sum(
             1 for ps in self._project_states.values() if ps.status == "completed"
         )
-        EventBus().emit_campaign_progress(CampaignProgressPayload(
-            campaign_name=self.config.name,
-            projects_completed=projects_completed,
-            projects_total=len(self.config.targets),
-            current_project=current_project,
-            status=status,
-            cost_usd=self._budget_spent,
-            findings_total=total_findings,
-            verified_total=total_verified,
-        ))
+        EventBus().emit_campaign_progress(
+            CampaignProgressPayload(
+                campaign_name=self.config.name,
+                projects_completed=projects_completed,
+                projects_total=len(self.config.targets),
+                current_project=current_project,
+                status=status,
+                cost_usd=self._budget_spent,
+                findings_total=total_findings,
+                verified_total=total_verified,
+            )
+        )
 
     async def arun(self) -> CampaignResult:
         """Run the full campaign."""
@@ -207,12 +214,14 @@ class CampaignRunner:
 
         try:
             from .findings_pool import FindingsPool
+
             self._findings_pool = FindingsPool(checkpoint_path=pool_path)
         except Exception:
             logger.warning("FindingsPool init failed", exc_info=True)
 
         try:
             from .historical_findings_db import HistoricalFindingsDB
+
             self._historical_db = HistoricalFindingsDB()
         except Exception:
             logger.warning("HistoricalFindingsDB init failed", exc_info=True)
@@ -220,8 +229,7 @@ class CampaignRunner:
         checkpoint_task = asyncio.create_task(self._checkpoint_loop())
 
         pending_targets = [
-            t for t in self.config.targets
-            if self._project_states[t.repo].status == "queued"
+            t for t in self.config.targets if self._project_states[t.repo].status == "queued"
         ]
         pending_targets.sort(
             key=lambda t: (not bool(t.focus), -(t.budget or 0)),
@@ -240,12 +248,8 @@ class CampaignRunner:
         completed_count = 0
         for coro in asyncio.as_completed(list(tasks.keys())):
             try:
-                result = await coro
-                target = tasks[
-                    [t for t in tasks if t.done() and not t.cancelled()][
-                        -1
-                    ]
-                ]
+                await coro
+                target = tasks[[t for t in tasks if t.done() and not t.cancelled()][-1]]
             except Exception:
                 completed_count += 1
                 continue
@@ -256,7 +260,8 @@ class CampaignRunner:
             if stopping_reason:
                 self._emit_progress(status="stopped")
                 logger.info(
-                    "Campaign stopping: %s", stopping_reason,
+                    "Campaign stopping: %s",
+                    stopping_reason,
                 )
                 for t in tasks:
                     if not t.done():
@@ -277,7 +282,8 @@ class CampaignRunner:
                     if ps.status == "completed":
                         self._historical_db.ingest_campaign(
                             [
-                                f for f in all_findings
+                                f
+                                for f in all_findings
                                 if target.repo in f.get("id", "")
                                 or f.get("_repo_url") == target.repo
                             ],
@@ -290,20 +296,16 @@ class CampaignRunner:
                 try:
                     self._historical_db.close()
                 except Exception:
+                    logger.debug("Silent exception in campaign", exc_info=True)
                     pass
 
         self._save_checkpoint()
 
         duration = time.time() - self._start_time
-        total_findings = sum(
-            ps.findings_count for ps in self._project_states.values()
-        )
-        total_verified = sum(
-            ps.verified_count for ps in self._project_states.values()
-        )
+        total_findings = sum(ps.findings_count for ps in self._project_states.values())
+        total_verified = sum(ps.verified_count for ps in self._project_states.values())
         projects_completed = sum(
-            1 for ps in self._project_states.values()
-            if ps.status == "completed"
+            1 for ps in self._project_states.values() if ps.status == "completed"
         )
 
         pool_stats = {}
@@ -311,6 +313,7 @@ class CampaignRunner:
             try:
                 pool_stats = self._findings_pool.pool_stats()
             except Exception:
+                logger.debug("Silent exception in campaign", exc_info=True)
                 pass
 
         status = stopping_reason or "completed"
@@ -406,7 +409,9 @@ class CampaignRunner:
                 ps.end_time = time.time()
                 logger.warning(
                     "Campaign project %s failed: %s",
-                    target.repo, e, exc_info=True,
+                    target.repo,
+                    e,
+                    exc_info=True,
                 )
                 return None
 
@@ -436,8 +441,7 @@ class CampaignRunner:
             campaign_session_id=self._session_id,
             timestamp=time.time(),
             completed_projects=[
-                repo for repo, ps in self._project_states.items()
-                if ps.status == "completed"
+                repo for repo, ps in self._project_states.items() if ps.status == "completed"
             ],
             per_project_state=dict(self._project_states),
             budget_spent=self._budget_spent,
@@ -461,15 +465,13 @@ class CampaignRunner:
             if rate < self.config.diminishing_returns_threshold:
                 return f"diminishing_returns (rate={rate:.3f})"
 
-        if (
-            self.config.triage_backlog_limit > 0
-            and self._findings_pool is not None
-        ):
+        if self.config.triage_backlog_limit > 0 and self._findings_pool is not None:
             try:
                 stats = self._findings_pool.pool_stats()
                 if stats.get("unique_findings", 0) > self.config.triage_backlog_limit:
                     return "triage_backlog"
             except Exception:
+                logger.debug("Silent exception in campaign", exc_info=True)
                 pass
 
         return None
@@ -481,10 +483,7 @@ class CampaignRunner:
         self._pause_event.set()
 
     def _queued_count(self) -> int:
-        return sum(
-            1 for ps in self._project_states.values()
-            if ps.status == "queued"
-        )
+        return sum(1 for ps in self._project_states.values() if ps.status == "queued")
 
     @classmethod
     async def from_checkpoint(
@@ -514,6 +513,7 @@ class CampaignRunner:
         if pool_path.exists():
             try:
                 from .findings_pool import FindingsPool
+
                 runner._findings_pool = FindingsPool.from_checkpoint(pool_path)
             except Exception:
                 logger.warning("Pool reconstruction failed", exc_info=True)

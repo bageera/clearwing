@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-import asyncio
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -248,9 +247,14 @@ def test_subsystem_prompt_existing_findings():
     from clearwing.findings.types import Finding
 
     f = Finding(
-        id="f1", file="net/ipv4/tcp.c", line_number=42,
-        cwe="CWE-787", severity="high", description="heap overflow in tcp",
-        primitive_type="bounded_write", cluster_id="c1",
+        id="f1",
+        file="net/ipv4/tcp.c",
+        line_number=42,
+        cwe="CWE-787",
+        severity="high",
+        description="heap overflow in tcp",
+        primitive_type="bounded_write",
+        cluster_id="c1",
     )
     pool._findings["f1"] = f
 
@@ -412,21 +416,25 @@ def test_native_hunter_default_message():
 
 @pytest.mark.asyncio
 async def test_subsystem_hunt_runner_no_llm():
-    runner = SubsystemHuntRunner(SubsystemHuntConfig(
-        subsystems=[SubsystemTarget(name="test", root_path="src", files=[])],
-        repo_path="/tmp",
-        llm=None,
-    ))
+    runner = SubsystemHuntRunner(
+        SubsystemHuntConfig(
+            subsystems=[SubsystemTarget(name="test", root_path="src", files=[])],
+            repo_path="/tmp",
+            llm=None,
+        )
+    )
     result = await runner.arun()
     assert result == []
 
 
 @pytest.mark.asyncio
 async def test_subsystem_hunt_runner_no_subsystems():
-    runner = SubsystemHuntRunner(SubsystemHuntConfig(
-        subsystems=[],
-        repo_path="/tmp",
-        llm=MagicMock(),
-    ))
+    runner = SubsystemHuntRunner(
+        SubsystemHuntConfig(
+            subsystems=[],
+            repo_path="/tmp",
+            llm=MagicMock(),
+        )
+    )
     result = await runner.arun()
     assert result == []

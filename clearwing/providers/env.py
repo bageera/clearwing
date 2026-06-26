@@ -327,6 +327,7 @@ def _openai_codex_default_base_url() -> str:
 
         return OPENAI_CODEX_DEFAULT_BASE_URL
     except Exception:
+        logger.debug("Silent exception in env", exc_info=True)
         return "https://chatgpt.com/backend-api"
 
 
@@ -336,6 +337,7 @@ def _openai_codex_default_model() -> str:
 
         return OPENAI_CODEX_DEFAULT_MODEL
     except Exception:
+        logger.debug("Silent exception in env", exc_info=True)
         return "gpt-5.2"
 
 

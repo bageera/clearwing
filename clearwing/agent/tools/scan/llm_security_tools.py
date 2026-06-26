@@ -8,7 +8,7 @@ import logging
 from typing import Any
 
 from clearwing.agent.tooling import tool
-from clearwing.agent.tools.ops.pentest_container import KALI, PARROT
+from clearwing.agent.tools.ops.pentest_container import run_in_pentest_container
 
 logger = logging.getLogger(__name__)
 
@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 # ════════════════════════════════════════════════════════════════════════════
 # 1. Prompt Injection & Jailbreak
 # ════════════════════════════════════════════════════════════════════════════
+
 
 @tool(requires_approval=True)
 def run_prompt_injection_scanner(
@@ -43,9 +44,6 @@ def run_prompt_injection_scanner(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     script = (
         f"python3 /opt/promptmap/promptmap.py "
@@ -55,8 +53,12 @@ def run_prompt_injection_scanner(
         f"{' --hint ' + repr(system_prompt_hint) if system_prompt_hint else ''}"
     )
     logger.info("[%s] prompt-injection scanner: %s", distro, script)
-    return KALI.execute(container_id, script, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, script, requires_approval=True)
+    return run_in_pentest_container(
+        script,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )
 
 
 @tool(requires_approval=True)
@@ -83,17 +85,18 @@ def run_jailbreak_tester(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     script = (
         f"python3 /opt/jailbreak-orchestrator/orchestrator.py "
         f"--url '{target_url}' --technique {technique} --depth {depth}"
     )
     logger.info("[%s] jailbreak tester (%s): %s", distro, technique, script)
-    return KALI.execute(container_id, script, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, script, requires_approval=True)
+    return run_in_pentest_container(
+        script,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )
 
 
 @tool(requires_approval=True)
@@ -120,9 +123,6 @@ def run_indirect_prompt_injection(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     script = (
         f"python3 /opt/indirect-prompt-injector/inject.py "
@@ -130,13 +130,18 @@ def run_indirect_prompt_injection(
         f"--payload {repr(payload)}"
     )
     logger.info("[%s] indirect prompt injection: %s", distro, script)
-    return KALI.execute(container_id, script, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, script, requires_approval=True)
+    return run_in_pentest_container(
+        script,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )
 
 
 # ════════════════════════════════════════════════════════════════════════════
 # 2. System Prompt & Data Extraction
 # ════════════════════════════════════════════════════════════════════════════
+
 
 @tool(requires_approval=True)
 def run_system_prompt_extraction(
@@ -161,9 +166,6 @@ def run_system_prompt_extraction(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     script = (
         f"python3 /opt/prompt-extractor/extract.py "
@@ -171,8 +173,12 @@ def run_system_prompt_extraction(
         f"--encodings {encoding_tricks}"
     )
     logger.info("[%s] system prompt extractor: %s", distro, script)
-    return KALI.execute(container_id, script, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, script, requires_approval=True)
+    return run_in_pentest_container(
+        script,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )
 
 
 @tool(requires_approval=True)
@@ -201,9 +207,6 @@ def run_training_data_extraction(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     script = (
         f"python3 /opt/training-data-extractor/extract.py "
@@ -212,8 +215,12 @@ def run_training_data_extraction(
         f"{' --dataset ' + repr(dataset_guess) if dataset_guess else ''}"
     )
     logger.info("[%s] training-data extraction: %s", distro, script)
-    return KALI.execute(container_id, script, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, script, requires_approval=True)
+    return run_in_pentest_container(
+        script,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )
 
 
 @tool(requires_approval=True)
@@ -237,22 +244,21 @@ def run_pii_extraction_tester(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
-    script = (
-        f"python3 /opt/pii-extractor/extract.py "
-        f"--url '{target_url}' --types {pii_types}"
-    )
+    script = f"python3 /opt/pii-extractor/extract.py --url '{target_url}' --types {pii_types}"
     logger.info("[%s] PII extraction tester: %s", distro, script)
-    return KALI.execute(container_id, script, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, script, requires_approval=True)
+    return run_in_pentest_container(
+        script,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )
 
 
 # ════════════════════════════════════════════════════════════════════════════
 # 3. Model Behaviour, Consistency & Bias
 # ════════════════════════════════════════════════════════════════════════════
+
 
 @tool(requires_approval=True)
 def run_model_consistency_tester(
@@ -278,17 +284,18 @@ def run_model_consistency_tester(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     script = (
         f"python3 /opt/consistency-tester/test.py "
         f"--url '{target_url}' --prompt {repr(prompt)} --reps {repetitions}"
     )
     logger.info("[%s] consistency tester: %s", distro, script)
-    return KALI.execute(container_id, script, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, script, requires_approval=True)
+    return run_in_pentest_container(
+        script,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )
 
 
 @tool(requires_approval=True)
@@ -313,17 +320,17 @@ def run_toxicity_regression_tester(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     script = (
-        f"python3 /opt/toxicity-redteam/redteam.py "
-        f"--url '{target_url}' --categories {categories}"
+        f"python3 /opt/toxicity-redteam/redteam.py --url '{target_url}' --categories {categories}"
     )
     logger.info("[%s] toxicity regression tester: %s", distro, script)
-    return KALI.execute(container_id, script, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, script, requires_approval=True)
+    return run_in_pentest_container(
+        script,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )
 
 
 @tool(requires_approval=True)
@@ -347,22 +354,21 @@ def run_bias_detector(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
-    script = (
-        f"python3 /opt/bias-detector/test.py "
-        f"--url '{target_url}' --dimensions {dimensions}"
-    )
+    script = f"python3 /opt/bias-detector/test.py --url '{target_url}' --dimensions {dimensions}"
     logger.info("[%s] bias detector: %s", distro, script)
-    return KALI.execute(container_id, script, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, script, requires_approval=True)
+    return run_in_pentest_container(
+        script,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )
 
 
 # ════════════════════════════════════════════════════════════════════════════
 # 4. Agent & Multi-Turn Safety
 # ════════════════════════════════════════════════════════════════════════════
+
 
 @tool(requires_approval=True)
 def run_agent_escape_tester(
@@ -385,17 +391,15 @@ def run_agent_escape_tester(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
-    script = (
-        f"python3 /opt/agent-escape/escape.py "
-        f"--url '{target_url}' --sandbox {sandbox_type}"
-    )
+    script = f"python3 /opt/agent-escape/escape.py --url '{target_url}' --sandbox {sandbox_type}"
     logger.info("[%s] agent escape tester (%s): %s", distro, sandbox_type, script)
-    return KALI.execute(container_id, script, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, script, requires_approval=True)
+    return run_in_pentest_container(
+        script,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )
 
 
 @tool(requires_approval=True)
@@ -422,9 +426,6 @@ def run_tool_poisoning_tester(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     cmd_parts = [f"python3 /opt/tool-poison/poison.py --url '{target_url}'"]
     if tool_name:
@@ -433,8 +434,12 @@ def run_tool_poisoning_tester(
         cmd_parts.append(f"--desc {repr(poison_description)}")
     script = " ".join(cmd_parts)
     logger.info("[%s] tool poisoning tester: %s", distro, script)
-    return KALI.execute(container_id, script, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, script, requires_approval=True)
+    return run_in_pentest_container(
+        script,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )
 
 
 @tool(requires_approval=True)
@@ -442,7 +447,7 @@ def run_multi_turn_poisoning(
     target_url: str,
     turns: int = 5,
     container_id: str | None = None,
-        distro: str = "kali",
+    distro: str = "kali",
 ) -> dict[str, Any]:
     """Gradual context-window poisoning across conversation history.
 
@@ -459,22 +464,21 @@ def run_multi_turn_poisoning(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
-    script = (
-        f"python3 /opt/multi-turn-poison/poison.py "
-        f"--url '{target_url}' --turns {turns}"
-    )
+    script = f"python3 /opt/multi-turn-poison/poison.py --url '{target_url}' --turns {turns}"
     logger.info("[%s] multi-turn poisoning: %s", distro, script)
-    return KALI.execute(container_id, script, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, script, requires_approval=True)
+    return run_in_pentest_container(
+        script,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )
 
 
 # ════════════════════════════════════════════════════════════════════════════
 # 5. Adversarial & Filter Bypass
 # ════════════════════════════════════════════════════════════════════════════
+
 
 @tool(requires_approval=True)
 def run_token_smuggling_tester(
@@ -498,17 +502,15 @@ def run_token_smuggling_tester(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
-    script = (
-        f"python3 /opt/token-smuggler/smuggle.py "
-        f"--url '{target_url}' --encodings {encodings}"
-    )
+    script = f"python3 /opt/token-smuggler/smuggle.py --url '{target_url}' --encodings {encodings}"
     logger.info("[%s] token smuggling tester: %s", distro, script)
-    return KALI.execute(container_id, script, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, script, requires_approval=True)
+    return run_in_pentest_container(
+        script,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )
 
 
 @tool(requires_approval=True)
@@ -535,14 +537,15 @@ def run_adversarial_vision_tester(
     Returns:
         Dict with exit_code, output, and error.
     """
-    if container_id is None:
-        manager = KALI if distro == "kali" else PARROT
-        container_id = manager.setup()["container_id"]
 
     script = (
         f"python3 /opt/adversarial-vision/attack.py "
         f"--url '{target_url}' --image {image_path} --attack {attack}"
     )
     logger.info("[%s] adversarial vision tester (%s): %s", distro, attack, script)
-    return KALI.execute(container_id, script, requires_approval=True) \
-        if distro == "kali" else PARROT.execute(container_id, script, requires_approval=True)
+    return run_in_pentest_container(
+        script,
+        container_id=container_id,
+        distro=distro,
+        requires_approval=True,
+    )

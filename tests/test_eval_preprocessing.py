@@ -4,8 +4,6 @@ from __future__ import annotations
 
 import json
 import tempfile
-from dataclasses import dataclass, field
-from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
@@ -24,10 +22,8 @@ from clearwing.eval.metrics import (
 from clearwing.eval.preprocessing import (
     CONFIGURATIONS,
     EvalConfig,
-    PreprocessingEval,
     resolve_config,
 )
-
 
 # --- Helper: mock SourceHuntResult -------------------------------------------
 
@@ -117,7 +113,9 @@ class TestComputeMetrics:
             _make_finding(cwe=""),
         ]
         result = _make_hunt_result(
-            findings=verified, verified=verified, cost_usd=10.0,
+            findings=verified,
+            verified=verified,
+            cost_usd=10.0,
         )
         metrics = compute_metrics(result)
         assert metrics.cwe_diversity == 3
@@ -335,11 +333,13 @@ class TestConfigResolution:
 class TestRunnerFlags:
     def test_preprocessing_true_is_default(self):
         from clearwing.sourcehunt.runner import SourceHuntRunner
+
         runner = SourceHuntRunner(repo_url="https://example.com/repo")
         assert runner._preprocessing is True
 
     def test_preprocessing_false_stored(self):
         from clearwing.sourcehunt.runner import SourceHuntRunner
+
         runner = SourceHuntRunner(
             repo_url="https://example.com/repo",
             preprocessing=False,
@@ -348,6 +348,7 @@ class TestRunnerFlags:
 
     def test_seed_harness_crashes_stored(self):
         from clearwing.sourcehunt.runner import SourceHuntRunner
+
         runner = SourceHuntRunner(
             repo_url="https://example.com/repo",
             seed_harness_crashes=True,
@@ -356,6 +357,7 @@ class TestRunnerFlags:
 
     def test_seed_harness_crashes_default_false(self):
         from clearwing.sourcehunt.runner import SourceHuntRunner
+
         runner = SourceHuntRunner(repo_url="https://example.com/repo")
         assert runner._seed_harness_crashes is False
 
@@ -366,91 +368,140 @@ class TestRunnerFlags:
 class TestEvalCLI:
     def test_eval_preprocessing_flag(self):
         import argparse
+
         from clearwing.ui.commands import eval
 
         parser = argparse.ArgumentParser()
         subs = parser.add_subparsers()
         eval.add_parser(subs)
-        args = parser.parse_args([
-            "eval", "preprocessing", "--project", "foo",
-        ])
+        args = parser.parse_args(
+            [
+                "eval",
+                "preprocessing",
+                "--project",
+                "foo",
+            ]
+        )
         assert args.eval_action == "preprocessing"
         assert args.project == "foo"
 
     def test_eval_configs_parsing(self):
         import argparse
+
         from clearwing.ui.commands import eval
 
         parser = argparse.ArgumentParser()
         subs = parser.add_subparsers()
         eval.add_parser(subs)
-        args = parser.parse_args([
-            "eval", "preprocessing", "--project", "foo",
-            "--configs", "glasswing_minimal,sourcehunt_full",
-        ])
+        args = parser.parse_args(
+            [
+                "eval",
+                "preprocessing",
+                "--project",
+                "foo",
+                "--configs",
+                "glasswing_minimal,sourcehunt_full",
+            ]
+        )
         configs = [c.strip() for c in args.configs.split(",")]
         assert configs == ["glasswing_minimal", "sourcehunt_full"]
 
     def test_eval_budget_flag(self):
         import argparse
+
         from clearwing.ui.commands import eval
 
         parser = argparse.ArgumentParser()
         subs = parser.add_subparsers()
         eval.add_parser(subs)
-        args = parser.parse_args([
-            "eval", "preprocessing", "--project", "foo",
-            "--budget-per-config", "100",
-        ])
+        args = parser.parse_args(
+            [
+                "eval",
+                "preprocessing",
+                "--project",
+                "foo",
+                "--budget-per-config",
+                "100",
+            ]
+        )
         assert args.budget_per_config == 100.0
 
     def test_eval_runs_flag(self):
         import argparse
+
         from clearwing.ui.commands import eval
 
         parser = argparse.ArgumentParser()
         subs = parser.add_subparsers()
         eval.add_parser(subs)
-        args = parser.parse_args([
-            "eval", "preprocessing", "--project", "foo",
-            "--runs", "3",
-        ])
+        args = parser.parse_args(
+            [
+                "eval",
+                "preprocessing",
+                "--project",
+                "foo",
+                "--runs",
+                "3",
+            ]
+        )
         assert args.runs == 3
 
     def test_eval_ground_truth_flag(self):
         import argparse
+
         from clearwing.ui.commands import eval
 
         parser = argparse.ArgumentParser()
         subs = parser.add_subparsers()
         eval.add_parser(subs)
-        args = parser.parse_args([
-            "eval", "preprocessing", "--project", "foo",
-            "--ground-truth", "CVE-2024-1234", "CVE-2024-5678",
-        ])
+        args = parser.parse_args(
+            [
+                "eval",
+                "preprocessing",
+                "--project",
+                "foo",
+                "--ground-truth",
+                "CVE-2024-1234",
+                "CVE-2024-5678",
+            ]
+        )
         assert args.ground_truth == ["CVE-2024-1234", "CVE-2024-5678"]
 
     def test_eval_compare_flag(self):
         import argparse
+
         from clearwing.ui.commands import eval
 
         parser = argparse.ArgumentParser()
         subs = parser.add_subparsers()
         eval.add_parser(subs)
-        args = parser.parse_args([
-            "eval", "compare", "a.json", "b.json",
-        ])
+        args = parser.parse_args(
+            [
+                "eval",
+                "compare",
+                "a.json",
+                "b.json",
+            ]
+        )
         assert args.eval_action == "compare"
         assert args.results == ["a.json", "b.json"]
 
     def test_eval_compare_format(self):
         import argparse
+
         from clearwing.ui.commands import eval
 
         parser = argparse.ArgumentParser()
         subs = parser.add_subparsers()
         eval.add_parser(subs)
-        args = parser.parse_args([
-            "eval", "compare", "a.json", "b.json", "--format", "json",
-        ])
+        args = parser.parse_args(
+            [
+                "eval",
+                "compare",
+                "a.json",
+                "b.json",
+                "--format",
+                "json",
+            ]
+        )
         assert args.output_format == "json"

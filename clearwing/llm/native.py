@@ -140,9 +140,7 @@ class AsyncLLMClient:
 
             account_id = extract_account_id(self.api_key)
             if not account_id:
-                raise RuntimeError(
-                    "OpenAI OAuth access token is missing the ChatGPT account id."
-                )
+                raise RuntimeError("OpenAI OAuth access token is missing the ChatGPT account id.")
 
             # rust-genai's openai_resp adapter joins "responses" onto the
             # base_url, so set base to `.../codex/` and let it produce
@@ -492,4 +490,3 @@ def _schema_name_for_model(schema_model: type[BaseModel]) -> str:
     raw_name = getattr(schema_model, "__name__", "response_schema")
     normalized = re.sub(r"[^A-Za-z0-9_-]+", "_", raw_name).strip("_")
     return normalized or "response_schema"
-

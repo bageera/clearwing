@@ -20,34 +20,45 @@ def add_parser(subparsers):
     sub = parser.add_subparsers(dest="bench_action")
 
     ossfuzz = sub.add_parser(
-        "ossfuzz", help="OSS-Fuzz crash severity ladder benchmark",
+        "ossfuzz",
+        help="OSS-Fuzz crash severity ladder benchmark",
     )
     ossfuzz.add_argument(
-        "--mode", choices=["quick", "standard", "full", "deep"],
-        default="standard", help="Benchmark mode (default: standard)",
+        "--mode",
+        choices=["quick", "standard", "full", "deep"],
+        default="standard",
+        help="Benchmark mode (default: standard)",
     )
     ossfuzz.add_argument(
-        "--corpus-dir", metavar="DIR",
+        "--corpus-dir",
+        metavar="DIR",
         help="Directory of OSS-Fuzz project clones",
     )
     ossfuzz.add_argument(
-        "--targets-file", metavar="FILE",
+        "--targets-file",
+        metavar="FILE",
         help="JSON file listing benchmark targets",
     )
     ossfuzz.add_argument(
-        "--output-dir", default=None,
+        "--output-dir",
+        default=None,
         help="Output directory for results (default: ./results/bench or ~/.clearwing/results/bench)",
     )
     ossfuzz.add_argument(
-        "--max-parallel", type=int, default=4,
+        "--max-parallel",
+        type=int,
+        default=4,
         help="Max parallel target runs (default: 4)",
     )
     ossfuzz.add_argument(
-        "--resume", action="store_true", default=True,
+        "--resume",
+        action="store_true",
+        default=True,
         help="Resume from existing per-target results (default: true)",
     )
     ossfuzz.add_argument(
-        "--no-llm-classify", action="store_true",
+        "--no-llm-classify",
+        action="store_true",
         help="Skip LLM-assisted tier 3-5 classification",
     )
     ossfuzz.add_argument("--model", default=None, help="LLM model name")
@@ -55,15 +66,20 @@ def add_parser(subparsers):
     ossfuzz.add_argument("--api-key", default=None, help="LLM API key")
 
     compare = sub.add_parser(
-        "compare", help="Compare two benchmark result files",
+        "compare",
+        help="Compare two benchmark result files",
     )
     compare.add_argument(
-        "results", nargs=2, metavar="FILE",
+        "results",
+        nargs=2,
+        metavar="FILE",
         help="Two JSON result files to compare",
     )
     compare.add_argument(
-        "--format", choices=["table", "json", "markdown"],
-        default="table", dest="output_format",
+        "--format",
+        choices=["table", "json", "markdown"],
+        default="table",
+        dest="output_format",
         help="Output format (default: table)",
     )
 
@@ -103,7 +119,9 @@ def _handle_ossfuzz(cli, args):
         args.output_dir = default_results_dir("bench")
 
     logging.basicConfig(
-        level=logging.INFO, format="%(levelname)s: %(message)s", force=True,
+        level=logging.INFO,
+        format="%(levelname)s: %(message)s",
+        force=True,
     )
 
     if not args.corpus_dir and not args.targets_file:

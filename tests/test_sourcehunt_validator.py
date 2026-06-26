@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import json
 import tempfile
-from dataclasses import asdict
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 
@@ -55,9 +54,19 @@ def _make_verdict(**kwargs) -> ValidatorVerdict:
         finding_id="hunter-abc",
         axes={
             "REAL": AxisResult(axis="REAL", passed=True, confidence="high", rationale="confirmed"),
-            "TRIGGERABLE": AxisResult(axis="TRIGGERABLE", passed=True, confidence="high", rationale="reachable"),
-            "IMPACTFUL": AxisResult(axis="IMPACTFUL", passed=True, confidence="high", rationale="crosses boundary", boundary_crossed="user"),
-            "GENERAL": AxisResult(axis="GENERAL", passed=True, confidence="high", rationale="default config"),
+            "TRIGGERABLE": AxisResult(
+                axis="TRIGGERABLE", passed=True, confidence="high", rationale="reachable"
+            ),
+            "IMPACTFUL": AxisResult(
+                axis="IMPACTFUL",
+                passed=True,
+                confidence="high",
+                rationale="crosses boundary",
+                boundary_crossed="user",
+            ),
+            "GENERAL": AxisResult(
+                axis="GENERAL", passed=True, confidence="high", rationale="default config"
+            ),
         },
         advance=True,
         severity_validated="high",
@@ -77,9 +86,14 @@ def _make_verdict(**kwargs) -> ValidatorVerdict:
 class TestValidatorVerdict:
     def test_defaults(self):
         v = ValidatorVerdict(
-            finding_id="x", axes={}, advance=False,
-            severity_validated=None, evidence_level="suspicion",
-            pro_argument="", counter_argument="", tie_breaker="",
+            finding_id="x",
+            axes={},
+            advance=False,
+            severity_validated=None,
+            evidence_level="suspicion",
+            pro_argument="",
+            counter_argument="",
+            tie_breaker="",
             duplicate_cve=None,
         )
         assert v.raw_response == ""
@@ -158,21 +172,32 @@ class TestIndependentContext:
 class TestResponseParsing:
     def test_parse_full_4axis_response(self):
         val = Validator(MagicMock())
-        response = json.dumps({
-            "axes": {
-                "REAL": {"passed": True, "confidence": "high", "rationale": "confirmed"},
-                "TRIGGERABLE": {"passed": True, "confidence": "medium", "rationale": "likely"},
-                "IMPACTFUL": {"passed": True, "confidence": "high", "rationale": "boundary crossed", "boundary_crossed": "user"},
-                "GENERAL": {"passed": True, "confidence": "high", "rationale": "default config"},
-            },
-            "advance": True,
-            "severity": "high",
-            "evidence_level": "crash_reproduced",
-            "pro_argument": "strong case",
-            "counter_argument": "weak counter",
-            "tie_breaker": "crash log",
-            "duplicate_cve": None,
-        })
+        response = json.dumps(
+            {
+                "axes": {
+                    "REAL": {"passed": True, "confidence": "high", "rationale": "confirmed"},
+                    "TRIGGERABLE": {"passed": True, "confidence": "medium", "rationale": "likely"},
+                    "IMPACTFUL": {
+                        "passed": True,
+                        "confidence": "high",
+                        "rationale": "boundary crossed",
+                        "boundary_crossed": "user",
+                    },
+                    "GENERAL": {
+                        "passed": True,
+                        "confidence": "high",
+                        "rationale": "default config",
+                    },
+                },
+                "advance": True,
+                "severity": "high",
+                "evidence_level": "crash_reproduced",
+                "pro_argument": "strong case",
+                "counter_argument": "weak counter",
+                "tie_breaker": "crash log",
+                "duplicate_cve": None,
+            }
+        )
         verdict = val._parse_response(_make_finding(), response)
         assert verdict.advance is True
         assert len(verdict.axes) == 4
@@ -182,42 +207,46 @@ class TestResponseParsing:
 
     def test_parse_partial_pass(self):
         val = Validator(MagicMock())
-        response = json.dumps({
-            "axes": {
-                "REAL": {"passed": True, "confidence": "high", "rationale": "confirmed"},
-                "TRIGGERABLE": {"passed": False, "confidence": "low", "rationale": "dead code"},
-                "IMPACTFUL": {"passed": True, "confidence": "high", "rationale": "yes"},
-                "GENERAL": {"passed": True, "confidence": "medium", "rationale": "yes"},
-            },
-            "advance": False,
-            "severity": "high",
-            "evidence_level": "static_corroboration",
-            "pro_argument": "real but dead",
-            "counter_argument": "unreachable",
-            "tie_breaker": "triggerable failed",
-            "duplicate_cve": None,
-        })
+        response = json.dumps(
+            {
+                "axes": {
+                    "REAL": {"passed": True, "confidence": "high", "rationale": "confirmed"},
+                    "TRIGGERABLE": {"passed": False, "confidence": "low", "rationale": "dead code"},
+                    "IMPACTFUL": {"passed": True, "confidence": "high", "rationale": "yes"},
+                    "GENERAL": {"passed": True, "confidence": "medium", "rationale": "yes"},
+                },
+                "advance": False,
+                "severity": "high",
+                "evidence_level": "static_corroboration",
+                "pro_argument": "real but dead",
+                "counter_argument": "unreachable",
+                "tie_breaker": "triggerable failed",
+                "duplicate_cve": None,
+            }
+        )
         verdict = val._parse_response(_make_finding(), response)
         assert verdict.advance is False
         assert verdict.axes["TRIGGERABLE"].passed is False
 
     def test_advance_logic_all_pass(self):
         val = Validator(MagicMock())
-        response = json.dumps({
-            "axes": {
-                "REAL": {"passed": True, "confidence": "high", "rationale": "yes"},
-                "TRIGGERABLE": {"passed": True, "confidence": "high", "rationale": "yes"},
-                "IMPACTFUL": {"passed": True, "confidence": "high", "rationale": "yes"},
-                "GENERAL": {"passed": True, "confidence": "high", "rationale": "yes"},
-            },
-            "advance": True,
-            "severity": "critical",
-            "evidence_level": "crash_reproduced",
-            "pro_argument": "yes",
-            "counter_argument": "no",
-            "tie_breaker": "obvious",
-            "duplicate_cve": None,
-        })
+        response = json.dumps(
+            {
+                "axes": {
+                    "REAL": {"passed": True, "confidence": "high", "rationale": "yes"},
+                    "TRIGGERABLE": {"passed": True, "confidence": "high", "rationale": "yes"},
+                    "IMPACTFUL": {"passed": True, "confidence": "high", "rationale": "yes"},
+                    "GENERAL": {"passed": True, "confidence": "high", "rationale": "yes"},
+                },
+                "advance": True,
+                "severity": "critical",
+                "evidence_level": "crash_reproduced",
+                "pro_argument": "yes",
+                "counter_argument": "no",
+                "tie_breaker": "obvious",
+                "duplicate_cve": None,
+            }
+        )
         verdict = val._parse_response(_make_finding(), response)
         assert verdict.advance is True
 
@@ -234,27 +263,35 @@ class TestResponseParsing:
 
     def test_invalid_severity_ignored(self):
         val = Validator(MagicMock())
-        response = json.dumps({
-            "axes": {"REAL": {"passed": True, "confidence": "high", "rationale": "yes"}},
-            "advance": True,
-            "severity": "apocalyptic",
-            "evidence_level": "crash_reproduced",
-            "pro_argument": "", "counter_argument": "", "tie_breaker": "",
-            "duplicate_cve": None,
-        })
+        response = json.dumps(
+            {
+                "axes": {"REAL": {"passed": True, "confidence": "high", "rationale": "yes"}},
+                "advance": True,
+                "severity": "apocalyptic",
+                "evidence_level": "crash_reproduced",
+                "pro_argument": "",
+                "counter_argument": "",
+                "tie_breaker": "",
+                "duplicate_cve": None,
+            }
+        )
         verdict = val._parse_response(_make_finding(), response)
         assert verdict.severity_validated is None
 
     def test_invalid_confidence_defaults_to_low(self):
         val = Validator(MagicMock())
-        response = json.dumps({
-            "axes": {"REAL": {"passed": True, "confidence": "ultra_high", "rationale": "yes"}},
-            "advance": True,
-            "severity": "high",
-            "evidence_level": "crash_reproduced",
-            "pro_argument": "", "counter_argument": "", "tie_breaker": "",
-            "duplicate_cve": None,
-        })
+        response = json.dumps(
+            {
+                "axes": {"REAL": {"passed": True, "confidence": "ultra_high", "rationale": "yes"}},
+                "advance": True,
+                "severity": "high",
+                "evidence_level": "crash_reproduced",
+                "pro_argument": "",
+                "counter_argument": "",
+                "tie_breaker": "",
+                "duplicate_cve": None,
+            }
+        )
         verdict = val._parse_response(_make_finding(), response)
         assert verdict.axes["REAL"].confidence == "low"
 
@@ -343,9 +380,15 @@ class TestRejectedFindings:
             advance=False,
             axes={
                 "REAL": AxisResult(axis="REAL", passed=True, confidence="high", rationale="yes"),
-                "TRIGGERABLE": AxisResult(axis="TRIGGERABLE", passed=False, confidence="low", rationale="dead code"),
-                "IMPACTFUL": AxisResult(axis="IMPACTFUL", passed=True, confidence="high", rationale="yes"),
-                "GENERAL": AxisResult(axis="GENERAL", passed=False, confidence="low", rationale="exotic config"),
+                "TRIGGERABLE": AxisResult(
+                    axis="TRIGGERABLE", passed=False, confidence="low", rationale="dead code"
+                ),
+                "IMPACTFUL": AxisResult(
+                    axis="IMPACTFUL", passed=True, confidence="high", rationale="yes"
+                ),
+                "GENERAL": AxisResult(
+                    axis="GENERAL", passed=False, confidence="low", rationale="exotic config"
+                ),
             },
         )
         apply_validator_verdict(finding, verdict)
@@ -354,16 +397,20 @@ class TestRejectedFindings:
 
     def test_rejected_finding_severity_cleared_at_parse(self):
         val = Validator(MagicMock())
-        response = json.dumps({
-            "axes": {
-                "REAL": {"passed": False, "confidence": "high", "rationale": "not real"},
-            },
-            "advance": False,
-            "severity": "high",
-            "evidence_level": "static_corroboration",
-            "pro_argument": "", "counter_argument": "", "tie_breaker": "",
-            "duplicate_cve": None,
-        })
+        response = json.dumps(
+            {
+                "axes": {
+                    "REAL": {"passed": False, "confidence": "high", "rationale": "not real"},
+                },
+                "advance": False,
+                "severity": "high",
+                "evidence_level": "static_corroboration",
+                "pro_argument": "",
+                "counter_argument": "",
+                "tie_breaker": "",
+                "duplicate_cve": None,
+            }
+        )
         verdict = val._parse_response(_make_finding(), response)
         assert verdict.severity_validated is None
 
@@ -374,7 +421,9 @@ class TestRejectedFindings:
 class TestCalibration:
     def test_calibration_record_defaults(self):
         r = CalibrationRecord(
-            finding_id="x", session_id="s", cwe="CWE-787",
+            finding_id="x",
+            session_id="s",
+            cwe="CWE-787",
             discoverer_severity="high",
         )
         assert r.validator_severity is None
@@ -386,14 +435,24 @@ class TestCalibration:
         with tempfile.TemporaryDirectory() as tmpdir:
             path = Path(tmpdir) / "cal.jsonl"
             store = CalibrationStore(path)
-            store.append(CalibrationRecord(
-                finding_id="f1", session_id="s1", cwe="CWE-787",
-                discoverer_severity="high", validator_severity="high",
-            ))
-            store.append(CalibrationRecord(
-                finding_id="f2", session_id="s1", cwe="CWE-416",
-                discoverer_severity="critical", validator_severity="high",
-            ))
+            store.append(
+                CalibrationRecord(
+                    finding_id="f1",
+                    session_id="s1",
+                    cwe="CWE-787",
+                    discoverer_severity="high",
+                    validator_severity="high",
+                )
+            )
+            store.append(
+                CalibrationRecord(
+                    finding_id="f2",
+                    session_id="s1",
+                    cwe="CWE-416",
+                    discoverer_severity="critical",
+                    validator_severity="high",
+                )
+            )
             records = store.load_all()
             assert len(records) == 2
             assert records[0].finding_id == "f1"
@@ -402,10 +461,15 @@ class TestCalibration:
         with tempfile.TemporaryDirectory() as tmpdir:
             path = Path(tmpdir) / "cal.jsonl"
             store = CalibrationStore(path)
-            store.append(CalibrationRecord(
-                finding_id="f1", session_id="s1", cwe="CWE-787",
-                discoverer_severity="high", validator_severity="high",
-            ))
+            store.append(
+                CalibrationRecord(
+                    finding_id="f1",
+                    session_id="s1",
+                    cwe="CWE-787",
+                    discoverer_severity="high",
+                    validator_severity="high",
+                )
+            )
             store.record_human_verdict("f1", "s1", "high")
             records = store.load_all()
             assert records[0].human_severity == "high"
@@ -416,14 +480,24 @@ class TestCalibration:
         with tempfile.TemporaryDirectory() as tmpdir:
             path = Path(tmpdir) / "cal.jsonl"
             store = CalibrationStore(path)
-            store.append(CalibrationRecord(
-                finding_id="f1", session_id="s1", cwe="CWE-787",
-                discoverer_severity="high", validator_severity="high",
-            ))
-            store.append(CalibrationRecord(
-                finding_id="f2", session_id="s1", cwe="CWE-416",
-                discoverer_severity="critical", validator_severity="medium",
-            ))
+            store.append(
+                CalibrationRecord(
+                    finding_id="f1",
+                    session_id="s1",
+                    cwe="CWE-787",
+                    discoverer_severity="high",
+                    validator_severity="high",
+                )
+            )
+            store.append(
+                CalibrationRecord(
+                    finding_id="f2",
+                    session_id="s1",
+                    cwe="CWE-416",
+                    discoverer_severity="critical",
+                    validator_severity="medium",
+                )
+            )
             store.record_human_verdict("f1", "s1", "high")
             store.record_human_verdict("f2", "s1", "critical")
             stats = store.stats()
@@ -440,21 +514,28 @@ class TestAvalidate:
     async def test_avalidate_parses_response(self):
         mock_llm = AsyncMock()
         mock_response = MagicMock()
-        mock_response.first_text.return_value = json.dumps({
-            "axes": {
-                "REAL": {"passed": True, "confidence": "high", "rationale": "yes"},
-                "TRIGGERABLE": {"passed": True, "confidence": "medium", "rationale": "likely"},
-                "IMPACTFUL": {"passed": True, "confidence": "high", "rationale": "yes", "boundary_crossed": "privilege"},
-                "GENERAL": {"passed": True, "confidence": "high", "rationale": "yes"},
-            },
-            "advance": True,
-            "severity": "high",
-            "evidence_level": "crash_reproduced",
-            "pro_argument": "strong",
-            "counter_argument": "weak",
-            "tie_breaker": "crash",
-            "duplicate_cve": None,
-        })
+        mock_response.first_text.return_value = json.dumps(
+            {
+                "axes": {
+                    "REAL": {"passed": True, "confidence": "high", "rationale": "yes"},
+                    "TRIGGERABLE": {"passed": True, "confidence": "medium", "rationale": "likely"},
+                    "IMPACTFUL": {
+                        "passed": True,
+                        "confidence": "high",
+                        "rationale": "yes",
+                        "boundary_crossed": "privilege",
+                    },
+                    "GENERAL": {"passed": True, "confidence": "high", "rationale": "yes"},
+                },
+                "advance": True,
+                "severity": "high",
+                "evidence_level": "crash_reproduced",
+                "pro_argument": "strong",
+                "counter_argument": "weak",
+                "tie_breaker": "crash",
+                "duplicate_cve": None,
+            }
+        )
         mock_llm.aask_text = AsyncMock(return_value=mock_response)
 
         val = Validator(mock_llm)
@@ -506,24 +587,32 @@ class TestFileContext:
 class TestRunnerIntegration:
     def test_validator_mode_v2_default(self):
         from clearwing.sourcehunt.runner import SourceHuntRunner
+
         r = SourceHuntRunner(repo_url="test", depth="standard")
         assert r.validator_mode == "v2"
 
     def test_validator_mode_v1_legacy(self):
         from clearwing.sourcehunt.runner import SourceHuntRunner
+
         r = SourceHuntRunner(
-            repo_url="test", depth="standard", validator_mode="v1",
+            repo_url="test",
+            depth="standard",
+            validator_mode="v1",
         )
         assert r.validator_mode == "v1"
 
     def test_calibration_store_created_by_default(self):
         from clearwing.sourcehunt.runner import SourceHuntRunner
+
         r = SourceHuntRunner(repo_url="test", depth="standard")
         assert r._calibration_store is not None
 
     def test_calibration_disabled(self):
         from clearwing.sourcehunt.runner import SourceHuntRunner
+
         r = SourceHuntRunner(
-            repo_url="test", depth="standard", enable_calibration=False,
+            repo_url="test",
+            depth="standard",
+            enable_calibration=False,
         )
         assert r._calibration_store is None

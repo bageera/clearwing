@@ -85,7 +85,9 @@ class TestAddCertificate:
         kg.add_target("example.com")
         kg.add_certificate("example.com", subject_cn="example.com")
         rels = kg.get_relationships("example.com", direction="out")
-        assert any(r.rel_type == "PRESENTS_CERT" and r.target_id == "cert:example.com:443" for r in rels)
+        assert any(
+            r.rel_type == "PRESENTS_CERT" and r.target_id == "cert:example.com:443" for r in rels
+        )
 
     def test_no_auto_link_without_target(self, tmp_path: Path):
         kg = KnowledgeGraph(persist_path=str(tmp_path / "kg.json"))
@@ -113,14 +115,21 @@ class TestCryptoRelationships:
         kg.add_algorithm("PBKDF2-HMAC-SHA256")
         kg.add_relationship("protocol:SRP-6a", "algorithm:PBKDF2-HMAC-SHA256", "USES_ALGORITHM")
         rels = kg.get_relationships("protocol:SRP-6a", direction="out")
-        assert any(r.rel_type == "USES_ALGORITHM" and r.target_id == "algorithm:PBKDF2-HMAC-SHA256" for r in rels)
+        assert any(
+            r.rel_type == "USES_ALGORITHM" and r.target_id == "algorithm:PBKDF2-HMAC-SHA256"
+            for r in rels
+        )
 
     def test_derives_key(self, tmp_path: Path):
         kg = KnowledgeGraph(persist_path=str(tmp_path / "kg.json"))
         kg.add_kdf_config("PBKDF2-HMAC-SHA256", 650000, "10.0.0.1")
         kg.add_key_material("auk", "10.0.0.1")
-        kg.add_relationship("kdf:PBKDF2-HMAC-SHA256:650000:10.0.0.1", "key:auk:10.0.0.1", "DERIVES_KEY")
-        neighbors = kg.get_neighbors("kdf:PBKDF2-HMAC-SHA256:650000:10.0.0.1", rel_type="DERIVES_KEY")
+        kg.add_relationship(
+            "kdf:PBKDF2-HMAC-SHA256:650000:10.0.0.1", "key:auk:10.0.0.1", "DERIVES_KEY"
+        )
+        neighbors = kg.get_neighbors(
+            "kdf:PBKDF2-HMAC-SHA256:650000:10.0.0.1", rel_type="DERIVES_KEY"
+        )
         assert any(n.id == "key:auk:10.0.0.1" for n in neighbors)
 
     def test_wraps_key(self, tmp_path: Path):
