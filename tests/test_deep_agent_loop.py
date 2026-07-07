@@ -9,9 +9,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from genai_pyo3 import ToolCall
 
-from clearwing.agent.tools.hunt.sandbox import HunterContext
-from clearwing.llm.native import NativeToolSpec
-from clearwing.sourcehunt.hunter import NativeHunter
+from nightwing.agent.tools.hunt.sandbox import HunterContext
+from nightwing.llm.native import NativeToolSpec
+from nightwing.sourcehunt.hunter import NativeHunter
 
 
 @dataclass
@@ -77,7 +77,7 @@ async def test_constrained_mode_stops_at_max_steps():
         tool_calls_list=[_make_tool_call("think", {"notes": "thinking"})],
     )
 
-    with patch("clearwing.sourcehunt.hunter.HunterTrajectoryLogger") as mock_traj:
+    with patch("nightwing.sourcehunt.hunter.HunterTrajectoryLogger") as mock_traj:
         mock_traj.for_hunter.return_value = MagicMock()
         result = await hunter.arun()
 
@@ -94,9 +94,9 @@ async def test_deep_mode_terminates_on_budget():
         tool_calls_list=[_make_tool_call("think", {"notes": "thinking"})],
     )
 
-    with patch("clearwing.sourcehunt.hunter.HunterTrajectoryLogger") as mock_traj:
+    with patch("nightwing.sourcehunt.hunter.HunterTrajectoryLogger") as mock_traj:
         mock_traj.for_hunter.return_value = MagicMock()
-        with patch("clearwing.sourcehunt.hunter._estimate_cost_usd", return_value=0.005):
+        with patch("nightwing.sourcehunt.hunter._estimate_cost_usd", return_value=0.005):
             result = await hunter.arun()
 
     # Should stop after 2 steps: 0.005 + 0.005 = 0.01 >= 0.01 * 0.9
@@ -112,7 +112,7 @@ async def test_deep_mode_safety_cap():
         tool_calls_list=[_make_tool_call("think", {"notes": "thinking"})],
     )
 
-    with patch("clearwing.sourcehunt.hunter.HunterTrajectoryLogger") as mock_traj:
+    with patch("nightwing.sourcehunt.hunter.HunterTrajectoryLogger") as mock_traj:
         mock_traj.for_hunter.return_value = MagicMock()
         result = await hunter.arun()
 
@@ -137,7 +137,7 @@ async def test_deep_mode_no_repeated_call_throttle():
 
     llm.achat.side_effect = achat_side_effect
 
-    with patch("clearwing.sourcehunt.hunter.HunterTrajectoryLogger") as mock_traj:
+    with patch("nightwing.sourcehunt.hunter.HunterTrajectoryLogger") as mock_traj:
         mock_logger = MagicMock()
         mock_traj.for_hunter.return_value = mock_logger
         await hunter.arun()
@@ -168,7 +168,7 @@ async def test_constrained_mode_throttles_repeated_calls():
 
     llm.achat.side_effect = achat_side_effect
 
-    with patch("clearwing.sourcehunt.hunter.HunterTrajectoryLogger") as mock_traj:
+    with patch("nightwing.sourcehunt.hunter.HunterTrajectoryLogger") as mock_traj:
         mock_logger = MagicMock()
         mock_traj.for_hunter.return_value = mock_logger
         await hunter.arun()
@@ -189,7 +189,7 @@ async def test_hunter_completes_when_no_tool_calls():
 
     llm.achat.return_value = FakeResponse(text="No vulnerabilities found.")
 
-    with patch("clearwing.sourcehunt.hunter.HunterTrajectoryLogger") as mock_traj:
+    with patch("nightwing.sourcehunt.hunter.HunterTrajectoryLogger") as mock_traj:
         mock_traj.for_hunter.return_value = MagicMock()
         result = await hunter.arun()
 

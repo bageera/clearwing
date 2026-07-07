@@ -4,8 +4,8 @@ import json
 
 import pytest
 
-from clearwing.safety.audit import AuditLogger, SessionMetrics
-from clearwing.safety.audit.logger import AuditEntry
+from nightwing.safety.audit import AuditLogger, SessionMetrics
+from nightwing.safety.audit.logger import AuditEntry
 
 
 @pytest.fixture

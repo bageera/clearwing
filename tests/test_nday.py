@@ -7,9 +7,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from clearwing.sourcehunt.nday import NdayPipeline, NdayPipelineResult, NdayResult
-from clearwing.sourcehunt.nday_builder import NdayBuild, NdayBuilder
-from clearwing.sourcehunt.nday_filter import (
+from nightwing.sourcehunt.nday import NdayPipeline, NdayPipelineResult, NdayResult
+from nightwing.sourcehunt.nday_builder import NdayBuild, NdayBuilder
+from nightwing.sourcehunt.nday_filter import (
     NdayCandidate,
     NdayFilter,
     parse_cve_list,
@@ -223,7 +223,7 @@ class TestNdayPipeline:
         mock_factory = MagicMock(return_value=mock_sandbox)
 
         with patch(
-            "clearwing.sourcehunt.nday.AgenticExploiter",
+            "nightwing.sourcehunt.nday.AgenticExploiter",
         ) as mock_exploiter_cls:
             mock_exploiter = AsyncMock()
             mock_exploiter.aattempt = AsyncMock(return_value=mock_exploit_result)
@@ -279,7 +279,7 @@ class TestNdayCLI:
     def test_nday_flag(self):
         import argparse
 
-        from clearwing.ui.commands import sourcehunt
+        from nightwing.ui.commands import sourcehunt
 
         parser = argparse.ArgumentParser()
         subs = parser.add_subparsers()
@@ -291,7 +291,7 @@ class TestNdayCLI:
     def test_cve_list_flag(self):
         import argparse
 
-        from clearwing.ui.commands import sourcehunt
+        from nightwing.ui.commands import sourcehunt
 
         parser = argparse.ArgumentParser()
         subs = parser.add_subparsers()
@@ -302,7 +302,7 @@ class TestNdayCLI:
     def test_recent_cves_flag(self):
         import argparse
 
-        from clearwing.ui.commands import sourcehunt
+        from nightwing.ui.commands import sourcehunt
 
         parser = argparse.ArgumentParser()
         subs = parser.add_subparsers()
@@ -323,7 +323,7 @@ class TestNdayCLI:
     def test_nday_budget_flag(self):
         import argparse
 
-        from clearwing.ui.commands import sourcehunt
+        from nightwing.ui.commands import sourcehunt
 
         parser = argparse.ArgumentParser()
         subs = parser.add_subparsers()
@@ -344,7 +344,7 @@ class TestNdayCLI:
     def test_patch_commit_flag(self):
         import argparse
 
-        from clearwing.ui.commands import sourcehunt
+        from nightwing.ui.commands import sourcehunt
 
         parser = argparse.ArgumentParser()
         subs = parser.add_subparsers()

@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-import clearwing.agent.tools.recon.auth_recorder as recorder_mod
-from clearwing.agent.tools.recon.auth_recorder import (
+import nightwing.agent.tools.recon.auth_recorder as recorder_mod
+from nightwing.agent.tools.recon.auth_recorder import (
     AuthFlowEvent,
     _RecordingState,
     _saved_flows,
@@ -14,8 +14,8 @@ from clearwing.agent.tools.recon.auth_recorder import (
     start_auth_recording,
     stop_auth_recording,
 )
-from clearwing.agent.tools.recon.proxy_tools import _proxy_history
-from clearwing.agent.tools.recon.webcrypto_hooks import CryptoLog, _crypto_logs, _hooks_installed
+from nightwing.agent.tools.recon.proxy_tools import _proxy_history
+from nightwing.agent.tools.recon.webcrypto_hooks import CryptoLog, _crypto_logs, _hooks_installed
 
 
 @pytest.fixture(autouse=True)

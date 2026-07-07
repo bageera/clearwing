@@ -16,14 +16,14 @@ from unittest.mock import MagicMock, patch
 
 from typing_extensions import TypedDict
 
-from clearwing.agent.graph import (
+from nightwing.agent.graph import (
     _default_pentest_state_updater,
     build_react_graph,
     create_agent,
 )
-from clearwing.agent.state import AgentState
-from clearwing.agent.tooling import tool
-from clearwing.llm import BaseMessage
+from nightwing.agent.state import AgentState
+from nightwing.agent.tooling import tool
+from nightwing.llm import BaseMessage
 
 
 class CustomState(TypedDict):
@@ -148,7 +148,7 @@ class TestCreateAgentDelegatesToBuildReactGraph:
 
     def test_create_agent_returns_compiled_graph(self):
         # Patch the LLM creation to avoid network/auth
-        with patch("clearwing.agent.graph._create_llm") as mock_create_llm:
+        with patch("nightwing.agent.graph._create_llm") as mock_create_llm:
             mock_llm = MagicMock()
             mock_llm.bind_tools = MagicMock(return_value=MagicMock())
             mock_create_llm.return_value = mock_llm
@@ -162,7 +162,7 @@ class TestCreateAgentDelegatesToBuildReactGraph:
             """Doubler."""
             return x * 2
 
-        with patch("clearwing.agent.graph._create_llm") as mock_create_llm:
+        with patch("nightwing.agent.graph._create_llm") as mock_create_llm:
             mock_llm = MagicMock()
             bound = MagicMock()
             mock_llm.bind_tools = MagicMock(return_value=bound)

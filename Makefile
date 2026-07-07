@@ -1,4 +1,4 @@
-# Clearwing developer commands. Mirror the CI gate so `make lint type test`
+# Nightwing developer commands. Mirror the CI gate so `make lint type test`
 # gives you the same pass/fail signal as a PR.
 
 .PHONY: help install-dev lint format fmt type test test-strict test-parallel test-coverage build clean gate all docs docs-serve security-lint
@@ -9,10 +9,10 @@ RUFF     := $(PY) -m ruff
 MYPY     := $(PY) -m mypy
 COVERAGE := $(PY) -m coverage
 
-MYPY_SCOPE := clearwing/findings clearwing/sourcehunt clearwing/capabilities.py clearwing/agent/tools clearwing/core
+MYPY_SCOPE := nightwing/findings nightwing/sourcehunt nightwing/capabilities.py nightwing/agent/tools nightwing/core
 
 help:
-	@echo "Clearwing developer commands:"
+	@echo "Nightwing developer commands:"
 	@echo "  install-dev     uv pip install -e '.[dev]' (requires venv)"
 	@echo "  lint            ruff check + ruff format --check"
 	@echo "  format          ruff format (writes changes)"
@@ -20,7 +20,7 @@ help:
 	@echo "  test            pytest -q"
 	@echo "  test-strict     pytest -q --strict-markers --strict-config (CI mode)"
 	@echo "  test-parallel   pytest -q -n auto (parallel, requires pytest-xdist)"
-	@echo "  test-coverage   pytest --cov=clearwing --cov-report=term-missing --cov-report=html"
+	@echo "  test-coverage   pytest --cov=nightwing --cov-report=term-missing --cov-report=html"
 	@echo "  build           python -m build + twine check"
 	@echo "  clean           remove dist/, build/, *.egg-info/, __pycache__/, .pytest_cache/, htmlcov/"
 	@echo "  gate            lint + type + test-strict + build (full CI gate, local)"
@@ -34,12 +34,12 @@ install-dev:
 	uv pip install --python $(PY) -e '.[dev]'
 
 lint:
-	$(RUFF) check clearwing/ tests/
-	$(RUFF) format --check clearwing/ tests/
+	$(RUFF) check nightwing/ tests/
+	$(RUFF) format --check nightwing/ tests/
 
 format fmt:
-	$(RUFF) format clearwing/ tests/
-	$(RUFF) check --fix clearwing/ tests/
+	$(RUFF) format nightwing/ tests/
+	$(RUFF) check --fix nightwing/ tests/
 
 type:
 	$(MYPY) --follow-imports=silent $(MYPY_SCOPE)
@@ -54,7 +54,7 @@ test-parallel:
 	$(PYTEST) -q -n auto
 
 test-coverage:
-	$(PYTEST) --cov=clearwing --cov-report=term-missing --cov-report=html
+	$(PYTEST) --cov=nightwing --cov-report=term-missing --cov-report=html
 
 coverage:
 	$(COVERAGE) report --fail-under=65
@@ -79,7 +79,7 @@ gate: lint type test-strict build
 all: gate
 
 security-lint:
-	$(RUFF) check --select S clearwing/
+	$(RUFF) check --select S nightwing/
 
 docs:
 	$(PY) -m mkdocs build --strict

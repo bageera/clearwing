@@ -5,9 +5,9 @@ import time
 
 import pytest
 
-from clearwing.observability.integration import ObservabilityIntegration
-from clearwing.observability.metrics import MetricPoint, MetricsCollector
-from clearwing.observability.tracer import (
+from nightwing.observability.integration import ObservabilityIntegration
+from nightwing.observability.metrics import MetricPoint, MetricsCollector
+from nightwing.observability.tracer import (
     ConsoleExporter,
     InMemoryExporter,
     Span,

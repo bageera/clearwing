@@ -6,14 +6,14 @@ from unittest.mock import patch
 
 import pytest
 
-import clearwing.agent.tools.crypto.timing_tools as timing_mod
-from clearwing.agent.tools.crypto.timing_tools import (
+import nightwing.agent.tools.crypto.timing_tools as timing_mod
+from nightwing.agent.tools.crypto.timing_tools import (
     get_timing_tools,
     timing_bitwise_probe,
     timing_compare,
     timing_probe,
 )
-from clearwing.crypto.stats import (
+from nightwing.crypto.stats import (
     apply_outlier_rejection,
     cohens_d,
     compute_extended_stats,
@@ -26,7 +26,7 @@ from clearwing.crypto.stats import (
     welch_t_test,
 )
 
-# --- Statistical helpers (clearwing/crypto/stats.py) ---
+# --- Statistical helpers (nightwing/crypto/stats.py) ---
 
 
 class TestComputeStats:

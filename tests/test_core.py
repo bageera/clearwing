@@ -1,7 +1,7 @@
 import pytest
 
-from clearwing.core import Config, CoreEngine, ScanConfig
-from clearwing.core.engine import ScanState
+from nightwing.core import Config, CoreEngine, ScanConfig
+from nightwing.core.engine import ScanState
 
 
 class TestConfig:

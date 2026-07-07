@@ -1,4 +1,4 @@
-# Clearwing Security Assessment — Retest Executive Report
+# Nightwing Security Assessment — Retest Executive Report
 
 ## Lazarus AI Production Environment
 
@@ -7,7 +7,7 @@
 **Original Assessment:** May 2026 (Amendments 01–05)  
 **Authorization:** LOA LAZ-ROE-MASTER-2026 v1.1, Amendment 06  
 **Authorization Code:** CW-2026-LAZARUS-001  
-**Authorized Party:** Jon Bethea, Clearwing Security Operations  
+**Authorized Party:** Jon Bethea, Nightwing Security Operations  
 **Authorizing CISO:** Jane Doe, Lazarus AI / Cyber Security & Infrastructure Services LLC  
 
 ---
@@ -448,7 +448,7 @@ The recommended path forward is clear: **enable IAM authentication on all Cloud 
 
 ---
 
-*This report was prepared by Clearwing Security Operations under LOA LAZ-ROE-MASTER-2026 v1.1, Amendment 06. All testing was conducted within the authorized scope (Tiers 1–7). Findings and recommendations are provided for the exclusive use of Lazarus AI and Cyber Security & Infrastructure Services LLC.*
+*This report was prepared by Nightwing Security Operations under LOA LAZ-ROE-MASTER-2026 v1.1, Amendment 06. All testing was conducted within the authorized scope (Tiers 1–7). Findings and recommendations are provided for the exclusive use of Lazarus AI and Cyber Security & Infrastructure Services LLC.*
 
 *Report generated: June 5, 2026*
 *Next retest recommended: July 2026 (after remediation window)*

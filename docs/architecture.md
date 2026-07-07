@@ -1,19 +1,19 @@
 # Architecture
 
-Clearwing is organized around two complementary pipelines that share
+Nightwing is organized around two complementary pipelines that share
 a common Finding type, sandboxing layer, knowledge graph, and event
 bus.
 
 ```
 ┌───────────────────────────────────────────────────────────────────┐
-│                         clearwing.cli                              │
+│                         nightwing.cli                              │
 │  (scan, sourcehunt, interactive, operate, mcp, parallel, webui)   │
 └─────────────────┬───────────────────────────────┬─────────────────┘
                   │                               │
                   ▼                               ▼
 ┌─────────────────────────┐      ┌────────────────────────────────┐
 │  Network-pentest agent  │      │   Source-code hunter           │
-│  clearwing.agent.graph  │      │   clearwing.sourcehunt.runner  │
+│  nightwing.agent.graph  │      │   nightwing.sourcehunt.runner  │
 │                         │      │                                │
 │  build_react_graph      │      │  Preprocessor → Ranker → Pool  │
 │    ├── ToolNode         │      │   → Hunter (per-file ReAct)   │
@@ -28,21 +28,21 @@ bus.
 ┌───────────────────────────────────────────────────────────────────┐
 │                       Shared substrate                            │
 ├───────────────────────────────────────────────────────────────────┤
-│  clearwing.findings.Finding  — the one canonical finding type     │
-│  clearwing.capabilities      — runtime subsystem detection        │
-│  clearwing.sandbox           — Docker-based sanitizer containers  │
-│  clearwing.data.knowledge    — attack-graph + finding-graph DB    │
-│  clearwing.data.memory       — episodic + session memory          │
-│  clearwing.core.events       — process-wide pub/sub event bus     │
-│  clearwing.observability     — cost tracker + Prometheus metrics  │
-│  clearwing.safety            — guardrails, audit log, scoring     │
+│  nightwing.findings.Finding  — the one canonical finding type     │
+│  nightwing.capabilities      — runtime subsystem detection        │
+│  nightwing.sandbox           — Docker-based sanitizer containers  │
+│  nightwing.data.knowledge    — attack-graph + finding-graph DB    │
+│  nightwing.data.memory       — episodic + session memory          │
+│  nightwing.core.events       — process-wide pub/sub event bus     │
+│  nightwing.observability     — cost tracker + Prometheus metrics  │
+│  nightwing.safety            — guardrails, audit log, scoring     │
 └───────────────────────────────────────────────────────────────────┘
 ```
 
-## The network-pentest agent (`clearwing.agent.graph`)
+## The network-pentest agent (`nightwing.agent.graph`)
 
-A native ReAct loop with 99 bind-tools, driven by `clearwing.agent.runtime`
-on top of `clearwing.llm.native.AsyncLLMClient` (the `genai-pyo3` bridge
+A native ReAct loop with 99 bind-tools, driven by `nightwing.agent.runtime`
+on top of `nightwing.llm.native.AsyncLLMClient` (the `genai-pyo3` bridge
 to rust-genai). The graph has two nodes:
 
 - **`assistant`** — invokes the LLM with the current state and the
@@ -67,14 +67,14 @@ runtime's inner while-loop falls out and the graph returns.
 
 ### Capability gating
 
-`clearwing/capabilities.py` probes each of the six optional subsystems
+`nightwing/capabilities.py` probes each of the six optional subsystems
 (`guardrails`, `memory`, `telemetry`, `events`, `audit`, `knowledge`)
 at import time and exposes `capabilities.has(name)`. The graph's
 init block decides whether to instantiate each subsystem based on
 a user flag AND the capability being present — so a stripped install
 degrades gracefully instead of crashing on first use.
 
-## The source-code hunter (`clearwing.sourcehunt`)
+## The source-code hunter (`nightwing.sourcehunt`)
 
 The sourcehunt pipeline is staged, not looped. Each stage produces
 input for the next:
@@ -94,7 +94,7 @@ input for the next:
    harness, compile it in the sandbox with ASan, run for a per-file
    budget, capture any crashes. Hunters for fuzzed files then get
    the easier "explain this crash" prompt instead of cold-reading.
-4. **Tiered hunt** (`clearwing.sourcehunt.pool.HunterPool`) — files
+4. **Tiered hunt** (`nightwing.sourcehunt.pool.HunterPool`) — files
    split into Tier A/B/C by priority. Budget allocated 70/25/5 with
    rollover. Tier C files get a narrower `build_propagation_auditor_tools(ctx)`
    set (no compile/run, just grep/read/record) to stay cheap.
@@ -134,14 +134,14 @@ input for the next:
 
 ## The shared Finding type
 
-`clearwing.findings.Finding` is the single canonical finding
+`nightwing.findings.Finding` is the single canonical finding
 dataclass. It's a strict superset of every legacy shape:
 
 - sourcehunt hits (file, line_number, cwe, evidence_level, crash_evidence, ...)
 - CICDRunner network findings (target, port, protocol, cve, cvss, ...)
 - SourceAnalyzer static hits (file_path, line_number, severity, ...)
 
-Converters in `clearwing.findings.types` bridge between `Finding`
+Converters in `nightwing.findings.types` bridge between `Finding`
 and the two external shapes that still need dict form:
 `from_cicd_dict` / `to_cicd_dict` and `from_analysis_finding`. The
 old `SourceFinding` TypedDict was unified into `Finding` in Phase 3.
@@ -154,10 +154,10 @@ dataclass or a plain dict. Test fixtures lean on this heavily.
 
 ## The sandbox layer
 
-`clearwing.sandbox` wraps the Docker SDK to provide per-hunter
+`nightwing.sandbox` wraps the Docker SDK to provide per-hunter
 disposable containers with sanitizer images (ASan+UBSan primary,
 MSan variant, optional LSan/TSan). Each `HunterContext`
-(`clearwing.agent.tools.hunt.sandbox.HunterContext`) owns:
+(`nightwing.agent.tools.hunt.sandbox.HunterContext`) owns:
 
 - A primary `SandboxContainer` attached at hunt start.
 - A `sandbox_manager` reference for spawning sanitizer-variant
@@ -173,8 +173,8 @@ all configured per-container.
 
 ## The knowledge graph
 
-`clearwing.data.knowledge.KnowledgeGraph` is a networkx-backed
-attack graph that persists to `~/.clearwing/knowledge_graph.json`.
+`nightwing.data.knowledge.KnowledgeGraph` is a networkx-backed
+attack graph that persists to `~/.nightwing/knowledge_graph.json`.
 The network-pentest agent populates it with Target / Port / Service
 / Vulnerability / Exploit entities and the relationships between
 them (`HAS_PORT`, `RUNS_SERVICE`, `AFFECTED_BY`, `EXPLOITED_WITH`).
@@ -190,7 +190,7 @@ pulls back the relevant subgraph.
 After Phase 4b, the agent tool set lives in seven domain subdirs:
 
 ```
-clearwing/agent/tools/
+nightwing/agent/tools/
 ├── scan/        # scanner_tools — port, service, vuln, os
 ├── exploit/     # exploit_tools, exploit_search, payload_tools
 ├── hunt/        # sandbox, discovery, analysis, reporting — for
@@ -202,8 +202,8 @@ clearwing/agent/tools/
                    sourcehunt_tools, wargame_tools, ot_tools
 ```
 
-`clearwing.agent.tools.__init__.get_all_tools()` is a pure aggregator
+`nightwing.agent.tools.__init__.get_all_tools()` is a pure aggregator
 that composes the network-agent's 102-tool bind-list. The
 sourcehunt pipeline uses its own tool factory in
-`clearwing.agent.tools.hunt.__init__.build_hunter_tools(ctx)` — a
+`nightwing.agent.tools.hunt.__init__.build_hunter_tools(ctx)` — a
 different lineage that never appears in `get_all_tools()`.

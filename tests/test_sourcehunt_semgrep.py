@@ -9,9 +9,9 @@ import json
 import subprocess
 from unittest.mock import MagicMock, patch
 
-from clearwing.sourcehunt.preprocessor import Preprocessor
-from clearwing.sourcehunt.ranker import Ranker
-from clearwing.sourcehunt.semgrep_sidecar import (
+from nightwing.sourcehunt.preprocessor import Preprocessor
+from nightwing.sourcehunt.ranker import Ranker
+from nightwing.sourcehunt.semgrep_sidecar import (
     SemgrepFinding,
     SemgrepSidecar,
     finding_to_dict,

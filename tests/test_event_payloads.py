@@ -2,7 +2,7 @@
 
 from dataclasses import asdict
 
-from clearwing.core.event_payloads import (
+from nightwing.core.event_payloads import (
     BenchmarkProgressPayload,
     CampaignProgressPayload,
     DisclosureUpdatePayload,
@@ -11,7 +11,7 @@ from clearwing.core.event_payloads import (
     SourcehuntStagePayload,
     ValidationResultPayload,
 )
-from clearwing.core.events import EventBus, EventType
+from nightwing.core.events import EventBus, EventType
 
 
 def _reset_bus():

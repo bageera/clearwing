@@ -6,7 +6,7 @@ import json
 
 import pytest
 
-from clearwing.runners.workflow import (
+from nightwing.runners.workflow import (
     RetryPolicy,
     StepStatus,
     WorkflowEngine,

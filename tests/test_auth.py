@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 import yaml
 
-from clearwing.safety.auth import (
+from nightwing.safety.auth import (
     APIAuth,
     AuthConfig,
     AuthConfigLoader,

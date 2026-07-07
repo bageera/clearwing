@@ -21,15 +21,15 @@ from unittest.mock import MagicMock
 import pytest
 from genai_pyo3 import ChatResponse, Usage
 
-from clearwing.agent.tools.hunt import (
+from nightwing.agent.tools.hunt import (
     HunterContext,
     _normalize_path,
     _parse_rg_output,
     _parse_sanitizer_report,
     build_hunter_tools,
 )
-from clearwing.sandbox.container import ExecResult
-from clearwing.sourcehunt.hunter import (
+from nightwing.sandbox.container import ExecResult
+from nightwing.sourcehunt.hunter import (
     NativeHunter,
     _build_hunter_prompt,
     _build_propagation_prompt,
@@ -446,8 +446,8 @@ class TestBuildHunterAgent:
 
 class TestHunterTrajectoryLogging:
     def test_trajectory_is_append_log_of_turns(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("CLEARWING_HOME", str(tmp_path))
-        monkeypatch.delenv("CLEARWING_SOURCEHUNT_TRACE_DIR", raising=False)
+        monkeypatch.setenv("NIGHTWING_HOME", str(tmp_path))
+        monkeypatch.delenv("NIGHTWING_SOURCEHUNT_TRACE_DIR", raising=False)
 
         class _StubLLM:
             model_name = "stub-model"
@@ -481,7 +481,7 @@ class TestHunterTrajectoryLogging:
         assert result.findings == []
 
         trajectory_path = (
-            Path(os.environ["CLEARWING_HOME"])
+            Path(os.environ["NIGHTWING_HOME"])
             / "sourcehunt"
             / "trajectories"
             / "traj-test"

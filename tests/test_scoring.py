@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from clearwing.safety.scoring import (
+from nightwing.safety.scoring import (
     VULN_PRESETS,
     CVSSCalculator,
     CVSSVector,

@@ -4,14 +4,14 @@ from pathlib import Path
 
 import pytest
 
-from clearwing.agent.tools.ops.dynamic_tool_creator import (
+from nightwing.agent.tools.ops.dynamic_tool_creator import (
     _CUSTOM_TOOL_REGISTRY,
     create_custom_tool,
     get_custom_tools,
     list_custom_tools,
 )
 
-CUSTOM_TOOLS_DIR = Path(__file__).parent.parent / "clearwing" / "agent" / "custom_tools"
+CUSTOM_TOOLS_DIR = Path(__file__).parent.parent / "nightwing" / "agent" / "custom_tools"
 
 
 class TestDynamicToolCreator:

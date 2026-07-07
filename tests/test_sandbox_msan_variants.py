@@ -16,20 +16,20 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from clearwing.agent.tools.hunt import (
+from nightwing.agent.tools.hunt import (
     HunterContext,
     _parse_variant_arg,
     build_hunter_tools,
 )
-from clearwing.sandbox.builders import (
+from nightwing.sandbox.builders import (
     INCOMPATIBLE_SANITIZER_PAIRS,
     BuildRecipe,
     BuildSystemDetector,
     compute_sanitizer_env,
     validate_sanitizer_combo,
 )
-from clearwing.sandbox.container import ExecResult
-from clearwing.sandbox.hunter_sandbox import HunterSandbox
+from nightwing.sandbox.container import ExecResult
+from nightwing.sandbox.hunter_sandbox import HunterSandbox
 
 # --- validate_sanitizer_combo ----------------------------------------------
 
@@ -299,7 +299,7 @@ class TestHunterSandboxSpawnVariant:
         sb.build_image()
         sb.spawn(scratch_mount=False, variant=["msan"])
         env = mock_docker.containers.run.call_args.kwargs["environment"]
-        assert env["CLEARWING_SANITIZER_VARIANT"] == "msan"
+        assert env["NIGHTWING_SANITIZER_VARIANT"] == "msan"
 
 
 # --- Hunter tools: sanitizer_variant parameter ----------------------------

@@ -1,7 +1,7 @@
 # CLI reference
 
 ```
-clearwing [-h] {scan,report,history,config,interactive,graph,sessions,
+nightwing [-h] {scan,report,history,config,interactive,graph,sessions,
                 ci,parallel,mcp,operate,webui,sourcehunt,disclose,
                 campaign,bench,eval} ...
 ```
@@ -13,7 +13,7 @@ workflow and explains the non-obvious flags.
 ## `scan` — single-target network scan
 
 ```bash
-clearwing scan <target>
+nightwing scan <target>
   [-p PORTS]              # 22,80,443 or 1-1024; default = top 1000
   [--scan-type syn|connect]
   [--threads N]
@@ -23,13 +23,13 @@ clearwing scan <target>
   [--output FILE]         # write report to FILE (format by extension)
 ```
 
-Writes to `~/.clearwing/clearwing.db` automatically. Retrieve later
-with `clearwing report` or `clearwing history`.
+Writes to `~/.nightwing/nightwing.db` automatically. Retrieve later
+with `nightwing report` or `nightwing history`.
 
 ## `sourcehunt` — source-code vulnerability hunting
 
 ```bash
-clearwing sourcehunt <repo_url_or_path>
+nightwing sourcehunt <repo_url_or_path>
   [--branch BRANCH]           # default: main
   [--depth quick|standard|deep]
   [--budget USD]              # default: unlimited; 0 = unlimited
@@ -46,7 +46,7 @@ clearwing sourcehunt <repo_url_or_path>
   [--model MODEL_NAME]        # override per-task model selection
   [--base-url URL]            # OpenAI-compat endpoint (OpenRouter, Ollama, ...)
   [--api-key KEY]             # credential for --base-url
-  [--output-dir DIR]          # default: ./results/sourcehunt (dev) or ~/.clearwing/results/sourcehunt
+  [--output-dir DIR]          # default: ./results/sourcehunt (dev) or ~/.nightwing/results/sourcehunt
   [--format sarif markdown json all]  # default: all
 ```
 
@@ -217,7 +217,7 @@ use a lowered 70% threshold with 100 runs.
 ### `sourcehunt --nday` — N-day exploit pipeline
 
 ```bash
-clearwing sourcehunt <repo_url_or_path>
+nightwing sourcehunt <repo_url_or_path>
   --nday                          # enable N-day pipeline
   [--cve-list CVE-2024-1234,...]  # specific CVEs to target
   [--recent-cves N]               # fetch N most recent CVEs for the project
@@ -232,7 +232,7 @@ agentic exploiter with sanitizer instrumentation.
 ### `sourcehunt --reveng` — reverse engineering pipeline
 
 ```bash
-clearwing sourcehunt <binary_path>
+nightwing sourcehunt <binary_path>
   --reveng                        # enable reverse engineering pipeline
   [--arch x86_64]                 # target architecture (default: x86_64)
   [--reveng-budget deep|campaign] # budget band (default: deep)
@@ -245,15 +245,15 @@ hybrid source + binary validation (GDB against the original binary).
 ## `disclose` — responsible disclosure workflow
 
 ```bash
-clearwing disclose queue <results_dirs...>    # queue findings for review
-clearwing disclose review                     # show next finding for review
-clearwing disclose validate <finding_id>      # approve for disclosure
-clearwing disclose reject <finding_id>        # reject finding
-clearwing disclose send <finding_id>          # mark as sent to vendor
-clearwing disclose status                     # dashboard of all findings
-clearwing disclose timeline [--finding-id ID] # show/manage disclosure timelines
-clearwing disclose verify <finding_id>        # verify SHA-3 commitment
-clearwing disclose commitments [--format json|markdown] # list all commitments
+nightwing disclose queue <results_dirs...>    # queue findings for review
+nightwing disclose review                     # show next finding for review
+nightwing disclose validate <finding_id>      # approve for disclosure
+nightwing disclose reject <finding_id>        # reject finding
+nightwing disclose send <finding_id>          # mark as sent to vendor
+nightwing disclose status                     # dashboard of all findings
+nightwing disclose timeline [--finding-id ID] # show/manage disclosure timelines
+nightwing disclose verify <finding_id>        # verify SHA-3 commitment
+nightwing disclose commitments [--format json|markdown] # list all commitments
 ```
 
 Human-in-the-loop validation workflow. Generates pre-filled MITRE CVE
@@ -264,12 +264,12 @@ priority without revealing vulnerability details.
 ## `campaign` — campaign-scale orchestration
 
 ```bash
-clearwing campaign run <config.yaml>       # start a campaign
+nightwing campaign run <config.yaml>       # start a campaign
   [--dry-run]                              # validate config, show plan
-clearwing campaign status <config.yaml>    # progress dashboard
-clearwing campaign pause <config.yaml>     # pause after current files
-clearwing campaign resume <config.yaml>    # resume from checkpoint
-clearwing campaign report <config.yaml>    # aggregate report
+nightwing campaign status <config.yaml>    # progress dashboard
+nightwing campaign pause <config.yaml>     # pause after current files
+nightwing campaign resume <config.yaml>    # resume from checkpoint
+nightwing campaign report <config.yaml>    # aggregate report
   [--format sarif|markdown|json|all]
 ```
 
@@ -280,7 +280,7 @@ automatic pause/resume, and aggregate reporting.
 ## `bench` — benchmarking tools
 
 ```bash
-clearwing bench ossfuzz                    # OSS-Fuzz crash severity benchmark
+nightwing bench ossfuzz                    # OSS-Fuzz crash severity benchmark
   --corpus-dir DIR | --targets-file FILE   # target source (one required)
   [--mode quick|standard|full|deep]        # default: standard
   [--output-dir DIR]                       # default: ./results/bench
@@ -288,7 +288,7 @@ clearwing bench ossfuzz                    # OSS-Fuzz crash severity benchmark
   [--no-llm-classify]                      # skip LLM tier 3-5 classification
   [--model MODEL] [--base-url URL] [--api-key KEY]
 
-clearwing bench compare <file_a> <file_b>  # compare two result files
+nightwing bench compare <file_a> <file_b>  # compare two result files
   [--format table|json|markdown]
 ```
 
@@ -299,7 +299,7 @@ tier 5 = full control flow hijack). Modes control scale: `quick`
 ## `eval` — evaluation and A/B testing
 
 ```bash
-clearwing eval preprocessing              # A/B test preprocessing pipeline
+nightwing eval preprocessing              # A/B test preprocessing pipeline
   --project <repo_url_or_path>
   [--commit SHA]                           # checkout specific commit
   [--configs glasswing_minimal,sourcehunt_full,glasswing_plus_crashes]
@@ -311,7 +311,7 @@ clearwing eval preprocessing              # A/B test preprocessing pipeline
   [--model MODEL] [--base-url URL] [--api-key KEY]
   [--format table|json|markdown]
 
-clearwing eval compare <file_a> <file_b>   # compare two eval results
+nightwing eval compare <file_a> <file_b>   # compare two eval results
   [--format table|json|markdown]
 ```
 
@@ -327,7 +327,7 @@ false positive rate, cost per finding, CWE diversity. Configurations:
 ## `interactive` — ReAct-loop chat session
 
 ```bash
-clearwing interactive
+nightwing interactive
   [--model MODEL_NAME]
   [--base-url URL]            # OpenAI-compatible endpoint
   [--api-key KEY]
@@ -342,7 +342,7 @@ Press Ctrl-C to exit cleanly; the session is persisted and resumable.
 ## `operate` — autonomous mission mode
 
 ```bash
-clearwing operate
+nightwing operate
   --mission MISSION_FILE      # YAML with goals + constraints
   [--budget USD]
   [--max-steps N]
@@ -355,7 +355,7 @@ the mission succeeds, runs out of budget, or exceeds max steps.
 ## `parallel` — scan multiple targets concurrently
 
 ```bash
-clearwing parallel <targets...>
+nightwing parallel <targets...>
   [--max-concurrent N]        # default: 5
   [--depth basic|standard|deep]
   [--output-dir DIR]
@@ -366,7 +366,7 @@ clearwing parallel <targets...>
 ## `ci` — non-interactive CI/CD entry point
 
 ```bash
-clearwing ci
+nightwing ci
   --config CICD_CONFIG.yaml
   [--sarif OUTPUT.sarif]      # write SARIF for GitHub Code Scanning
   [--fail-on critical|high|medium|low]
@@ -380,55 +380,55 @@ gets denied by default.
 ## `report`, `history`, `sessions` — inspect prior runs
 
 ```bash
-clearwing history                   # all sessions, newest first
-clearwing sessions                  # all interactive sessions
-clearwing report --session <id>    # full report for one session
-clearwing report --session <id> -o report.html
+nightwing history                   # all sessions, newest first
+nightwing sessions                  # all interactive sessions
+nightwing report --session <id>    # full report for one session
+nightwing report --session <id> -o report.html
 ```
 
 ## `graph` — attack-graph viewer
 
 ```bash
-clearwing graph                    # TUI viewer
-clearwing graph --serve [--port P] # D3.js web viewer on http://localhost:8000
+nightwing graph                    # TUI viewer
+nightwing graph --serve [--port P] # D3.js web viewer on http://localhost:8000
 ```
 
-Loads from `~/.clearwing/knowledge_graph.json` (populated by every
+Loads from `~/.nightwing/knowledge_graph.json` (populated by every
 scan/source-hunt run).
 
 ## `mcp` — Model Context Protocol server
 
 ```bash
-clearwing mcp                      # stdio transport, for IDE/agent integration
+nightwing mcp                      # stdio transport, for IDE/agent integration
 ```
 
-Exposes the full Clearwing tool set over the MCP stdio protocol.
+Exposes the full Nightwing tool set over the MCP stdio protocol.
 Claude Desktop, Cline, Continue, and other MCP clients can then
-call Clearwing tools from within their chat loop.
+call Nightwing tools from within their chat loop.
 
 ## `webui` — REST + WebSocket interface
 
 ```bash
-clearwing webui                    # default: 127.0.0.1:8000
-clearwing webui --host 0.0.0.0 --port 8080
+nightwing webui                    # default: 127.0.0.1:8000
+nightwing webui --host 0.0.0.0 --port 8080
 ```
 
 FastAPI-based. REST endpoints for session management and metrics;
-WebSocket endpoint for live agent streaming. Requires `clearwing[web]`
+WebSocket endpoint for live agent streaming. Requires `nightwing[web]`
 extras (`pip install -e '.[web]'`).
 
 ## `setup` / `init` — interactive provider wizard
 
 ```bash
-clearwing setup                              # menu-driven
-clearwing setup --provider openrouter        # skip the menu
-clearwing setup --provider ollama --no-test  # skip the live test
-clearwing setup -y                           # skip confirmations
-clearwing init                               # alias — same wizard
+nightwing setup                              # menu-driven
+nightwing setup --provider openrouter        # skip the menu
+nightwing setup --provider ollama --no-test  # skip the live test
+nightwing setup -y                           # skip confirmations
+nightwing init                               # alias — same wizard
 ```
 
 Walks through LLM backend selection, credential entry, optional
-connection testing, and persistence to `~/.clearwing/config.yaml`.
+connection testing, and persistence to `~/.nightwing/config.yaml`.
 The menu currently lists Anthropic, OpenRouter, Ollama, LM Studio,
 OpenAI, Together, Groq, Fireworks, DeepSeek, and a "custom
 OpenAI-compatible endpoint" catch-all. Safe to re-run — existing
@@ -441,14 +441,14 @@ secrets, so the YAML file never contains an api_key value.
 ## `doctor` — environment health check
 
 ```bash
-clearwing doctor                       # full probe with live LLM test
-clearwing doctor --skip-llm-invoke     # skip the test prompt
-clearwing doctor --json                # machine-readable output for CI
+nightwing doctor                       # full probe with live LLM test
+nightwing doctor --skip-llm-invoke     # skip the test prompt
+nightwing doctor --json                # machine-readable output for CI
 ```
 
-Runs ~25 checks across: Python version, clearwing version, LLM
+Runs ~25 checks across: Python version, nightwing version, LLM
 provider resolution (with an optional live test-invoke), filesystem
-(`~/.clearwing/` writable, `config.yaml` valid, `clearwing.log`
+(`~/.nightwing/` writable, `config.yaml` valid, `nightwing.log`
 writable), Docker daemon reachability, external CLI tools (git, rg,
 gh, gdb, strace — or dtruss on macOS), optional Python extras
 (genai-pyo3, playwright, sentence-transformers, fastapi, pymetasploit3,
@@ -456,31 +456,31 @@ chromadb), and network reachability to the configured LLM endpoint. Prints a per
 glyphs plus a totals panel at the bottom.
 
 Exit code is 0 when every check is ok/warn and 1 when any check is
-in error state — useful in CI pipelines (`clearwing doctor || exit 1`).
+in error state — useful in CI pipelines (`nightwing doctor || exit 1`).
 
 ## `config` — show/edit config
 
 ```bash
-clearwing config                   # print current config
-clearwing config --show-provider   # print resolved LLM endpoint + source
-clearwing config --set-provider \
+nightwing config                   # print current config
+nightwing config --show-provider   # print resolved LLM endpoint + source
+nightwing config --set-provider \
     base_url=https://openrouter.ai/api/v1 \
     api_key='${OPENROUTER_API_KEY}' \
-    model=anthropic/claude-opus-4  # persist to ~/.clearwing/config.yaml
+    model=anthropic/claude-opus-4  # persist to ~/.nightwing/config.yaml
 ```
 
 ## Global flags
 
 - `-h`, `--help` — command-level help
-- `-V`, `--version` — print version (`clearwing 1.0.0`)
+- `-V`, `--version` — print version (`nightwing 1.0.0`)
 - `--log-level debug|info|warning|error` — root logger level
-- `--log-file PATH` — redirect logs away from `~/.clearwing/clearwing.log`
+- `--log-file PATH` — redirect logs away from `~/.nightwing/nightwing.log`
 
 ## Global env vars
 
 - `ANTHROPIC_API_KEY` — Anthropic direct credential (default LLM path)
-- `CLEARWING_BASE_URL` — OpenAI-compatible endpoint override (OpenRouter,
+- `NIGHTWING_BASE_URL` — OpenAI-compatible endpoint override (OpenRouter,
   Ollama, LM Studio, vLLM, Together, Groq, etc.)
-- `CLEARWING_API_KEY` — credential for the `CLEARWING_BASE_URL` endpoint
-- `CLEARWING_MODEL` — model name for the endpoint
+- `NIGHTWING_API_KEY` — credential for the `NIGHTWING_BASE_URL` endpoint
+- `NIGHTWING_MODEL` — model name for the endpoint
 - `GITHUB_WEBHOOK_SECRET` — HMAC secret for `sourcehunt --webhook`

@@ -14,8 +14,8 @@ from unittest.mock import AsyncMock
 
 from genai_pyo3 import ChatResponse
 
-from clearwing.sourcehunt.runner import SourceHuntRunner
-from clearwing.sourcehunt.variant_loop import (
+from nightwing.sourcehunt.runner import SourceHuntRunner
+from nightwing.sourcehunt.variant_loop import (
     VariantLoop,
     VariantLoopConfig,
     VariantLoopResult,

@@ -5,11 +5,11 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from clearwing.sourcehunt.disclosure import (
+from nightwing.sourcehunt.disclosure import (
     DisclosureGenerator,
     write_bundle,
 )
-from clearwing.sourcehunt.runner import SourceHuntRunner
+from nightwing.sourcehunt.runner import SourceHuntRunner
 
 
 def _finding(**kwargs) -> dict:

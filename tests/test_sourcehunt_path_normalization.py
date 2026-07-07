@@ -23,7 +23,7 @@ import json
 from pathlib import PureWindowsPath
 from unittest.mock import MagicMock, patch
 
-from clearwing.sourcehunt.semgrep_sidecar import SemgrepSidecar
+from nightwing.sourcehunt.semgrep_sidecar import SemgrepSidecar
 
 
 class TestRunnerStaticFindingPathNormalization:
@@ -32,10 +32,10 @@ class TestRunnerStaticFindingPathNormalization:
     def test_static_finding_file_uses_forward_slashes_on_windows_paths(self):
         # Importing inside the test keeps module-level import failures
         # in one site from blocking the other two tests.
-        from clearwing.analysis.source_analyzer import AnalyzerFinding
-        from clearwing.findings.types import Finding
-        from clearwing.sourcehunt.preprocessor import PreprocessResult
-        from clearwing.sourcehunt.runner import SourceHuntRunner
+        from nightwing.analysis.source_analyzer import AnalyzerFinding
+        from nightwing.findings.types import Finding
+        from nightwing.sourcehunt.preprocessor import PreprocessResult
+        from nightwing.sourcehunt.runner import SourceHuntRunner
 
         sf = AnalyzerFinding(
             file_path=r"C:\repo\src\auth\login.py",
@@ -56,10 +56,10 @@ class TestRunnerStaticFindingPathNormalization:
         # so `.as_posix()` actually performs the conversion.
         with (
             patch(
-                "clearwing.sourcehunt.runner.os.path.relpath",
+                "nightwing.sourcehunt.runner.os.path.relpath",
                 return_value=r"src\auth\login.py",
             ),
-            patch("clearwing.sourcehunt.runner.Path", PureWindowsPath),
+            patch("nightwing.sourcehunt.runner.Path", PureWindowsPath),
         ):
             runner = SourceHuntRunner.__new__(SourceHuntRunner)
             out = SourceHuntRunner._merge_static_findings(runner, [], pp)
@@ -75,7 +75,7 @@ class TestRunnerStaticFindingPathNormalization:
         """Static assertion: the fix site uses `.as_posix()` wrapping."""
         import inspect
 
-        from clearwing.sourcehunt.runner import SourceHuntRunner
+        from nightwing.sourcehunt.runner import SourceHuntRunner
 
         src = inspect.getsource(SourceHuntRunner._merge_static_findings)
         assert ".as_posix()" in src, (
@@ -88,7 +88,7 @@ class TestTaintRelPathNormalization:
     """`TaintAnalyzer._analyze_file` must emit POSIX `TaintPath.rel_path`."""
 
     def test_rel_path_uses_forward_slashes_on_windows_paths(self):
-        from clearwing.sourcehunt.taint import TaintAnalyzer
+        from nightwing.sourcehunt.taint import TaintAnalyzer
 
         analyzer = TaintAnalyzer.__new__(TaintAnalyzer)
 
@@ -110,12 +110,12 @@ class TestTaintRelPathNormalization:
         with (
             patch.object(TaintAnalyzer, "_get_parser", return_value=fake_parser),
             patch.object(TaintAnalyzer, "_walk_ast_for_taint", side_effect=fake_walk),
-            patch("clearwing.sourcehunt.taint.open", return_value=fake_file, create=True),
+            patch("nightwing.sourcehunt.taint.open", return_value=fake_file, create=True),
             patch(
-                "clearwing.sourcehunt.taint.os.path.relpath",
+                "nightwing.sourcehunt.taint.os.path.relpath",
                 return_value=r"src\api\view.py",
             ),
-            patch("clearwing.sourcehunt.taint.Path", PureWindowsPath),
+            patch("nightwing.sourcehunt.taint.Path", PureWindowsPath),
         ):
             analyzer._analyze_file(r"C:\repo\src\api\view.py", "python", r"C:\repo")
 
@@ -127,7 +127,7 @@ class TestTaintRelPathNormalization:
     def test_guard_fix_is_applied_at_source(self):
         import inspect
 
-        from clearwing.sourcehunt.taint import TaintAnalyzer
+        from nightwing.sourcehunt.taint import TaintAnalyzer
 
         src = inspect.getsource(TaintAnalyzer._analyze_file)
         assert ".as_posix()" in src
@@ -159,10 +159,10 @@ class TestSemgrepFindingPathNormalization:
 
         with (
             patch(
-                "clearwing.sourcehunt.semgrep_sidecar.os.path.relpath",
+                "nightwing.sourcehunt.semgrep_sidecar.os.path.relpath",
                 return_value=r"src\db\queries.py",
             ),
-            patch("clearwing.sourcehunt.semgrep_sidecar.Path", PureWindowsPath),
+            patch("nightwing.sourcehunt.semgrep_sidecar.Path", PureWindowsPath),
         ):
             findings = sidecar._parse_semgrep_json(stdout, r"C:\repo")
 
@@ -176,7 +176,7 @@ class TestSemgrepFindingPathNormalization:
     def test_guard_fix_is_applied_at_source(self):
         import inspect
 
-        from clearwing.sourcehunt.semgrep_sidecar import SemgrepSidecar
+        from nightwing.sourcehunt.semgrep_sidecar import SemgrepSidecar
 
         src = inspect.getsource(SemgrepSidecar._parse_semgrep_json)
         assert ".as_posix()" in src

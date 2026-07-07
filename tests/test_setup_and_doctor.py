@@ -1,4 +1,4 @@
-"""Tests for the `clearwing setup` wizard and `clearwing doctor` command.
+"""Tests for the `nightwing setup` wizard and `nightwing doctor` command.
 
 Covers:
 - Provider catalog lookup + completeness (every preset has the
@@ -20,16 +20,16 @@ from unittest.mock import patch
 import pytest
 import yaml
 
-from clearwing.providers import KNOWN_PROVIDERS, preset_by_key
-from clearwing.ui.commands import doctor, setup
-from clearwing.ui.commands.doctor import (
+from nightwing.providers import KNOWN_PROVIDERS, preset_by_key
+from nightwing.ui.commands import doctor, setup
+from nightwing.ui.commands.doctor import (
     STATUS_ERR,
     STATUS_OK,
     STATUS_WARN,
     DoctorCheck,
     DoctorSection,
 )
-from clearwing.ui.commands.setup import _mask_secret, _write_config
+from nightwing.ui.commands.setup import _mask_secret, _write_config
 
 # --- Provider catalog ------------------------------------------------------
 
@@ -158,12 +158,12 @@ class TestMaskSecret:
 class _FakeConfig:
     """Minimal Config stand-in for the _write_config unit tests.
 
-    Wraps `tmp_path / ".clearwing" / "config.yaml"` so tests don't
+    Wraps `tmp_path / ".nightwing" / "config.yaml"` so tests don't
     touch the real home directory.
     """
 
     def __init__(self, tmp_path: Path) -> None:
-        self.DEFAULT_CONFIG_PATH = tmp_path / ".clearwing" / "config.yaml"
+        self.DEFAULT_CONFIG_PATH = tmp_path / ".nightwing" / "config.yaml"
         self.config: dict = {}
 
     def set(self, *keys: str, value) -> None:
@@ -322,23 +322,23 @@ class TestDoctorResult:
 
 class TestPythonCheck:
     def test_current_python_passes(self):
-        section = doctor._check_python_and_clearwing()
+        section = doctor._check_python_and_nightwing()
         statuses = [c.status for c in section.checks]
         # Every entry should be ok on any supported install
         assert all(s == STATUS_OK for s in statuses)
         assert section.checks[0].name == "Python"
-        assert section.checks[1].name == "clearwing"
+        assert section.checks[1].name == "nightwing"
 
 
 class TestFilesystemCheck:
     def test_creates_missing_directory(self, tmp_cli):
         # The fake config's DEFAULT_CONFIG_PATH lives under tmp; but
-        # _check_filesystem probes ~/.clearwing/ directly (not the
+        # _check_filesystem probes ~/.nightwing/ directly (not the
         # config path). We can't redirect $HOME inside a test easily;
         # just check that running the function doesn't raise.
         section = doctor._check_filesystem(tmp_cli)
         assert section.title == "Filesystem"
-        assert any(c.name == "~/.clearwing/" for c in section.checks)
+        assert any(c.name == "~/.nightwing/" for c in section.checks)
 
 
 class TestOptionalExtrasCheck:
@@ -355,9 +355,9 @@ class TestLLMProviderCheck:
         """With no env vars and an empty fake config, the LLM provider
         check should emit a credentials error."""
         for name in (
-            "CLEARWING_BASE_URL",
-            "CLEARWING_API_KEY",
-            "CLEARWING_MODEL",
+            "NIGHTWING_BASE_URL",
+            "NIGHTWING_API_KEY",
+            "NIGHTWING_MODEL",
             "ANTHROPIC_API_KEY",
             "OPENAI_API_KEY",
         ):
@@ -423,7 +423,7 @@ class TestDoctorSubcommand:
         """If any check returns STATUS_ERR, the handle() function
         should call sys.exit(1)."""
         # Stub every section to return known status mixes
-        with patch.object(doctor, "_check_python_and_clearwing") as mock_py:
+        with patch.object(doctor, "_check_python_and_nightwing") as mock_py:
             mock_py.return_value = DoctorSection(
                 "Core", [DoctorCheck("Python", STATUS_OK, "3.12.3")]
             )
@@ -453,7 +453,7 @@ class TestDoctorSubcommand:
         with (
             patch.object(
                 doctor,
-                "_check_python_and_clearwing",
+                "_check_python_and_nightwing",
                 return_value=DoctorSection("Core", [DoctorCheck("Python", STATUS_OK)]),
             ),
             patch.object(

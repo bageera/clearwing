@@ -5,8 +5,8 @@ from __future__ import annotations
 import json
 from unittest.mock import patch
 
-import clearwing.agent.tools.recon.cc_tools as cc_mod
-from clearwing.agent.tools.recon.cc_tools import (
+import nightwing.agent.tools.recon.cc_tools as cc_mod
+from nightwing.agent.tools.recon.cc_tools import (
     cc_discover_schema,
     cc_fuzz_fields,
     get_cc_tools,

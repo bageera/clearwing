@@ -6,9 +6,9 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from clearwing.agent.tools.hunt.deep_agent import _OUTPUT_CAP, build_deep_agent_tools
-from clearwing.agent.tools.hunt.sandbox import HunterContext
-from clearwing.sandbox.container import ExecResult
+from nightwing.agent.tools.hunt.deep_agent import _OUTPUT_CAP, build_deep_agent_tools
+from nightwing.agent.tools.hunt.sandbox import HunterContext
+from nightwing.sandbox.container import ExecResult
 
 
 @pytest.fixture

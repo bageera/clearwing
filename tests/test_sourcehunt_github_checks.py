@@ -17,8 +17,8 @@ import json
 import subprocess
 from unittest.mock import MagicMock, patch
 
-from clearwing.sourcehunt.commit_monitor import CommitMonitor, CommitMonitorConfig
-from clearwing.sourcehunt.github_checks import (
+from nightwing.sourcehunt.commit_monitor import CommitMonitor, CommitMonitorConfig
+from nightwing.sourcehunt.github_checks import (
     CheckRunOutcome,
     GitHubChecksConfig,
     GitHubChecksPublisher,

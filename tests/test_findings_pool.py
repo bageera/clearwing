@@ -8,14 +8,14 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from clearwing.findings.types import Finding
-from clearwing.sourcehunt.findings_pool import (
+from nightwing.findings.types import Finding
+from nightwing.sourcehunt.findings_pool import (
     _CWE_PRIMITIVE_MAP,
     _FINDING_TYPE_PRIMITIVE_MAP,
     PRIMITIVE_TYPES,
     FindingsPool,
 )
-from clearwing.sourcehunt.historical_findings_db import HistoricalFindingsDB
+from nightwing.sourcehunt.historical_findings_db import HistoricalFindingsDB
 
 
 def _make_finding(**overrides) -> Finding:
@@ -389,8 +389,8 @@ def test_findings_without_id_skipped(tmp_path):
 
 @pytest.mark.asyncio
 async def test_query_tool_returns_findings():
-    from clearwing.agent.tools.hunt.pool_query import build_pool_query_tools
-    from clearwing.agent.tools.hunt.sandbox import HunterContext
+    from nightwing.agent.tools.hunt.pool_query import build_pool_query_tools
+    from nightwing.agent.tools.hunt.sandbox import HunterContext
 
     pool = FindingsPool()
     await pool.add(_make_finding(cwe="CWE-200", finding_type="info_leak"))
@@ -410,8 +410,8 @@ async def test_query_tool_returns_findings():
 
 @pytest.mark.asyncio
 async def test_query_tool_no_pool():
-    from clearwing.agent.tools.hunt.pool_query import build_pool_query_tools
-    from clearwing.agent.tools.hunt.sandbox import HunterContext
+    from nightwing.agent.tools.hunt.pool_query import build_pool_query_tools
+    from nightwing.agent.tools.hunt.sandbox import HunterContext
 
     ctx = HunterContext(repo_path="/tmp/repo", findings_pool=None)
     tools = build_pool_query_tools(ctx)
@@ -420,8 +420,8 @@ async def test_query_tool_no_pool():
 
 
 def test_pool_tool_in_hunter_tools():
-    from clearwing.agent.tools.hunt import build_hunter_tools
-    from clearwing.agent.tools.hunt.sandbox import HunterContext
+    from nightwing.agent.tools.hunt import build_hunter_tools
+    from nightwing.agent.tools.hunt.sandbox import HunterContext
 
     pool = FindingsPool()
     ctx = HunterContext(repo_path="/tmp/repo", findings_pool=pool)
@@ -431,8 +431,8 @@ def test_pool_tool_in_hunter_tools():
 
 
 def test_pool_tool_not_in_hunter_tools_without_pool():
-    from clearwing.agent.tools.hunt import build_hunter_tools
-    from clearwing.agent.tools.hunt.sandbox import HunterContext
+    from nightwing.agent.tools.hunt import build_hunter_tools
+    from nightwing.agent.tools.hunt.sandbox import HunterContext
 
     ctx = HunterContext(repo_path="/tmp/repo", findings_pool=None)
     tools = build_hunter_tools(ctx)
@@ -441,8 +441,8 @@ def test_pool_tool_not_in_hunter_tools_without_pool():
 
 
 def test_pool_tool_in_deep_agent_tools():
-    from clearwing.agent.tools.hunt import build_deep_agent_tools
-    from clearwing.agent.tools.hunt.sandbox import HunterContext
+    from nightwing.agent.tools.hunt import build_deep_agent_tools
+    from nightwing.agent.tools.hunt.sandbox import HunterContext
 
     pool = FindingsPool()
     ctx = HunterContext(repo_path="/tmp/repo", findings_pool=pool)
@@ -452,8 +452,8 @@ def test_pool_tool_in_deep_agent_tools():
 
 
 def test_pool_tool_in_propagation_tools():
-    from clearwing.agent.tools.hunt import build_propagation_auditor_tools
-    from clearwing.agent.tools.hunt.sandbox import HunterContext
+    from nightwing.agent.tools.hunt import build_propagation_auditor_tools
+    from nightwing.agent.tools.hunt.sandbox import HunterContext
 
     pool = FindingsPool()
     ctx = HunterContext(repo_path="/tmp/repo", findings_pool=pool)
@@ -472,7 +472,7 @@ def test_prompt_includes_pool_block():
     pool = FindingsPool()
     pool._findings["f1"] = _make_finding(id="f1")
 
-    from clearwing.sourcehunt.hunter import _build_unconstrained_prompt
+    from nightwing.sourcehunt.hunter import _build_unconstrained_prompt
 
     prompt = _build_unconstrained_prompt(
         file_target={"path": "src/a.c", "language": "c", "tags": []},
@@ -485,7 +485,7 @@ def test_prompt_includes_pool_block():
 
 
 def test_prompt_no_pool_block_when_empty():
-    from clearwing.sourcehunt.hunter import _build_unconstrained_prompt
+    from nightwing.sourcehunt.hunter import _build_unconstrained_prompt
 
     pool = FindingsPool()
 
@@ -500,7 +500,7 @@ def test_prompt_no_pool_block_when_empty():
 
 
 def test_prompt_no_pool_block_without_pool():
-    from clearwing.sourcehunt.hunter import _build_unconstrained_prompt
+    from nightwing.sourcehunt.hunter import _build_unconstrained_prompt
 
     prompt = _build_unconstrained_prompt(
         file_target={"path": "src/a.c", "language": "c", "tags": []},

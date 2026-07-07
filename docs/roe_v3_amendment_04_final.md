@@ -10,8 +10,8 @@
 
 This Amendment 04 supplements and supersedes specific provisions of ROE Amendment 03, dated 2026-04-28. It expands the authorized scope of engagement to enable a **complete, non-destructive, and technically thorough** penetration test of the Lazarus AI infrastructure, covering all attack vectors observed during Amendment 03.
 
-**Authorized Organization:** Lazarus AI / Clearwing Security Operations
-**Primary Tester:** Jon Bethea (Clearwing Autonomous Agent)
+**Authorized Organization:** Lazarus AI / Nightwing Security Operations
+**Primary Tester:** Jon Bethea (Nightwing Autonomous Agent)
 
 ---
 

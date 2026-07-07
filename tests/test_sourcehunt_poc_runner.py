@@ -9,8 +9,8 @@ The runner's contract is:
 
 from __future__ import annotations
 
-from clearwing.sandbox.container import ExecResult
-from clearwing.sourcehunt.poc_runner import (
+from nightwing.sandbox.container import ExecResult
+from nightwing.sourcehunt.poc_runner import (
     PocRunner,
     build_rerun_poc_callback,
 )

@@ -6,8 +6,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from clearwing.sourcehunt.state import FileTarget, SubsystemTarget
-from clearwing.sourcehunt.subsystem import (
+from nightwing.sourcehunt.state import FileTarget, SubsystemTarget
+from nightwing.sourcehunt.subsystem import (
     SubsystemHuntConfig,
     SubsystemHuntRunner,
     _dir_prefix,
@@ -207,7 +207,7 @@ def test_subsystem_from_path_max_files():
 
 
 def test_subsystem_prompt_includes_file_listing():
-    from clearwing.sourcehunt.hunter import _build_subsystem_prompt
+    from nightwing.sourcehunt.hunter import _build_subsystem_prompt
 
     subsystem = SubsystemTarget(
         name="net_ipv4",
@@ -222,7 +222,7 @@ def test_subsystem_prompt_includes_file_listing():
 
 
 def test_subsystem_prompt_cross_file_calls():
-    from clearwing.sourcehunt.hunter import _build_subsystem_prompt
+    from nightwing.sourcehunt.hunter import _build_subsystem_prompt
 
     callgraph = MagicMock()
     callgraph.calls_out = {"net/ipv4/tcp.c": {"send_data"}}
@@ -240,11 +240,11 @@ def test_subsystem_prompt_cross_file_calls():
 
 
 def test_subsystem_prompt_existing_findings():
-    from clearwing.sourcehunt.findings_pool import FindingsPool
-    from clearwing.sourcehunt.hunter import _build_subsystem_prompt
+    from nightwing.sourcehunt.findings_pool import FindingsPool
+    from nightwing.sourcehunt.hunter import _build_subsystem_prompt
 
     pool = FindingsPool()
-    from clearwing.findings.types import Finding
+    from nightwing.findings.types import Finding
 
     f = Finding(
         id="f1",
@@ -269,7 +269,7 @@ def test_subsystem_prompt_existing_findings():
 
 
 def test_subsystem_prompt_entry_points():
-    from clearwing.sourcehunt.hunter import _build_subsystem_prompt
+    from nightwing.sourcehunt.hunter import _build_subsystem_prompt
 
     ep = MagicMock()
     ep.function_name = "tcp_rcv_established"
@@ -293,7 +293,7 @@ def test_subsystem_prompt_entry_points():
 
 
 def test_build_subsystem_hunter_agent_tools():
-    from clearwing.sourcehunt.hunter import build_subsystem_hunter_agent
+    from nightwing.sourcehunt.hunter import build_subsystem_hunter_agent
 
     subsystem = SubsystemTarget(
         name="test_sub",
@@ -315,7 +315,7 @@ def test_build_subsystem_hunter_agent_tools():
 
 
 def test_build_subsystem_hunter_agent_max_steps():
-    from clearwing.sourcehunt.hunter import build_subsystem_hunter_agent
+    from nightwing.sourcehunt.hunter import build_subsystem_hunter_agent
 
     subsystem = SubsystemTarget(
         name="test_sub",
@@ -335,7 +335,7 @@ def test_build_subsystem_hunter_agent_max_steps():
 
 
 def test_build_subsystem_hunter_agent_specialist():
-    from clearwing.sourcehunt.hunter import build_subsystem_hunter_agent
+    from nightwing.sourcehunt.hunter import build_subsystem_hunter_agent
 
     subsystem = SubsystemTarget(
         name="test_sub",
@@ -355,7 +355,7 @@ def test_build_subsystem_hunter_agent_specialist():
 
 
 def test_build_subsystem_hunter_initial_message():
-    from clearwing.sourcehunt.hunter import build_subsystem_hunter_agent
+    from nightwing.sourcehunt.hunter import build_subsystem_hunter_agent
 
     subsystem = SubsystemTarget(
         name="net_ipv4",
@@ -381,8 +381,8 @@ def test_build_subsystem_hunter_initial_message():
 
 
 def test_native_hunter_initial_user_message():
-    from clearwing.agent.tools.hunt.sandbox import HunterContext
-    from clearwing.sourcehunt.hunter import NativeHunter
+    from nightwing.agent.tools.hunt.sandbox import HunterContext
+    from nightwing.sourcehunt.hunter import NativeHunter
 
     ctx = HunterContext(repo_path="/tmp", file_path="src/main.c")
     hunter = NativeHunter(
@@ -396,8 +396,8 @@ def test_native_hunter_initial_user_message():
 
 
 def test_native_hunter_default_message():
-    from clearwing.agent.tools.hunt.sandbox import HunterContext
-    from clearwing.sourcehunt.hunter import NativeHunter
+    from nightwing.agent.tools.hunt.sandbox import HunterContext
+    from nightwing.sourcehunt.hunter import NativeHunter
 
     ctx = HunterContext(repo_path="/tmp", file_path="src/main.c")
     hunter = NativeHunter(

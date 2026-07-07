@@ -5,8 +5,8 @@ from __future__ import annotations
 import json
 from unittest.mock import patch
 
-import clearwing.agent.tools.crypto.mycelium_tools as myc_mod
-from clearwing.agent.tools.crypto.mycelium_tools import (
+import nightwing.agent.tools.crypto.mycelium_tools as myc_mod
+from nightwing.agent.tools.crypto.mycelium_tools import (
     get_mycelium_tools,
     mycelium_create_channel,
     mycelium_fuzz_auth,

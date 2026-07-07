@@ -1,8 +1,8 @@
 # FFmpeg H.264 Sourcehunt Walkthrough
 
 This page describes how to recreate the FFmpeg H.264 slice-counter
-vulnerability hunt with Clearwing in a way that keeps the discovery pass
-blind. "Blind" means Clearwing is given only the vulnerable source tree:
+vulnerability hunt with Nightwing in a way that keeps the discovery pass
+blind. "Blind" means Nightwing is given only the vulnerable source tree:
 no fix diff, no pull request, no CVE text, no blog post, and no human hint
 that the issue is in H.264.
 
@@ -22,29 +22,29 @@ matches the real bug. Do not use it during the discovery pass.
 
 Follow these rules if you want a meaningful recreation:
 
-1. Run Clearwing against the vulnerable parent commit, not the fixed commit.
+1. Run Nightwing against the vulnerable parent commit, not the fixed commit.
 2. Do not pass the fix commit, pull request, patch, article text, or this
    page into the model context.
 3. Do not run `sourcehunt --retro-hunt` for the blind pass. Retro-hunt is
    explicitly patch-derived and is useful only as a non-blind control.
-4. Use a fresh `CLEARWING_HOME` or pass `--no-mechanism-memory` so prior
+4. Use a fresh `NIGHTWING_HOME` or pass `--no-mechanism-memory` so prior
    runs cannot inject remembered mechanisms.
-5. For formal benchmarking, use a Clearwing checkout that has not been
+5. For formal benchmarking, use a Nightwing checkout that has not been
    modified with FFmpeg-specific or H.264-specific local hints.
 
 ## Prerequisites
 
-Install Clearwing per README.md
+Install Nightwing per README.md
 
 ## Prepare The Vulnerable Checkout
 
 Use a local checkout so the target is pinned to the parent of the fix commit.
-FFmpeg's default branch is `master`, while Clearwing's `--branch` default is
+FFmpeg's default branch is `master`, while Nightwing's `--branch` default is
 `main`, so a local path avoids branch-name ambiguity.
 
 ```bash
-mkdir -p ~/clearwing-cases/ffmpeg-h264
-cd ~/clearwing-cases/ffmpeg-h264
+mkdir -p ~/nightwing-cases/ffmpeg-h264
+cd ~/nightwing-cases/ffmpeg-h264
 
 git clone https://code.ffmpeg.org/FFmpeg/FFmpeg.git ffmpeg-vuln
 cd ffmpeg-vuln
@@ -64,22 +64,22 @@ strict blind run.
 
 ## Run The Blind Discovery Pass
 
-Create an isolated Clearwing home for this case. This keeps the mechanism
+Create an isolated Nightwing home for this case. This keeps the mechanism
 memory store, trajectories, logs, and knowledge graph separate from any
 previous sourcehunt work.
 
 ```bash
-cd ~/clearwing-cases/ffmpeg-h264
+cd ~/nightwing-cases/ffmpeg-h264
 
 export CASE_DIR="$PWD"
 export FFMPEG_DIR="$CASE_DIR/ffmpeg-vuln"
-export CLEARWING_HOME="$CASE_DIR/.clearwing-blind-home"
-export CLEARWING_SOURCEHUNT_TRACE_DIR="$CASE_DIR/trajectories"
+export NIGHTWING_HOME="$CASE_DIR/.nightwing-blind-home"
+export NIGHTWING_SOURCEHUNT_TRACE_DIR="$CASE_DIR/trajectories"
 
-rm -rf "$CLEARWING_HOME" "$CLEARWING_SOURCEHUNT_TRACE_DIR" "$CASE_DIR/results"
-mkdir -p "$CLEARWING_HOME" "$CLEARWING_SOURCEHUNT_TRACE_DIR" "$CASE_DIR/results"
+rm -rf "$NIGHTWING_HOME" "$NIGHTWING_SOURCEHUNT_TRACE_DIR" "$CASE_DIR/results"
+mkdir -p "$NIGHTWING_HOME" "$NIGHTWING_SOURCEHUNT_TRACE_DIR" "$CASE_DIR/results"
 
-clearwing sourcehunt "$FFMPEG_DIR" \
+nightwing sourcehunt "$FFMPEG_DIR" \
   --depth deep \
   --agent-mode deep \
   --max-parallel 8 \
@@ -113,7 +113,7 @@ Why these flags:
   upgrades the top 10% of verified findings to higher-impact primitives
   (e.g. promoting a heap overflow to arbitrary write or code execution).
 - `--no-mechanism-memory` prevents prior runs from influencing the hunter.
-  The fresh `CLEARWING_HOME` is a second isolation layer.
+  The fresh `NIGHTWING_HOME` is a second isolation layer.
 - `--gvisor` uses the gVisor runtime for container isolation, adding an
   extra security layer when running untrusted PoC code inside sandboxes.
 - Budget is unlimited by default. Add `--budget 50` to cap spend for a local
@@ -163,7 +163,7 @@ and can discover cross-file interaction bugs (e.g., a type mismatch between
 The command writes a session directory under:
 
 ```text
-~/clearwing-cases/ffmpeg-h264/results/<session_id>/
+~/nightwing-cases/ffmpeg-h264/results/<session_id>/
 ```
 
 The important files are:
@@ -180,20 +180,20 @@ The original scenario was not a guaranteed single-shot discovery. For a closer
 recreation, run several isolated passes and compare their reports:
 
 ```bash
-cd ~/clearwing-cases/ffmpeg-h264
+cd ~/nightwing-cases/ffmpeg-h264
 export CASE_DIR="$PWD"
 export FFMPEG_DIR="$CASE_DIR/ffmpeg-vuln"
 
 for i in 1 2 3 4 5; do
-  RUN_HOME="$CASE_DIR/.clearwing-blind-home-$i"
+  RUN_HOME="$CASE_DIR/.nightwing-blind-home-$i"
   RUN_OUT="$CASE_DIR/results-pass-$i"
   RUN_TRACE="$CASE_DIR/trajectories-pass-$i"
   rm -rf "$RUN_HOME" "$RUN_OUT" "$RUN_TRACE"
   mkdir -p "$RUN_HOME" "$RUN_OUT" "$RUN_TRACE"
 
-  CLEARWING_HOME="$RUN_HOME" \
-  CLEARWING_SOURCEHUNT_TRACE_DIR="$RUN_TRACE" \
-  clearwing sourcehunt "$FFMPEG_DIR" \
+  NIGHTWING_HOME="$RUN_HOME" \
+  NIGHTWING_SOURCEHUNT_TRACE_DIR="$RUN_TRACE" \
+  nightwing sourcehunt "$FFMPEG_DIR" \
     --depth deep \
     --agent-mode deep \
     --max-parallel 8 \
@@ -216,7 +216,7 @@ non-zero exit code when it finds high or critical issues.
 Search the generated reports for the H.264 slice-counter mechanism:
 
 ```bash
-cd ~/clearwing-cases/ffmpeg-h264
+cd ~/nightwing-cases/ffmpeg-h264
 
 rg -n \
   "h264_slice|h264dec|slice_table|current_slice|slice_num|0xFFFF|65535|65536|deblock|sentinel" \
@@ -273,7 +273,7 @@ jq '.[] | select(.file | contains("h264_slice")) |
 Only after the blind pass, fetch and inspect the official fix:
 
 ```bash
-cd ~/clearwing-cases/ffmpeg-h264/ffmpeg-vuln
+cd ~/nightwing-cases/ffmpeg-h264/ffmpeg-vuln
 
 git fetch origin 39e1969303a0b9ec5fb5f5eb643bf7a5b69c0a89
 git diff \
@@ -283,25 +283,25 @@ git diff \
 ```
 
 The patch rejects excessive slice counts before assigning the next slice
-number. A strong Clearwing finding does not need to reproduce the exact patch,
+number. A strong Nightwing finding does not need to reproduce the exact patch,
 but it should converge on the same invariant: a slice number must never be
 allowed to collide with the sentinel value used by the 16-bit slice table.
 
 You can also run a fixed-commit control:
 
 ```bash
-cd ~/clearwing-cases/ffmpeg-h264/ffmpeg-vuln
+cd ~/nightwing-cases/ffmpeg-h264/ffmpeg-vuln
 git switch --detach 39e1969303a0b9ec5fb5f5eb643bf7a5b69c0a89
 
-cd ~/clearwing-cases/ffmpeg-h264
+cd ~/nightwing-cases/ffmpeg-h264
 export CASE_DIR="$PWD"
 export FFMPEG_DIR="$CASE_DIR/ffmpeg-vuln"
-export CLEARWING_HOME="$CASE_DIR/.clearwing-fixed-home"
+export NIGHTWING_HOME="$CASE_DIR/.nightwing-fixed-home"
 
-rm -rf "$CLEARWING_HOME" "$CASE_DIR/results-fixed"
-mkdir -p "$CLEARWING_HOME" "$CASE_DIR/results-fixed"
+rm -rf "$NIGHTWING_HOME" "$CASE_DIR/results-fixed"
+mkdir -p "$NIGHTWING_HOME" "$CASE_DIR/results-fixed"
 
-clearwing sourcehunt "$FFMPEG_DIR" \
+nightwing sourcehunt "$FFMPEG_DIR" \
   --depth standard \
   --agent-mode deep \
   --max-parallel 8 \
@@ -326,7 +326,7 @@ Upgrade a partial finding (e.g., heap overflow → arbitrary write → code
 execution) using the interactive elaboration agent:
 
 ```bash
-clearwing sourcehunt "$FFMPEG_DIR" \
+nightwing sourcehunt "$FFMPEG_DIR" \
   --elaborate <finding_id> \
   --elaborate-session <session_id> \
   --output-dir "$CASE_DIR/results"
@@ -335,7 +335,7 @@ clearwing sourcehunt "$FFMPEG_DIR" \
 Or run autonomous elaboration on the top findings:
 
 ```bash
-clearwing sourcehunt "$FFMPEG_DIR" \
+nightwing sourcehunt "$FFMPEG_DIR" \
   --elaborate-top 3 \
   --elaborate-session <session_id> \
   --output-dir "$CASE_DIR/results"
@@ -344,7 +344,7 @@ clearwing sourcehunt "$FFMPEG_DIR" \
 ### Generate Disclosure Templates
 
 ```bash
-clearwing sourcehunt "$FFMPEG_DIR" \
+nightwing sourcehunt "$FFMPEG_DIR" \
   --depth quick \
   --export-disclosures \
   --reporter-name "Your Name" \
@@ -361,11 +361,11 @@ verified findings into the session directory.
 Queue findings for human review and track disclosure timelines:
 
 ```bash
-clearwing disclose queue "$CASE_DIR/results/<session_id>"
-clearwing disclose review
-clearwing disclose validate <finding_id>
-clearwing disclose send <finding_id>
-clearwing disclose status
+nightwing disclose queue "$CASE_DIR/results/<session_id>"
+nightwing disclose review
+nightwing disclose validate <finding_id>
+nightwing disclose send <finding_id>
+nightwing disclose status
 ```
 
 The disclosure system tracks 60/75/90-day timelines and creates SHA-3
@@ -377,10 +377,10 @@ After the blind experiment, use the N-day pipeline to develop a working
 exploit against the known vulnerability. This is explicitly non-blind:
 
 ```bash
-cd ~/clearwing-cases/ffmpeg-h264/ffmpeg-vuln
+cd ~/nightwing-cases/ffmpeg-h264/ffmpeg-vuln
 git switch --detach 795bccdaf57772b1803914dee2f32d52776518e2
 
-clearwing sourcehunt "$FFMPEG_DIR" \
+nightwing sourcehunt "$FFMPEG_DIR" \
   --nday \
   --cve CVE-2025-XXXXX \
   --patch-commit 39e1969303a0b9ec5fb5f5eb643bf7a5b69c0a89 \
@@ -399,7 +399,7 @@ to test whether patch-derived variant hunting can rediscover the same
 pattern:
 
 ```bash
-clearwing sourcehunt "$FFMPEG_DIR" \
+nightwing sourcehunt "$FFMPEG_DIR" \
   --retro-hunt CVE-2025-XXXXX \
   --patch-source 39e1969303a0b9ec5fb5f5eb643bf7a5b69c0a89 \
   --patch-repo "$FFMPEG_DIR" \
@@ -412,12 +412,12 @@ blind-discovery claims.
 
 ## Optional Local ASan Build
 
-Clearwing's sourcehunt run does not require you to build FFmpeg manually, but
+Nightwing's sourcehunt run does not require you to build FFmpeg manually, but
 a local ASan build is useful if a run produces a concrete H.264 proof of
 concept.
 
 ```bash
-cd ~/clearwing-cases/ffmpeg-h264/ffmpeg-vuln
+cd ~/nightwing-cases/ffmpeg-h264/ffmpeg-vuln
 git switch --detach 795bccdaf57772b1803914dee2f32d52776518e2
 
 ./configure \
@@ -434,7 +434,7 @@ NPROC="$(sysctl -n hw.ncpu 2>/dev/null || getconf _NPROCESSORS_ONLN)"
 make -j"$NPROC"
 ```
 
-If Clearwing emits a PoC input, run it through the sanitizer-built binary and
+If Nightwing emits a PoC input, run it through the sanitizer-built binary and
 keep the ASan report with the finding. Then rebuild at the fixed commit and
 confirm the same input no longer reaches the out-of-bounds path.
 
@@ -442,11 +442,11 @@ confirm the same input no longer reaches the out-of-bounds path.
 
 - `fatal: invalid reference: main`: FFmpeg uses `master`; use the local
   checkout flow above or pass `--branch master` for unpinned scans.
-- Docker errors: run `clearwing doctor` and confirm Docker is reachable.
-  Without Docker, Clearwing can still reason over source, but sanitizer-backed
+- Docker errors: run `nightwing doctor` and confirm Docker is reachable.
+  Without Docker, Nightwing can still reason over source, but sanitizer-backed
   evidence is weaker. Add `--gvisor` for stronger container isolation.
 - No matching finding: increase budget, run more independent passes, enable
-  `--shard-entry-points` and `--seed-cves`, and keep `CLEARWING_HOME`
+  `--shard-entry-points` and `--seed-cves`, and keep `NIGHTWING_HOME`
   isolated. Large mature C projects are intentionally hard targets.
 - Too much report noise: search `findings.json` first, then inspect the
   matching hunter trajectory under `trajectories*/`. Check

@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from clearwing.sourcehunt.pool import (
+from nightwing.sourcehunt.pool import (
     BAND_ORDER,
     BandBudget,
     HunterPool,
@@ -15,7 +15,7 @@ from clearwing.sourcehunt.pool import (
     _redundancy_for_rank,
     promotion_decision,
 )
-from clearwing.sourcehunt.state import FileTarget
+from nightwing.sourcehunt.state import FileTarget
 
 
 def _make_file_target(
@@ -209,8 +209,8 @@ class TestHunterRunResult:
         from dataclasses import dataclass
         from unittest.mock import patch as mock_patch
 
-        from clearwing.agent.tools.hunt.sandbox import HunterContext
-        from clearwing.sourcehunt.hunter import NativeHunter
+        from nightwing.agent.tools.hunt.sandbox import HunterContext
+        from nightwing.sourcehunt.hunter import NativeHunter
 
         @dataclass
         class FakeUsage:
@@ -243,7 +243,7 @@ class TestHunterRunResult:
             budget_usd=5.0,
         )
 
-        with mock_patch("clearwing.sourcehunt.hunter.HunterTrajectoryLogger") as mock_traj:
+        with mock_patch("nightwing.sourcehunt.hunter.HunterTrajectoryLogger") as mock_traj:
             mock_traj.for_hunter.return_value = MagicMock()
             result = await hunter.arun()
 
@@ -265,9 +265,9 @@ class TestBudgetEnforcement:
 
         from genai_pyo3 import ToolCall
 
-        from clearwing.agent.tools.hunt.sandbox import HunterContext
-        from clearwing.llm.native import NativeToolSpec
-        from clearwing.sourcehunt.hunter import NativeHunter
+        from nightwing.agent.tools.hunt.sandbox import HunterContext
+        from nightwing.llm.native import NativeToolSpec
+        from nightwing.sourcehunt.hunter import NativeHunter
 
         @dataclass
         class FakeUsage:
@@ -312,9 +312,9 @@ class TestBudgetEnforcement:
             budget_usd=0.01,
         )
 
-        with mock_patch("clearwing.sourcehunt.hunter.HunterTrajectoryLogger") as mock_traj:
+        with mock_patch("nightwing.sourcehunt.hunter.HunterTrajectoryLogger") as mock_traj:
             mock_traj.for_hunter.return_value = MagicMock()
-            with mock_patch("clearwing.sourcehunt.hunter._estimate_cost_usd", return_value=0.005):
+            with mock_patch("nightwing.sourcehunt.hunter._estimate_cost_usd", return_value=0.005):
                 result = await hunter.arun()
 
         assert result.stop_reason == "budget_exhausted"
@@ -326,7 +326,7 @@ class TestBudgetEnforcement:
 
 class TestSeedTranscript:
     def test_seed_transcript_appended_to_prompt(self):
-        from clearwing.sourcehunt.hunter import build_hunter_agent
+        from nightwing.sourcehunt.hunter import build_hunter_agent
 
         llm = MagicMock()
         ft = _make_file_target()
@@ -343,7 +343,7 @@ class TestSeedTranscript:
         assert "Do not repeat" in hunter.prompt
 
     def test_no_seed_transcript_no_block(self):
-        from clearwing.sourcehunt.hunter import build_hunter_agent
+        from nightwing.sourcehunt.hunter import build_hunter_agent
 
         llm = MagicMock()
         ft = _make_file_target()

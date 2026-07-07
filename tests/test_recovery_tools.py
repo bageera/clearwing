@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from unittest.mock import patch
 
-import clearwing.agent.tools.crypto.recovery_tools as rec_mod
-from clearwing.agent.tools.crypto.recovery_tools import (
+import nightwing.agent.tools.crypto.recovery_tools as rec_mod
+from nightwing.agent.tools.crypto.recovery_tools import (
     analyze_recovery_entropy,
     generate_recovery_codes,
     get_recovery_tools,

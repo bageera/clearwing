@@ -9,7 +9,7 @@ Generated from HackerOne scope export dated 2026-05-14
         Tool: run_complete_domain_recon
         Outputs: subdomains, IPs, URLs, certificates, GitHub leak indicators
    1.3  Query Shodan for api.figma.com and www.figma.com
-        Tool: query_shodan (from clearwing/native/shodan_tools.py)
+        Tool: query_shodan (from nightwing/native/shodan_tools.py)
         Requires: SHODAN_API_KEY env var
    1.4  Enumerate web archives for historical endpoints
         Tools: run_gau, run_waybackurls

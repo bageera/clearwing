@@ -11,7 +11,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from clearwing.sourcehunt.pool import (
+from nightwing.sourcehunt.pool import (
     HunterPool,
     HuntPoolConfig,
     TierBudget,

@@ -2,9 +2,9 @@ import json
 
 import pytest
 
-from clearwing.core.engine import ScanResult, ScanState
-from clearwing.reporting import ReportGenerator
-from clearwing.reporting.report_generator import _format_service_label
+from nightwing.core.engine import ScanResult, ScanState
+from nightwing.reporting import ReportGenerator
+from nightwing.reporting.report_generator import _format_service_label
 
 
 class TestReportGenerator:
@@ -51,7 +51,7 @@ class TestReportGenerator:
         """Test text report generation."""
         report = generator.generate(sample_result, "text")
         assert isinstance(report, str)
-        assert "CLEARWING SCAN REPORT" in report
+        assert "NIGHTWING SCAN REPORT" in report
         assert "192.168.1.1" in report
         assert "SSH" in report
 
@@ -75,7 +75,7 @@ class TestReportGenerator:
         """Test Markdown report generation."""
         report = generator.generate(sample_result, "markdown")
         assert isinstance(report, str)
-        assert "# Clearwing Scan Report" in report
+        assert "# Nightwing Scan Report" in report
         assert "| Port | Protocol | Service | State |" in report
 
     def test_save_report(self, generator, sample_result, tmp_path):
@@ -84,7 +84,7 @@ class TestReportGenerator:
         generator.save(sample_result, str(filepath))
         assert filepath.exists()
         content = filepath.read_text()
-        assert "CLEARWING SCAN REPORT" in content
+        assert "NIGHTWING SCAN REPORT" in content
 
     def test_auto_format_detection(self, generator, sample_result, tmp_path):
         """Test automatic format detection from file extension."""

@@ -6,7 +6,7 @@ from tests.fixtures import *  # noqa: F401,F403 — exposes all shared fixtures
 
 
 def pytest_configure(config):
-    """Turn any clearwing DeprecationWarning into a hard test failure.
+    """Turn any nightwing DeprecationWarning into a hard test failure.
 
     Phase 1e deleted the 22 legacy shim packages; this filter locks the trunk
     against accidental re-introduction of a deprecated import path.
@@ -14,7 +14,7 @@ def pytest_configure(config):
     warnings.filterwarnings(
         "error",
         category=DeprecationWarning,
-        module=r"clearwing\..*",
+        module=r"nightwing\..*",
     )
 
 

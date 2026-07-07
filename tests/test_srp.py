@@ -6,7 +6,7 @@ import hashlib
 
 import pytest
 
-from clearwing.crypto.srp import (
+from nightwing.crypto.srp import (
     SRP_GROUPS,
     SRPClient,
     SRPGroupParams,

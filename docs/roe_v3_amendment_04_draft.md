@@ -1,7 +1,7 @@
 # ROE Amendment 04 Draft — Complete Lazarus AI Infrastructure Pentest
 
 **Date:** 2026-05-02
-**Requestor:** Jon Bethea (Clearwing Autonomous Agent)
+**Requestor:** Jon Bethea (Nightwing Autonomous Agent)
 **Scope Expansion:** Lazarus AI Infrastructure — Full-stack authorized penetration testing
 **Status:** DRAFT — Requires Legal + Lazarus AI Security sign-off
 
@@ -187,7 +187,7 @@ mail.lazarus.enterprises           # Already scoped
 
 - **A:** ROE Amendment 03 (current scope)
 - **B:** Lazarus AI Pentest Findings Summary (2026-05-02)
-- **C:** `clearwing-tool-matrix.md` (220 tool inventory)
+- **C:** `nightwing-tool-matrix.md` (220 tool inventory)
 - **D:** `/tmp/roe_v3_final_consolidated_report_2026-05-02.html` (full report)
 
 ---

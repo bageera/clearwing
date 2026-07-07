@@ -15,7 +15,7 @@ from dataclasses import dataclass
 
 import pytest
 
-from clearwing.runners.parallel.executor import (
+from nightwing.runners.parallel.executor import (
     ParallelExecutor,
     ParallelScanConfig,
     TierBudget,

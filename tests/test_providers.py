@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pytest
 
-from clearwing.llm import ChatModel
-from clearwing.providers.manager import (
+from nightwing.llm import ChatModel
+from nightwing.providers.manager import (
     DEFAULT_ROUTES,
     PROVIDER_PRESETS,
     ModelRoute,

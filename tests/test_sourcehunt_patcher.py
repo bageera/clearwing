@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 from genai_pyo3 import ChatResponse
 
-from clearwing.sourcehunt.patcher import (
+from nightwing.sourcehunt.patcher import (
     AutoPatcher,
     PatchAttempt,
     apply_patch_attempt,

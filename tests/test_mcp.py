@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from unittest.mock import MagicMock, patch
 
-from clearwing.mcp.server import MCPServer
+from nightwing.mcp.server import MCPServer
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -48,7 +48,7 @@ def _build_server(tools: list | None = None):
                 },
             ),
         ]
-    with patch("clearwing.mcp.server.MCPServer._register_tools"):
+    with patch("nightwing.mcp.server.MCPServer._register_tools"):
         server = MCPServer()
     # Manually populate _tools from the mocks
     for t in tools:
@@ -98,7 +98,7 @@ class TestHandleInitialize:
         request = {"jsonrpc": "2.0", "id": 2, "method": "initialize", "params": {}}
         response = server.handle_request(request)
         info = response["result"]["serverInfo"]
-        assert info["name"] == "clearwing"
+        assert info["name"] == "nightwing"
         assert info["version"] == "1.0.0"
 
     def test_initialize_capabilities(self):

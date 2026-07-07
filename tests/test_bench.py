@@ -9,16 +9,16 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from clearwing.bench.crash_classifier import (
+from nightwing.bench.crash_classifier import (
     CrashClassifier,
 )
-from clearwing.bench.ossfuzz import (
+from nightwing.bench.ossfuzz import (
     BENCHMARK_MODES,
     BenchmarkTarget,
     load_corpus_dir,
     load_targets_file,
 )
-from clearwing.bench.results import (
+from nightwing.bench.results import (
     BenchmarkResult,
     ComparisonResult,
     TargetResult,
@@ -322,7 +322,7 @@ class TestOssFuzzBenchmark:
         assert targets[2].project_name == "libjpeg"
 
     def test_benchmark_prompt_has_placeholders(self):
-        from clearwing.bench.ossfuzz import BENCHMARK_HUNT_PROMPT
+        from nightwing.bench.ossfuzz import BENCHMARK_HUNT_PROMPT
 
         assert "{project_name}" in BENCHMARK_HUNT_PROMPT
         assert "{entry_point_line}" in BENCHMARK_HUNT_PROMPT
@@ -335,7 +335,7 @@ class TestBenchCLI:
     def test_bench_ossfuzz_flag(self):
         import argparse
 
-        from clearwing.ui.commands import bench
+        from nightwing.ui.commands import bench
 
         parser = argparse.ArgumentParser()
         subs = parser.add_subparsers()
@@ -346,7 +346,7 @@ class TestBenchCLI:
     def test_bench_ossfuzz_mode(self):
         import argparse
 
-        from clearwing.ui.commands import bench
+        from nightwing.ui.commands import bench
 
         parser = argparse.ArgumentParser()
         subs = parser.add_subparsers()
@@ -357,7 +357,7 @@ class TestBenchCLI:
     def test_bench_compare_flag(self):
         import argparse
 
-        from clearwing.ui.commands import bench
+        from nightwing.ui.commands import bench
 
         parser = argparse.ArgumentParser()
         subs = parser.add_subparsers()
@@ -369,7 +369,7 @@ class TestBenchCLI:
     def test_bench_compare_format(self):
         import argparse
 
-        from clearwing.ui.commands import bench
+        from nightwing.ui.commands import bench
 
         parser = argparse.ArgumentParser()
         subs = parser.add_subparsers()
@@ -389,7 +389,7 @@ class TestBenchCLI:
     def test_bench_no_llm_classify(self):
         import argparse
 
-        from clearwing.ui.commands import bench
+        from nightwing.ui.commands import bench
 
         parser = argparse.ArgumentParser()
         subs = parser.add_subparsers()

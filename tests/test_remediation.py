@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from clearwing.reporting.remediation import REMEDIATION_DB, RemediationAdvice, RemediationGenerator
+from nightwing.reporting.remediation import REMEDIATION_DB, RemediationAdvice, RemediationGenerator
 
 # --- RemediationAdvice dataclass ---
 

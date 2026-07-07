@@ -23,7 +23,7 @@ import time
 import urllib.request
 from unittest.mock import MagicMock
 
-from clearwing.sourcehunt.webhook_server import (
+from nightwing.sourcehunt.webhook_server import (
     WebhookConfig,
     WebhookServer,
     commit_monitor_on_push_factory,

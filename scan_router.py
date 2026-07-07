@@ -492,7 +492,7 @@ def main():
     cors_check(results)
 
     results.summarize()
-    results.to_json("/Users/jonbethea/projects/blacktech/clearwing/scan_results_192.168.1.1.json")
+    results.to_json("/Users/jonbethea/projects/blacktech/nightwing/scan_results_192.168.1.1.json")
 
     # Print report
     print(f"\n{'=' * 60}")
@@ -513,7 +513,7 @@ def main():
         print(f"   Fix: {f.recommendation[:150]}")
         print()
 
-    output_path = "/Users/jonbethea/projects/blacktech/clearwing/scan_results_192.168.1.1.json"
+    output_path = "/Users/jonbethea/projects/blacktech/nightwing/scan_results_192.168.1.1.json"
     print(f"Full results saved to: {output_path}")
 
 

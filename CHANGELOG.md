@@ -1,7 +1,7 @@
 # Release notes
 
 Release notes live at
-<https://github.com/Lazarus-AI/clearwing/releases>. Notes are
+<https://github.com/Lazarus-AI/nightwing/releases>. Notes are
 auto-generated from merged-PR titles + labels via
 [`.github/release.yml`](.github/release.yml) when each release is
 cut.
@@ -10,6 +10,99 @@ The hand-curated pre-1.0 history has been archived to
 [`docs/CHANGELOG-v1.0.md`](docs/CHANGELOG-v1.0.md). Per-PR
 `CHANGELOG.md` bullets are no longer required — see
 [`CONTRIBUTING.md`](CONTRIBUTING.md) for the current PR checklist.
+
+---
+
+## Session: 2026-07-07 — Project Rename (Clearwing → Nightwing) + Wireless/RF/NFC Expansion
+
+### Project Rename: Clearwing → Nightwing
+
+The project has been forked from the original Clearwing and renamed to
+**Nightwing** — continuing the butterfly-wing naming theme while nodding
+to the caped crusader's breakaway identity. All references updated:
+
+- Package directory `clearwing/` → `nightwing/`
+- Entry point `clearwing.py` → `nightwing.py`
+- CLI command `clearwing` → `nightwing`
+- Environment variables `CLEARWING_*` → `NIGHTWING_*`
+- Config directory `~/.clearwing/` → `~/.nightwing/`
+- Container names `clearwing-kali` → `nightwing-kali`, `clearwing-parrot` → `nightwing-parrot`
+- All internal imports, test paths, CI workflows, docs, Makefile targets updated
+- 298 Python files + 70 config/doc files updated (368 total)
+
+### Added: Wireless, RF & NFC Scanning Tools (30 new tools, 8 new modules)
+
+Split the 687-line `network_wireless_mobile_tools.py` megafile into
+8 phase-specific modules and added 30 new tools across 7 sub-phases:
+
+**Phase 12a — Wi-Fi Monitor Mode (5 new):**
+`run_airmon_ng`, `run_airbase_ng`, `run_aireplay_ng`, `run_airdecap_ng`, `run_wash`
+
+**Phase 12b — Wireless Recon (3 new):**
+`run_kismet`, `run_airgraph_ng`, `run_horst`
+
+**Phase 12c — Enterprise 802.1X (3 new):**
+`run_eaphammer`, `run_hostapd_wpe`, `run_asleap`
+
+**Phase 14a — Bluetooth Classic + BLE (4 new):**
+`run_bluez_scan`, `run_bluez_info`, `run_btlejack`, `run_sniffle`
+
+**Phase 14b — RFID / NFC (5 new, new domain):**
+`run_proxmark3`, `run_mfoc`, `run_mfuk`, `run_nfc_tool`, `run_rfidiot`
+
+**Phase 14c — SDR / RF (6 new, new domain):**
+`run_hackrf_info`, `run_hackrf_sweep`, `run_rtl_433`, `run_rtl_power`, `run_gqrx`, `run_inspectrum`
+
+**Phase 14d — IoT Radio Protocols (4 new, new domain):**
+`run_killerbee`, `run_zbstumbler`, `run_lorawan_scanner`, `run_subghz_scan`
+
+New files: `wireless_tools.py`, `network_discovery_tools.py`, `mobile_tools.py`,
+`bluetooth_rf_tools.py`, `rfid_nfc_tools.py`, `sdr_tools.py`, `iot_radio_tools.py`,
+`iot_hardware_tools.py`. The old `network_wireless_mobile_tools.py` is kept as a
+backward-compat re-export shim.
+
+### Fixed: PentestContainerManager
+
+- Added `"error": ""` key to all `execute()`/`install()`/`cleanup()` return dicts
+  (was missing — tools checking `result["error"]` would KeyError at runtime)
+- Added `timeout_seconds` parameter (default 600s) with `timeout --kill-after=2`
+  shell wrapping to prevent indefinite hangs on non-self-wrapping tools
+- Added `_get_client()` with cached Docker client and helpful ImportError message
+- Added `cleanup_all()` function for CLI container cleanup
+- Added try/except around `exec_run()` for graceful error handling
+
+### Fixed: Test Infrastructure
+
+- Moved `clearwing/tests/test_enumeration_tools.py` to `tests/` (was in-package,
+  shipping in the wheel via `package-data`)
+- Fixed mock fixture pattern: was patching `KALI`/`PARROT` directly (broken since
+  enumeration_tools uses `run_in_pentest_container`), now patches the correct symbol
+- Updated `EXPECTED_TOOL_COUNT` 255 → 285 in `test_tool_registry.py`
+
+### Added: Tests
+
+- `tests/test_wireless_tools.py` (27 tests)
+- `tests/test_bluetooth_tools.py` (7 tests)
+- `tests/test_rfid_nfc_tools.py` (9 tests)
+- `tests/test_sdr_tools.py` (9 tests)
+- `tests/test_iot_radio_tools.py` (7 tests)
+- `tests/test_enumeration_tools.py` (53 tests, moved + fixed)
+- Total: 112 new tests, all passing
+
+### Added: Scripts
+
+- `scripts/wireless_scan.py` — native macOS Wi-Fi + Bluetooth scanner using
+  CoreWLAN + IOBluetooth frameworks for SOC 2 wireless assessment without
+  requiring USB hardware
+
+### Statistics
+
+- Tool count: 255 → 285 (+30)
+- Test count: 2535 → 2647 (+112)
+- Source modules: 287 → 295 (+8)
+- Pre-existing test failures: 11 (unchanged — CVE DB, webcrypto, auth_recorder, band_promotion, reveng)
+- Lint: clean (ruff check + format)
+- Zero regressions introduced
 
 ---
 
@@ -29,7 +122,7 @@ testing support, and updated CI/Makefile to use them.
   - `hypothesis>=6.0.0` — property-based testing
   - `dirty-equals>=0.7.0` — type-safe fixture comparisons
 - **Coverage config** (`pyproject.toml` `[tool.coverage]`)
-  - Branch coverage enabled, source=clearwing, omit test/venv paths
+  - Branch coverage enabled, source=nightwing, omit test/venv paths
   - `fail_under = 50` threshold
   - HTML report to `htmlcov/`
 - **Fixture imports** (`conftest.py`)
@@ -42,7 +135,7 @@ testing support, and updated CI/Makefile to use them.
   - Added `coverage report --fail-under=50` step
 - **Makefile**
   - Added `test-parallel` (`-n auto`)
-  - Added `test-coverage` (`--cov=clearwing --cov-report=term-missing --cov-report=html`)
+  - Added `test-coverage` (`--cov=nightwing --cov-report=term-missing --cov-report=html`)
   - Added `coverage` (report + fail-under)
   - Added `coverage-html` (html generation)
   - Updated `clean` to remove `htmlcov/`
@@ -90,8 +183,8 @@ agent registry. Total bind-tools now **255** (up from 238).
   - `ReconResult` dataclass, aggregation, and reporting
 
 ### Changed
-- `clearwing/__init__.py`: Version synced from `"0.1.0"` to `"1.0.0"` (matching `pyproject.toml`)
-- `clearwing/agent/tools/__init__.py`: Registered all 14 new scan tools in `get_all_tools()`
+- `nightwing/__init__.py`: Version synced from `"0.1.0"` to `"1.0.0"` (matching `pyproject.toml`)
+- `nightwing/agent/tools/__init__.py`: Registered all 14 new scan tools in `get_all_tools()`
 - `.gitignore`: Added `results/figma/`, `scripts/figma/`, `figma_repos/` patterns
 - Figma engagement scripts moved to `scripts/figma/`
 - Figma scan results/databases moved to `results/figma/`
@@ -99,21 +192,21 @@ agent registry. Total bind-tools now **255** (up from 238).
 - `figma_repos/` moved to `.reference/figma_repos/` (gitignored, 30MB)
 
 ### Removed
-- `clearwing/venv/` — nested venv (top-level `venv/` is canonical)
-- `clearwing/clearwing.egg-info/` — stale build artifact
-- `clearwing/pyproject.toml` — duplicate of root-level file
-- `clearwing/ruff.toml` — duplicate of root-level config
+- `nightwing/venv/` — nested venv (top-level `venv/` is canonical)
+- `nightwing/nightwing.egg-info/` — stale build artifact
+- `nightwing/pyproject.toml` — duplicate of root-level file
+- `nightwing/ruff.toml` — duplicate of root-level config
 
 ---
 
 ## Session: 2026-04-27 — Ollama Cloud + Dual Container Support
 
 ### Added
-- **Ollama Cloud preset** (`clearwing/providers/catalog.py`)
+- **Ollama Cloud preset** (`nightwing/providers/catalog.py`)
   - New preset `ollama-cloud` for hosted models at `https://ollama.com`
   - Defaults: `deepseek-v4-flash`, requires `OLLAMA_API_KEY`
   - Alternative models: `qwen3-coder:480b`, `minimax-m2.7`, `kimi-k2.6`
-- **Dual PentestContainer support** (`clearwing/agent/tools/ops/`)
+- **Dual PentestContainer support** (`nightwing/agent/tools/ops/`)
   - New shared `PentestContainerManager` base class
   - Refactored Kali container (`kalilinux/kali-rolling`)
   - New ParrotOS container (`parrotsec/core:latest`, slim)
@@ -383,7 +476,7 @@ Added **18 new Android-specific tools**, expanding from 220 to **238 bind-tools*
 - All reports stored exclusively in `/tmp/` per security policy:
   - `/tmp/roe_v3_final_consolidated_report_2026-05-02.html`
   - `/tmp/ops_infrastructure_map.md`
-  - `/tmp/clearwing_tool_matrix.md`
+  - `/tmp/nightwing_tool_matrix.md`
   - `/tmp/detailed_findings.html`
   - `/tmp/executive_summary.html`
 - **NOT committed to repository**

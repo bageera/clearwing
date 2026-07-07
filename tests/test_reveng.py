@@ -8,8 +8,8 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from clearwing.sourcehunt.reveng import RevengPipeline, RevengResult
-from clearwing.sourcehunt.reveng_decompiler import (
+from nightwing.sourcehunt.reveng import RevengPipeline, RevengResult
+from nightwing.sourcehunt.reveng_decompiler import (
     DecompilationResult,
     DecompiledFunction,
     RevengSandbox,
@@ -17,7 +17,7 @@ from clearwing.sourcehunt.reveng_decompiler import (
     format_static_summary,
     validate_binary,
 )
-from clearwing.sourcehunt.reveng_reconstructor import (
+from nightwing.sourcehunt.reveng_reconstructor import (
     ReconstructedSource,
     ReconstructionResult,
     RevengReconstructor,
@@ -154,7 +154,7 @@ class TestRevengSandbox:
         s1 = RevengSandbox()
         s2 = RevengSandbox()
         assert s1._compute_tag() == s2._compute_tag()
-        assert s1._compute_tag().startswith("clearwing-reveng:")
+        assert s1._compute_tag().startswith("nightwing-reveng:")
 
 
 # --- Static analysis formatting tests ----------------------------------------
@@ -298,7 +298,7 @@ class TestRevengPipeline:
         assert result.status == "failed"
 
     def test_reveng_hunt_prompt_has_placeholders(self):
-        from clearwing.sourcehunt.reveng import REVENG_HUNT_PROMPT
+        from nightwing.sourcehunt.reveng import REVENG_HUNT_PROMPT
 
         assert "{project_name}" in REVENG_HUNT_PROMPT
         assert "{binary_name}" in REVENG_HUNT_PROMPT
@@ -311,12 +311,12 @@ class TestRevengPipeline:
 
 class TestHunterSpecialist:
     def test_reveng_in_specialist_prompts(self):
-        from clearwing.sourcehunt.hunter import _SPECIALIST_PROMPTS
+        from nightwing.sourcehunt.hunter import _SPECIALIST_PROMPTS
 
         assert "reveng" in _SPECIALIST_PROMPTS
 
     def test_reveng_in_deep_specialist_focus(self):
-        from clearwing.sourcehunt.hunter import _DEEP_SPECIALIST_FOCUS
+        from nightwing.sourcehunt.hunter import _DEEP_SPECIALIST_FOCUS
 
         assert "reveng" in _DEEP_SPECIALIST_FOCUS
         assert "binary" in _DEEP_SPECIALIST_FOCUS["reveng"].lower()
@@ -329,7 +329,7 @@ class TestRevengCLI:
     def test_reveng_flag(self):
         import argparse
 
-        from clearwing.ui.commands import sourcehunt
+        from nightwing.ui.commands import sourcehunt
 
         parser = argparse.ArgumentParser()
         subs = parser.add_subparsers()
@@ -340,7 +340,7 @@ class TestRevengCLI:
     def test_arch_flag(self):
         import argparse
 
-        from clearwing.ui.commands import sourcehunt
+        from nightwing.ui.commands import sourcehunt
 
         parser = argparse.ArgumentParser()
         subs = parser.add_subparsers()
@@ -351,7 +351,7 @@ class TestRevengCLI:
     def test_arch_default(self):
         import argparse
 
-        from clearwing.ui.commands import sourcehunt
+        from nightwing.ui.commands import sourcehunt
 
         parser = argparse.ArgumentParser()
         subs = parser.add_subparsers()
@@ -362,7 +362,7 @@ class TestRevengCLI:
     def test_reveng_budget_flag(self):
         import argparse
 
-        from clearwing.ui.commands import sourcehunt
+        from nightwing.ui.commands import sourcehunt
 
         parser = argparse.ArgumentParser()
         subs = parser.add_subparsers()
@@ -381,7 +381,7 @@ class TestRevengCLI:
     def test_reveng_budget_default(self):
         import argparse
 
-        from clearwing.ui.commands import sourcehunt
+        from nightwing.ui.commands import sourcehunt
 
         parser = argparse.ArgumentParser()
         subs = parser.add_subparsers()

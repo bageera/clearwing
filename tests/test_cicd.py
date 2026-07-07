@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from clearwing.runners.cicd import CICDResult, CICDRunner, SARIFGenerator
+from nightwing.runners.cicd import CICDResult, CICDRunner, SARIFGenerator
 
 
 class TestCICDResult:
@@ -80,7 +80,7 @@ class TestSARIFGenerator:
         assert "$schema" in sarif
         assert len(sarif["runs"]) == 1
         assert sarif["runs"][0]["results"] == []
-        assert sarif["runs"][0]["tool"]["driver"]["name"] == "clearwing"
+        assert sarif["runs"][0]["tool"]["driver"]["name"] == "nightwing"
 
     def test_sarif_schema_structure(self):
         findings = [

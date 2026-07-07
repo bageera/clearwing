@@ -15,7 +15,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from clearwing.runners.parallel.executor import (
+from nightwing.runners.parallel.executor import (
     ParallelExecutor,
     ParallelScanConfig,
 )
@@ -57,7 +57,7 @@ class TestDefaultRunnerFactoryPath:
     def test_default_path_uses_cicd_runner(self):
         """When factory=None, ParallelExecutor should import and use CICDRunner."""
         # Mock CICDRunner so we don't actually run a scan
-        with patch("clearwing.runners.cicd.runner.CICDRunner") as MockRunner:
+        with patch("nightwing.runners.cicd.runner.CICDRunner") as MockRunner:
             mock_instance = MagicMock()
             mock_instance.run.return_value = _FakeResult(target="10.0.0.1", exit_code=0)
             MockRunner.return_value = mock_instance

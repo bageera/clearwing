@@ -7,8 +7,8 @@ from unittest.mock import patch
 
 import pytest
 
-import clearwing.agent.tools.recon.mitm_proxy as mitm_mod
-from clearwing.agent.tools.recon.mitm_proxy import (
+import nightwing.agent.tools.recon.mitm_proxy as mitm_mod
+from nightwing.agent.tools.recon.mitm_proxy import (
     InterceptRule,
     _inject_rules,
     _intercept_rules,
@@ -26,7 +26,7 @@ from clearwing.agent.tools.recon.mitm_proxy import (
     mitm_start,
     mitm_stop,
 )
-from clearwing.agent.tools.recon.proxy_tools import _proxy_history
+from nightwing.agent.tools.recon.proxy_tools import _proxy_history
 
 
 @pytest.fixture(autouse=True)
@@ -273,7 +273,7 @@ class TestMitmStopErrors:
 
 class TestMitmInjectResponse:
     def test_inject_sets_rule(self):
-        with patch("clearwing.agent.tools.recon.mitm_proxy.interrupt"):
+        with patch("nightwing.agent.tools.recon.mitm_proxy.interrupt"):
             result = mitm_inject_response.invoke(
                 {
                     "url_pattern": "*/api/auth*",
@@ -287,18 +287,18 @@ class TestMitmInjectResponse:
 
     def test_inject_remove(self):
         _inject_rules["*/api/*"] = {"status": 200, "headers": {}, "body": "ok"}
-        with patch("clearwing.agent.tools.recon.mitm_proxy.interrupt"):
+        with patch("nightwing.agent.tools.recon.mitm_proxy.interrupt"):
             result = mitm_inject_response.invoke({"url_pattern": "*/api/*", "remove": True})
         assert result["status"] == "removed"
         assert "*/api/*" not in _inject_rules
 
     def test_inject_remove_nonexistent(self):
-        with patch("clearwing.agent.tools.recon.mitm_proxy.interrupt"):
+        with patch("nightwing.agent.tools.recon.mitm_proxy.interrupt"):
             result = mitm_inject_response.invoke({"url_pattern": "*/missing/*", "remove": True})
         assert result["status"] == "not_found"
 
     def test_inject_calls_interrupt(self):
-        with patch("clearwing.agent.tools.recon.mitm_proxy.interrupt") as mock_interrupt:
+        with patch("nightwing.agent.tools.recon.mitm_proxy.interrupt") as mock_interrupt:
             mitm_inject_response.invoke({"url_pattern": "*", "body": "injected"})
             mock_interrupt.assert_called_once()
 

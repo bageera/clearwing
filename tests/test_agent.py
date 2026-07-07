@@ -4,14 +4,14 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from clearwing.agent.graph import create_agent
-from clearwing.agent.prompts import build_system_prompt
-from clearwing.agent.state import AgentState
-from clearwing.agent.tooling import tool
-from clearwing.agent.tools import get_all_tools
-from clearwing.agent.tools.meta.reporting_tools import generate_report
-from clearwing.agent.tools.meta.utility_tools import calculate_severity, validate_target
-from clearwing.agent.tools.scan.scanner_tools import detect_os, detect_services, scan_ports
+from nightwing.agent.graph import create_agent
+from nightwing.agent.prompts import build_system_prompt
+from nightwing.agent.state import AgentState
+from nightwing.agent.tooling import tool
+from nightwing.agent.tools import get_all_tools
+from nightwing.agent.tools.meta.reporting_tools import generate_report
+from nightwing.agent.tools.meta.utility_tools import calculate_severity, validate_target
+from nightwing.agent.tools.scan.scanner_tools import detect_os, detect_services, scan_ports
 
 
 class TestAgentState:
@@ -62,7 +62,7 @@ class TestSystemPrompt:
         }
         prompt = build_system_prompt(state)
         assert "No scan data yet." in prompt
-        assert "Clearwing Agent" in prompt
+        assert "Nightwing Agent" in prompt
 
     def test_populated_state(self):
         state = {
@@ -100,7 +100,7 @@ class TestToolList:
 
 class TestGraphConstruction:
     def test_create_agent(self):
-        with patch("clearwing.agent.graph._create_llm") as mock_create_llm:
+        with patch("nightwing.agent.graph._create_llm") as mock_create_llm:
             mock_llm = MagicMock()
             mock_bound = MagicMock()
             mock_llm.bind_tools.return_value = mock_bound
@@ -120,7 +120,7 @@ class TestGraphConstruction:
             """A dummy tool."""
             return x
 
-        with patch("clearwing.agent.graph._create_llm") as mock_create_llm:
+        with patch("nightwing.agent.graph._create_llm") as mock_create_llm:
             mock_llm = MagicMock()
             mock_bound = MagicMock()
             mock_llm.bind_tools.return_value = mock_bound
@@ -131,7 +131,7 @@ class TestGraphConstruction:
             assert dummy_tool in bound_tools
 
     def test_create_agent_with_custom_endpoint(self):
-        with patch("clearwing.agent.graph._create_llm") as mock_create_llm:
+        with patch("nightwing.agent.graph._create_llm") as mock_create_llm:
             mock_llm = MagicMock()
             mock_bound = MagicMock()
             mock_llm.bind_tools.return_value = mock_bound
@@ -158,7 +158,7 @@ class TestScannerToolWrapping:
         mock_scanner.scan = AsyncMock(return_value=mock_result)
         mock_class = MagicMock(return_value=mock_scanner)
 
-        with patch("clearwing.scanning.PortScanner", mock_class):
+        with patch("nightwing.scanning.PortScanner", mock_class):
             await scan_ports.ainvoke(
                 {
                     "target": "192.168.1.1",
@@ -178,7 +178,7 @@ class TestScannerToolWrapping:
         mock_scanner.detect = AsyncMock(return_value=mock_result)
         mock_class = MagicMock(return_value=mock_scanner)
 
-        with patch("clearwing.scanning.ServiceScanner", mock_class):
+        with patch("nightwing.scanning.ServiceScanner", mock_class):
             await detect_services.ainvoke(
                 {
                     "target": "192.168.1.1",
@@ -193,7 +193,7 @@ class TestScannerToolWrapping:
         mock_scanner.detect = AsyncMock(return_value="Linux/Unix")
         mock_class = MagicMock(return_value=mock_scanner)
 
-        with patch("clearwing.scanning.OSScanner", mock_class):
+        with patch("nightwing.scanning.OSScanner", mock_class):
             await detect_os.ainvoke({"target": "192.168.1.1"})
             mock_scanner.detect.assert_called_once_with("192.168.1.1")
 
@@ -235,4 +235,4 @@ class TestReportingTools:
         }
         result = generate_report.invoke({"format": "text", "scan_data": scan_data})
         assert "192.168.1.1" in result
-        assert "CLEARWING SCAN REPORT" in result
+        assert "NIGHTWING SCAN REPORT" in result

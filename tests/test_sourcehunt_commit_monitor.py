@@ -14,7 +14,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from clearwing.sourcehunt.commit_monitor import (
+from nightwing.sourcehunt.commit_monitor import (
     CommitMonitor,
     CommitMonitorConfig,
     CommitScanResult,

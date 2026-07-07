@@ -14,12 +14,12 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from clearwing.sourcehunt.retro_hunt import (
+from nightwing.sourcehunt.retro_hunt import (
     RetroHunter,
     RetroHuntResult,
     fetch_patch_diff,
 )
-from clearwing.sourcehunt.semgrep_sidecar import SemgrepFinding
+from nightwing.sourcehunt.semgrep_sidecar import SemgrepFinding
 
 
 def _mock_llm(payload: dict) -> MagicMock:
@@ -164,7 +164,7 @@ class TestHuntEndToEnd:
         fake_sidecar = MagicMock()
         fake_sidecar.available = True
 
-        with patch("clearwing.sourcehunt.retro_hunt.SemgrepSidecar") as MockSidecar:
+        with patch("nightwing.sourcehunt.retro_hunt.SemgrepSidecar") as MockSidecar:
             mock_instance = MagicMock()
             mock_instance.run_scan.return_value = [
                 SemgrepFinding(
@@ -213,7 +213,7 @@ class TestHuntEndToEnd:
         fake_sidecar = MagicMock(available=False)
         fake_sidecar.run_scan = MagicMock(return_value=[])
 
-        with patch("clearwing.sourcehunt.retro_hunt.SemgrepSidecar") as MockSidecar:
+        with patch("nightwing.sourcehunt.retro_hunt.SemgrepSidecar") as MockSidecar:
             MockSidecar.return_value = fake_sidecar
             hunter = RetroHunter(llm=llm, sidecar=fake_sidecar)
             result = hunter.hunt(

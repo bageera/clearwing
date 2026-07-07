@@ -8,14 +8,14 @@ from __future__ import annotations
 
 import pytest
 
-from clearwing.analysis.source_analyzer import AnalyzerFinding as AnalysisFinding
-from clearwing.findings import (
+from nightwing.analysis.source_analyzer import AnalyzerFinding as AnalysisFinding
+from nightwing.findings import (
     Finding,
     from_analysis_finding,
     from_cicd_dict,
     to_cicd_dict,
 )
-from clearwing.findings.types import _coerce_severity
+from nightwing.findings.types import _coerce_severity
 
 # --- Finding dataclass ------------------------------------------------------
 

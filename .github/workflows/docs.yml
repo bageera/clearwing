@@ -6,14 +6,14 @@ on:
     paths:
       - docs/**
       - mkdocs.yml
-      - clearwing/**/*.py      # mkdocstrings regenerates on API changes
+      - nightwing/**/*.py      # mkdocstrings regenerates on API changes
       - .github/workflows/docs.yml
   pull_request:
     branches: [main]
     paths:
       - docs/**
       - mkdocs.yml
-      - clearwing/**/*.py
+      - nightwing/**/*.py
       - .github/workflows/docs.yml
   workflow_dispatch:
 

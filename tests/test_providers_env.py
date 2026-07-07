@@ -2,13 +2,13 @@
 
 Covers the `resolve_llm_endpoint` precedence rules, the
 `ProviderManager.for_endpoint` factory, and the env-var escape
-hatches that let users point Clearwing at OpenRouter, Ollama,
+hatches that let users point Nightwing at OpenRouter, Ollama,
 LM Studio, vLLM, or any OpenAI-compatible endpoint without
 editing config files.
 
 Structured around the precedence ladder:
     1. CLI flags          (highest)
-    2. CLEARWING_* env vars
+    2. NIGHTWING_* env vars
     3. config.yaml provider: section
     4. Anthropic default via ANTHROPIC_API_KEY  (lowest)
 """
@@ -17,8 +17,8 @@ from __future__ import annotations
 
 import pytest
 
-from clearwing.llm import ChatModel
-from clearwing.providers import (
+from nightwing.llm import ChatModel
+from nightwing.providers import (
     DEFAULT_ANTHROPIC_MODEL,
     ENV_ANTHROPIC_KEY,
     ENV_API_KEY,
@@ -70,7 +70,7 @@ class TestCLIPrecedence:
         assert ep.is_anthropic_direct
 
     def test_cli_beats_env(self, clean_env, monkeypatch):
-        # CLEARWING_* env vars set one endpoint, CLI another
+        # NIGHTWING_* env vars set one endpoint, CLI another
         monkeypatch.setenv(ENV_BASE_URL, "http://localhost:11434/v1")
         monkeypatch.setenv(ENV_API_KEY, "ollama")
         monkeypatch.setenv(ENV_MODEL, "llama3:70b")
@@ -85,7 +85,7 @@ class TestCLIPrecedence:
         assert ep.source == "cli"
 
 
-# --- Precedence: CLEARWING_* env vars win over config + default -----------
+# --- Precedence: NIGHTWING_* env vars win over config + default -----------
 
 
 class TestEnvPrecedence:
@@ -173,7 +173,7 @@ class TestConfigPrecedence:
         assert ep.api_key == "not-needed"
 
     def test_config_openai_oauth_routes_to_codex(self, clean_env, monkeypatch):
-        import clearwing.providers.openai_oauth as openai_oauth
+        import nightwing.providers.openai_oauth as openai_oauth
 
         monkeypatch.setattr(
             openai_oauth,

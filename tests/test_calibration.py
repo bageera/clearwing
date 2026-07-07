@@ -6,7 +6,7 @@ import tempfile
 import threading
 from pathlib import Path
 
-from clearwing.sourcehunt.calibration import CalibrationRecord, CalibrationStore
+from nightwing.sourcehunt.calibration import CalibrationRecord, CalibrationStore
 
 
 def _make_record(fid: str, sid: str = "s1") -> CalibrationRecord:

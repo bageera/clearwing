@@ -3,7 +3,7 @@ from __future__ import annotations
 import base64
 import json
 
-from clearwing.providers.openai_oauth import (
+from nightwing.providers.openai_oauth import (
     OPENAI_AUTH_JWT_CLAIM_PATH,
     build_authorize_url,
     credentials_from_value,

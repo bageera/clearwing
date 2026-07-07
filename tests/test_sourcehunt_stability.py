@@ -16,12 +16,12 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from clearwing.sourcehunt.stability import (
+from nightwing.sourcehunt.stability import (
     StabilityConfig,
     StabilityVerifier,
     apply_stability_result,
 )
-from clearwing.sourcehunt.state import StabilityResult
+from nightwing.sourcehunt.state import StabilityResult
 
 
 def _make_finding(**kwargs) -> dict:
@@ -437,13 +437,13 @@ class TestHardening:
 
 class TestRunnerIntegration:
     def test_stability_enabled_by_default(self):
-        from clearwing.sourcehunt.runner import SourceHuntRunner
+        from nightwing.sourcehunt.runner import SourceHuntRunner
 
         r = SourceHuntRunner(repo_url="test", depth="standard")
         assert r.enable_stability_verification is True
 
     def test_stability_disabled(self):
-        from clearwing.sourcehunt.runner import SourceHuntRunner
+        from nightwing.sourcehunt.runner import SourceHuntRunner
 
         r = SourceHuntRunner(
             repo_url="test",

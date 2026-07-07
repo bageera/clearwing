@@ -38,24 +38,24 @@ jobs:
           uv pip install --system -e '.[dev]'
 
       - name: Ruff check
-        run: ruff check clearwing/ tests/
+        run: ruff check nightwing/ tests/
 
       - name: Ruff format (check)
-        run: ruff format --check clearwing/ tests/
+        run: ruff format --check nightwing/ tests/
 
       - name: Mypy scoped gate
         run: |
           mypy --follow-imports=silent \
-            clearwing/findings \
-            clearwing/sourcehunt \
-            clearwing/capabilities.py \
-            clearwing/agent/tools \
-            clearwing/core
+            nightwing/findings \
+            nightwing/sourcehunt \
+            nightwing/capabilities.py \
+            nightwing/agent/tools \
+            nightwing/core
 
       - name: Run pytest with coverage
         run: |
           python -m pytest -q --strict-markers --strict-config \
-            --cov=clearwing --cov-report=term-missing --cov-report=xml
+            --cov=nightwing --cov-report=term-missing --cov-report=xml
 
       - name: Coverage report
         run: coverage report --fail-under=65

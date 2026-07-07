@@ -3,9 +3,9 @@ from contextlib import redirect_stdout
 
 import pytest
 
-from clearwing.exploitation.payloads.authorization import AuthorizationGate
-from clearwing.exploitation.payloads.obfuscator import PayloadObfuscator
-from clearwing.exploitation.payloads.watermark import Watermarker
+from nightwing.exploitation.payloads.authorization import AuthorizationGate
+from nightwing.exploitation.payloads.obfuscator import PayloadObfuscator
+from nightwing.exploitation.payloads.watermark import Watermarker
 
 
 def test_payload_obfuscation_requires_authorization():

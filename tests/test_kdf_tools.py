@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from unittest.mock import patch
 
-import clearwing.agent.tools.crypto.kdf_tools as kdf_mod
-from clearwing.agent.tools.crypto.kdf_tools import (
+import nightwing.agent.tools.crypto.kdf_tools as kdf_mod
+from nightwing.agent.tools.crypto.kdf_tools import (
     _format_duration,
     _normalize_algorithm,
     analyze_kdf_parameters,
@@ -250,7 +250,7 @@ class TestTest2skdImplementation:
 
         with (
             patch.object(kdf_mod, "interrupt", return_value=True),
-            patch("clearwing.agent.tools.crypto.srp_tools._http_post", mock_http_post),
+            patch("nightwing.agent.tools.crypto.srp_tools._http_post", mock_http_post),
         ):
             result = test_2skd_implementation.invoke(
                 {
@@ -278,7 +278,7 @@ class TestTest2skdImplementation:
 
         with (
             patch.object(kdf_mod, "interrupt", return_value=True),
-            patch("clearwing.agent.tools.crypto.srp_tools._http_post", mock_http_post),
+            patch("nightwing.agent.tools.crypto.srp_tools._http_post", mock_http_post),
         ):
             result = test_2skd_implementation.invoke(
                 {
@@ -312,7 +312,7 @@ class TestTest2skdImplementation:
 
         with (
             patch.object(kdf_mod, "interrupt", return_value=True),
-            patch("clearwing.agent.tools.crypto.srp_tools._http_post", mock_http_post),
+            patch("nightwing.agent.tools.crypto.srp_tools._http_post", mock_http_post),
         ):
             result = test_2skd_implementation.invoke(
                 {
@@ -369,8 +369,8 @@ class TestKdfOracleTest:
 
         with (
             patch.object(kdf_mod, "interrupt", return_value=True),
-            patch("clearwing.agent.tools.crypto.srp_tools._http_post", mock_http_post),
-            patch("clearwing.agent.tools.crypto.srp_tools._timed_post", mock_timed_post),
+            patch("nightwing.agent.tools.crypto.srp_tools._http_post", mock_http_post),
+            patch("nightwing.agent.tools.crypto.srp_tools._timed_post", mock_timed_post),
         ):
             result = kdf_oracle_test.invoke(
                 {
@@ -407,8 +407,8 @@ class TestKdfOracleTest:
 
         with (
             patch.object(kdf_mod, "interrupt", return_value=True),
-            patch("clearwing.agent.tools.crypto.srp_tools._http_post", mock_http_post),
-            patch("clearwing.agent.tools.crypto.srp_tools._timed_post", mock_timed_post),
+            patch("nightwing.agent.tools.crypto.srp_tools._http_post", mock_http_post),
+            patch("nightwing.agent.tools.crypto.srp_tools._timed_post", mock_timed_post),
         ):
             result = kdf_oracle_test.invoke(
                 {

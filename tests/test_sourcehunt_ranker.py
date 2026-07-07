@@ -19,8 +19,8 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from genai_pyo3 import ChatResponse
 
-from clearwing.sourcehunt.pool import assign_tier
-from clearwing.sourcehunt.ranker import (
+from nightwing.sourcehunt.pool import assign_tier
+from nightwing.sourcehunt.ranker import (
     RANKER_SYSTEM_PROMPT,
     Ranker,
     RankerConfig,

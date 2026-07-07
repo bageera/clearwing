@@ -18,7 +18,7 @@ so the suite is independent of prior state.
 
 from __future__ import annotations
 
-from clearwing.core.events import EventBus, EventType
+from nightwing.core.events import EventBus, EventType
 
 
 def _reset_bus() -> None:

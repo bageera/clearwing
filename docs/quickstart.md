@@ -3,8 +3,8 @@
 ## Install
 
 ```bash
-git clone https://github.com/Lazarus-AI/clearwing.git
-cd clearwing
+git clone https://github.com/Lazarus-AI/nightwing.git
+cd nightwing
 python3 -m venv venv
 source venv/bin/activate  # fish: source venv/bin/activate.fish
 pip install -e '.[dev]'
@@ -19,7 +19,7 @@ and reproduces the locked environment exactly.
 
 ## Configure credentials
 
-Clearwing talks to Anthropic by default. Either export the API key:
+Nightwing talks to Anthropic by default. Either export the API key:
 
 ```bash
 export ANTHROPIC_API_KEY=sk-ant-...
@@ -30,19 +30,19 @@ vLLM, Together, Groq, DeepSeek, OpenAI, ...):
 
 ```bash
 # Per-command
-clearwing interactive \
+nightwing interactive \
     --base-url https://openrouter.ai/api/v1 \
     --api-key "$OPENROUTER_API_KEY" \
     --model anthropic/claude-opus-4
 
 # Per-session
-export CLEARWING_BASE_URL=https://openrouter.ai/api/v1
-export CLEARWING_API_KEY=$OPENROUTER_API_KEY
-export CLEARWING_MODEL=anthropic/claude-opus-4
-clearwing interactive
+export NIGHTWING_BASE_URL=https://openrouter.ai/api/v1
+export NIGHTWING_API_KEY=$OPENROUTER_API_KEY
+export NIGHTWING_MODEL=anthropic/claude-opus-4
+nightwing interactive
 
 # Persistent
-clearwing config --set-provider \
+nightwing config --set-provider \
     base_url=http://localhost:11434/v1 \
     api_key=ollama \
     model=qwen2.5-coder:32b
@@ -58,54 +58,54 @@ The simplest operation — scan a single host for open ports, services,
 and known vulnerabilities:
 
 ```bash
-clearwing scan 192.168.1.10
+nightwing scan 192.168.1.10
 ```
 
 Scan a specific port range with service detection:
 
 ```bash
-clearwing scan 192.168.1.10 -p 22,80,443,8080 --detect-services
+nightwing scan 192.168.1.10 -p 22,80,443,8080 --detect-services
 ```
 
 Scan a whole CIDR in parallel:
 
 ```bash
-clearwing parallel 192.168.1.0/24 --max-concurrent 10
+nightwing parallel 192.168.1.0/24 --max-concurrent 10
 ```
 
-Results are persisted to a SQLite DB at `~/.clearwing/clearwing.db`.
+Results are persisted to a SQLite DB at `~/.nightwing/nightwing.db`.
 View history:
 
 ```bash
-clearwing history
-clearwing report --session <session_id>
+nightwing history
+nightwing report --session <session_id>
 ```
 
 ## Run a source-hunt pass
 
-Point Clearwing at a cloned repo or a git URL. The hunter will
+Point Nightwing at a cloned repo or a git URL. The hunter will
 clone, rank, and analyze files according to the attack-surface
 ladder (see [architecture](architecture.md) for how ranking works).
 
 ```bash
 # Quick pass — static analysis + regex patterns, no LLM, free
-clearwing sourcehunt /path/to/repo --depth quick
+nightwing sourcehunt /path/to/repo --depth quick
 
 # Standard pass — sandboxed LLM hunters, adversarial verifier,
 # variant loop, mechanism memory, taint analysis. Default.
-clearwing sourcehunt https://github.com/example/project \
+nightwing sourcehunt https://github.com/example/project \
     --depth standard
 
 # Deep pass — adds crash-first harness generation (libFuzzer)
 # and auto-patch validation (recompile + rerun PoC). The most
 # rigorous mode; expects real build deps in the sandbox.
-clearwing sourcehunt /path/to/repo \
+nightwing sourcehunt /path/to/repo \
     --depth deep --max-parallel 8 \
     --auto-patch
 ```
 
 Output lives in `./results/sourcehunt/<session_id>/` (dev checkout) or
-`~/.clearwing/results/sourcehunt/<session_id>/` (PyPI install) — SARIF for
+`~/.nightwing/results/sourcehunt/<session_id>/` (PyPI install) — SARIF for
 IDE integration, markdown for humans, JSON for programmatic consumers.
 
 ## Interactive agent
@@ -113,7 +113,7 @@ IDE integration, markdown for humans, JSON for programmatic consumers.
 Start a ReAct-loop chat session with the full tool set:
 
 ```bash
-clearwing interactive
+nightwing interactive
 ```
 
 The agent will plan, call tools (which may pause for human approval
@@ -121,8 +121,8 @@ for anything destructive), and converge on a summary. Sessions are
 persisted; resume with:
 
 ```bash
-clearwing sessions                 # list
-clearwing interactive --resume <session_id>
+nightwing sessions                 # list
+nightwing interactive --resume <session_id>
 ```
 
 ## Run the tests

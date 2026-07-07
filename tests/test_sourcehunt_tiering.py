@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import pytest
 
-from clearwing.sourcehunt.pool import TierBudget, assign_tier
+from nightwing.sourcehunt.pool import TierBudget, assign_tier
 
 
 def _ft(surface: int, influence: int, reach: int = 3) -> dict:

@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from clearwing.agent.tools.recon.webcrypto_hooks import (
+from nightwing.agent.tools.recon.webcrypto_hooks import (
     _SUBTLE_METHODS,
     _WEBCRYPTO_INSTRUMENT_JS,
     CryptoLog,
@@ -193,10 +193,10 @@ class TestJSPayload:
         assert len(_WEBCRYPTO_INSTRUMENT_JS) > 100
 
     def test_payload_contains_guard(self):
-        assert "__clearwing_crypto_installed" in _WEBCRYPTO_INSTRUMENT_JS
+        assert "__nightwing_crypto_installed" in _WEBCRYPTO_INSTRUMENT_JS
 
     def test_payload_contains_flush(self):
-        assert "__clearwing_crypto_flush" in _WEBCRYPTO_INSTRUMENT_JS
+        assert "__nightwing_crypto_flush" in _WEBCRYPTO_INSTRUMENT_JS
 
     def test_payload_hooks_all_methods(self):
         for method in _SUBTLE_METHODS:
@@ -227,4 +227,4 @@ class TestClearLogWithoutHooks:
 
 
 # We need this import for the install test
-from clearwing.agent.tools.recon.webcrypto_hooks import install_webcrypto_hooks  # noqa: E402
+from nightwing.agent.tools.recon.webcrypto_hooks import install_webcrypto_hooks  # noqa: E402

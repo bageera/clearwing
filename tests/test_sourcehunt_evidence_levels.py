@@ -6,7 +6,7 @@ pipeline. These tests pin down the ordering and the budget-gate filter.
 
 from __future__ import annotations
 
-from clearwing.sourcehunt.state import (
+from nightwing.sourcehunt.state import (
     EVIDENCE_LEVELS,
     evidence_at_or_above,
     evidence_compare,

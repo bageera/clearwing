@@ -5,8 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from unittest.mock import patch
 
-import clearwing.agent.tools.recon.session_tools as sess_mod
-from clearwing.agent.tools.recon.session_tools import (
+import nightwing.agent.tools.recon.session_tools as sess_mod
+from nightwing.agent.tools.recon.session_tools import (
     extract_session_tokens,
     get_session_tools,
     replay_with_mutations,
@@ -29,7 +29,7 @@ class FakeProxyHistory:
 
 class TestExtractSessionTokens:
     def _patch_history(self, fake):
-        return patch("clearwing.agent.tools.recon.proxy_tools._proxy_history", fake)
+        return patch("nightwing.agent.tools.recon.proxy_tools._proxy_history", fake)
 
     def test_empty_history(self):
         fake = FakeProxyHistory()

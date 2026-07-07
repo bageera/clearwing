@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from clearwing.scanning import OSScanner, PortScanner, ServiceScanner, VulnerabilityScanner
+from nightwing.scanning import OSScanner, PortScanner, ServiceScanner, VulnerabilityScanner
 
 
 class TestPortScanner:
@@ -45,7 +45,7 @@ class TestPortScanner:
             pytest.skip("raw-socket privilege check is Unix-only")
         monkeypatch.setattr(os, "geteuid", lambda: 1000)
 
-        with caplog.at_level(logging.WARNING, logger="clearwing.scanning.port_scanner"):
+        with caplog.at_level(logging.WARNING, logger="nightwing.scanning.port_scanner"):
             # Scan a single closed port on localhost so we exit fast
             # regardless of whether scapy actually fires a packet.
             await scanner.scan("127.0.0.1", [1], scan_type="syn")
@@ -64,7 +64,7 @@ class TestPortScanner:
             pytest.skip("raw-socket privilege check is Unix-only")
         monkeypatch.setattr(os, "geteuid", lambda: 1000)
 
-        with caplog.at_level(logging.WARNING, logger="clearwing.scanning.port_scanner"):
+        with caplog.at_level(logging.WARNING, logger="nightwing.scanning.port_scanner"):
             await scanner.scan("127.0.0.1", [1], scan_type="connect")
 
         assert not [
@@ -134,8 +134,8 @@ class TestVulnerabilityScanner:
         aiohttp emits an `Unclosed client session` warning at interpreter
         teardown.
         """
-        from clearwing.core.config import ScanConfig
-        from clearwing.core.engine import CoreEngine, ScanResult
+        from nightwing.core.config import ScanConfig
+        from nightwing.core.engine import CoreEngine, ScanResult
 
         engine = CoreEngine()
         engine.scan_result = ScanResult(target="127.0.0.1")
@@ -146,7 +146,7 @@ class TestVulnerabilityScanner:
         fake_scanner.close = AsyncMock()
 
         with (
-            patch("clearwing.core.engine.VulnerabilityScanner", return_value=fake_scanner),
+            patch("nightwing.core.engine.VulnerabilityScanner", return_value=fake_scanner),
             pytest.raises(RuntimeError, match="simulated NVD failure"),
         ):
             await engine._vulnerability_scan("127.0.0.1", ScanConfig(target="127.0.0.1"))

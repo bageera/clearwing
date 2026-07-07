@@ -13,12 +13,12 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
-from clearwing.agent.tools.hunt import (
+from nightwing.agent.tools.hunt import (
     HunterContext,
     _default_libfuzzer_template,
     build_hunter_tools,
 )
-from clearwing.sandbox.container import ExecResult
+from nightwing.sandbox.container import ExecResult
 
 
 class _FakeSandbox:

@@ -7,8 +7,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-import clearwing.agent.tools.scan.tls_tools as tls_mod
-from clearwing.agent.tools.scan.tls_tools import (
+import nightwing.agent.tools.scan.tls_tools as tls_mod
+from nightwing.agent.tools.scan.tls_tools import (
     _classify_cipher,
     _days_remaining,
     _decode_oid,

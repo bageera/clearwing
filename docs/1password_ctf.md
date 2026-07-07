@@ -1,4 +1,4 @@
-# 1Password $1M CTF — Clearwing Runbook
+# 1Password $1M CTF — Nightwing Runbook
 
 ## 1. CTF Goals
 
@@ -41,7 +41,7 @@ acknowledges weaknesses in several of these layers. Those are the most
 productive starting points.
 
 
-## 2. Clearwing Toolchain
+## 2. Nightwing Toolchain
 
 All tools referenced in the runbook below. Organized by attack domain.
 
@@ -148,7 +148,7 @@ All tools referenced in the runbook below. Organized by attack domain.
 
 ### 2.10 Crypto Skill Pack
 
-Pre-built attack methodology playbooks in `clearwing/core/skills/crypto/`:
+Pre-built attack methodology playbooks in `nightwing/core/skills/crypto/`:
 
 | Skill | Coverage |
 |-------|----------|

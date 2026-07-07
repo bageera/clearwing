@@ -2,11 +2,11 @@
 
 ## Summary
 
-I have successfully implemented comprehensive improvements to the Clearwing OSINT capabilities as requested. All five improvement areas have been addressed with working code:
+I have successfully implemented comprehensive improvements to the Nightwing OSINT capabilities as requested. All five improvement areas have been addressed with working code:
 
 ## 1. Enhanced Data Management (recon_store.py)
 
-**File**: `/Users/jonbethea/projects/blacktech/clearwing/clearwing/data/database/recon_store.py`
+**File**: `/Users/jonbethea/projects/blacktech/nightwing/nightwing/data/database/recon_store.py`
 
 Enhanced the ReconStore class with powerful aggregation and analysis capabilities:
 - `get_combined_recon_results()`: Consolidates findings from all tools for a target
@@ -17,7 +17,7 @@ Enhanced the ReconStore class with powerful aggregation and analysis capabilitie
 
 ## 2. Automated Workflows (osint_workflow.py)
 
-**File**: `/Users/jonbethea/projects/blacktech/clearwing/clearwing/workflows/osint_workflow.py`
+**File**: `/Users/jonbethea/projects/blacktech/nightwing/nightwing/workflows/osint_workflow.py`
 
 Created comprehensive orchestration workflows:
 - `run_complete_domain_recon()`: Executes full spectrum reconnaissance
@@ -27,7 +27,7 @@ Created comprehensive orchestration workflows:
 
 ## 3. Enhanced Parsing Capabilities (output_parsers.py)
 
-**File**: `/Users/jonbethea/projects/blacktech/clearwing/clearwing/utils/output_parsers.py`
+**File**: `/Users/jonbethea/projects/blacktech/nightwing/nightwing/utils/output_parsers.py`
 
 Extended parsing support for additional tools and formats:
 - `parse_github_json()`: Handles GitHub API responses
@@ -38,7 +38,7 @@ Extended parsing support for additional tools and formats:
 
 ## 4. Intelligence Correlation (correlation.py)
 
-**File**: `/Users/jonbethea/projects/blacktech/clearwing/clearwing/intel/correlation.py`
+**File**: `/Users/jonbethea/projects/blacktech/nightwing/nightwing/intel/correlation.py`
 
 Implemented sophisticated correlation engine:
 - `IntelCorrelator` class: Central correlation framework
@@ -51,7 +51,7 @@ Implemented sophisticated correlation engine:
 
 ### Enhanced Container Tools (osint_recon_tools.py)
 
-**File**: `/Users/jonbethea/projects/blacktech/clearwing/clearwing/agent/tools/scan/osint_recon_tools.py`
+**File**: `/Users/jonbethea/projects/blacktech/nightwing/nightwing/agent/tools/scan/osint_recon_tools.py`
 
 Added new container-based tools:
 - `run_httpx()`: HTTP probing and fingerprinting
@@ -59,7 +59,7 @@ Added new container-based tools:
 
 ### Native Python Implementations (shodan_tools.py)
 
-**File**: `/Users/jonbethea/projects/blacktech/clearwing/clearwing/native/shodan_tools.py`
+**File**: `/Users/jonbethea/projects/blacktech/nightwing/nightwing/native/shodan_tools.py`
 
 Created native Shodan API integration:
 - `query_shodan()`: General Shodan search queries
@@ -69,8 +69,8 @@ Created native Shodan API integration:
 
 ## Documentation and Testing
 
-- **Documentation**: `/Users/jonbethea/projects/blacktech/clearwing/docs/osint_improvements.md`
-- **Test Script**: `/Users/jonbethea/projects/blacktech/clearwing/tests/test_osint_improvements.py`
+- **Documentation**: `/Users/jonbethea/projects/blacktech/nightwing/docs/osint_improvements.md`
+- **Test Script**: `/Users/jonbethea/projects/blacktech/nightwing/tests/test_osint_improvements.py`
 
 ## Integration Benefits
 

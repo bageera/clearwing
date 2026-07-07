@@ -4,28 +4,28 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
 
-from clearwing.sourcehunt.callgraph import CallGraph, FunctionInfo
-from clearwing.sourcehunt.entry_points import (
+from nightwing.sourcehunt.callgraph import CallGraph, FunctionInfo
+from nightwing.sourcehunt.entry_points import (
     MAX_ENTRY_POINTS_PER_FILE,
     EntryPoint,
     _classify_function,
     extract_entry_points,
     extract_entry_points_batch,
 )
-from clearwing.sourcehunt.pool import (
+from nightwing.sourcehunt.pool import (
     HunterPool,
     HuntPoolConfig,
     _file_rank,
     _redundancy_for_rank,
 )
-from clearwing.sourcehunt.seed_corpus import (
+from nightwing.sourcehunt.seed_corpus import (
     MAX_ENTRIES_PER_FILE,
     SeedCorpusEntry,
     _extract_git_cve_history,
     format_seed_context,
     ingest_seed_corpus,
 )
-from clearwing.sourcehunt.state import FileTarget
+from nightwing.sourcehunt.state import FileTarget
 
 # --- Helpers ------------------------------------------------------------------
 
@@ -452,7 +452,7 @@ class TestWorkItemExpansion:
 
 class TestPromptBlocks:
     def test_entry_point_focus_in_prompt(self):
-        from clearwing.sourcehunt.hunter import _build_unconstrained_prompt
+        from nightwing.sourcehunt.hunter import _build_unconstrained_prompt
 
         ft = _make_file_target(path="src/parser.c")
         ep = EntryPoint("src/parser.c", "parse_header", 10, 50, "protocol_parser", "parses")
@@ -468,14 +468,14 @@ class TestPromptBlocks:
         assert "protocol_parser" in prompt
 
     def test_no_entry_point_no_focus_block(self):
-        from clearwing.sourcehunt.hunter import _build_unconstrained_prompt
+        from nightwing.sourcehunt.hunter import _build_unconstrained_prompt
 
         ft = _make_file_target(path="src/parser.c")
         prompt = _build_unconstrained_prompt(ft, "testproject", None, None)
         assert "Your starting point is the function" not in prompt
 
     def test_seed_corpus_block_in_prompt(self):
-        from clearwing.sourcehunt.hunter import _build_unconstrained_prompt
+        from nightwing.sourcehunt.hunter import _build_unconstrained_prompt
 
         ft = _make_file_target(path="src/parser.c")
         prompt = _build_unconstrained_prompt(
@@ -489,14 +489,14 @@ class TestPromptBlocks:
         assert "Prior crash/CVE history" in prompt
 
     def test_no_seed_context_no_block(self):
-        from clearwing.sourcehunt.hunter import _build_unconstrained_prompt
+        from nightwing.sourcehunt.hunter import _build_unconstrained_prompt
 
         ft = _make_file_target(path="src/parser.c")
         prompt = _build_unconstrained_prompt(ft, "testproject", None, None)
         assert "Prior crash/CVE history" not in prompt
 
     def test_deep_agent_prompt_with_entry_point(self):
-        from clearwing.sourcehunt.hunter import _build_deep_agent_prompt
+        from nightwing.sourcehunt.hunter import _build_deep_agent_prompt
 
         ft = _make_file_target(path="src/parser.c", tags=["parser"])
         ep = EntryPoint("src/parser.c", "decode_frame", 20, 80, "protocol_parser", "parses")
@@ -513,7 +513,7 @@ class TestPromptBlocks:
         assert "CVE-2024-99999" in prompt
 
     def test_build_hunter_agent_with_entry_point(self):
-        from clearwing.sourcehunt.hunter import build_hunter_agent
+        from nightwing.sourcehunt.hunter import build_hunter_agent
 
         ft = _make_file_target(path="src/parser.c")
         ep = EntryPoint("src/parser.c", "parse_header", 10, 50, "protocol_parser", "parses")

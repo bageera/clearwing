@@ -3,7 +3,7 @@
 This file captures the hand-curated `CHANGELOG.md` entries from the
 period leading up to and just after the 1.0.0 tag. It is **frozen**:
 release notes for everything after this point are the auto-generated
-[GitHub Releases](https://github.com/Lazarus-AI/clearwing/releases),
+[GitHub Releases](https://github.com/Lazarus-AI/nightwing/releases),
 grouped by PR label via `.github/release.yml`.
 
 The `[Unreleased]` section below is a snapshot of what had accumulated
@@ -66,7 +66,7 @@ Format of the archive: [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.
 ### Added
 
 - **`tests/test_event_bus.py`** — coverage backfill for the
-  `clearwing.core.events.EventBus` introduced by dd5f093: pins down
+  `nightwing.core.events.EventBus` introduced by dd5f093: pins down
   emission ordering (single and multi-subscriber), late-subscriber
   semantics (no historical backfill — the bus is live pub/sub, not a
   replay log), and subscriber exception resilience (a raising handler,
@@ -83,20 +83,20 @@ Format of the archive: [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.
   `disclosure_update`, `benchmark_progress`, `eval_progress`) plus
   the inline `started` / streaming-`agent_message` / inline-`error`
   frames produced by the handler itself.
-- **`clearwing setup` / `clearwing init`** — interactive provider
+- **`nightwing setup` / `nightwing init`** — interactive provider
   wizard. Menu-driven selection from 10 backends (Anthropic,
   OpenRouter, Ollama, LM Studio, OpenAI, Together, Groq, Fireworks,
   DeepSeek, custom OpenAI-compatible), per-provider credential
   prompts with `${ENV_VAR}` reference support (so secrets don't land
   in the file), optional live test-invoke before writing, and
-  persistence to `~/.clearwing/config.yaml`. `--provider KEY` skips
+  persistence to `~/.nightwing/config.yaml`. `--provider KEY` skips
   the menu for scripted use; `-y` skips confirmations; `--no-test`
   skips the live test. `init` is a dispatcher alias for the same
   command.
-- **`clearwing doctor`** — environment health check. Runs ~25
-  probes across: Python version (`>=3.10`), clearwing version,
+- **`nightwing doctor`** — environment health check. Runs ~25
+  probes across: Python version (`>=3.10`), nightwing version,
   LLM provider resolution + optional live test-invoke, filesystem
-  (`~/.clearwing/` writable, `config.yaml` valid YAML, log file
+  (`~/.nightwing/` writable, `config.yaml` valid YAML, log file
   writable), Docker daemon reachability, external CLI tools (git,
   ripgrep, gh, gdb, strace), optional Python extras (langchain-ollama,
   langchain-google-genai, playwright, sentence-transformers, fastapi,
@@ -104,14 +104,14 @@ Format of the archive: [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.
   configured LLM endpoint. Per-section Rich tables with green/yellow/
   red glyphs and actionable hints. `--json` emits machine-readable
   output for CI use. Exit 0 on ok/warn, 1 on any err.
-- **`clearwing/providers/catalog.py`** — shared `ProviderPreset`
+- **`nightwing/providers/catalog.py`** — shared `ProviderPreset`
   dataclass + `PROVIDER_PRESETS` tuple listing every known backend
   with its base URL, default model, docs URL, and env-var convention.
   Consumed by both the setup wizard and the doctor command so
   adding a new provider means one catalog entry.
 - **Subcommand alias mechanism** — command modules can declare an
   `ALIASES: tuple[str, ...]` to route extra names through the same
-  handler (e.g. `clearwing init` dispatches to `setup`).
+  handler (e.g. `nightwing init` dispatches to `setup`).
 - **`tests/test_setup_and_doctor.py`** — 27 tests across 10 classes
   covering catalog completeness, secret-masking, YAML write merging
   (preserves unrelated sections, doesn't bloat with default ports),
@@ -120,7 +120,7 @@ Format of the archive: [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.
   vars), and the doctor handle()'s exit-code logic (err → 1,
   ok/warn → 0).
 
-- **Multi-provider LLM support**. Clearwing now talks to any
+- **Multi-provider LLM support**. Nightwing now talks to any
   OpenAI-compatible endpoint — OpenRouter, Ollama (`/v1`),
   LM Studio, vLLM, Together, Groq, Fireworks, DeepSeek, OpenAI
   direct — in addition to the original Anthropic-direct path.
@@ -130,15 +130,15 @@ Format of the archive: [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.
   is identical across the tool.
 - **Three ways to configure the provider**, with clear precedence:
   1. CLI flags: `--base-url`, `--api-key`, `--model`
-  2. Env vars: `CLEARWING_BASE_URL`, `CLEARWING_API_KEY`, `CLEARWING_MODEL`
-  3. Config file: `~/.clearwing/config.yaml` `provider:` section
+  2. Env vars: `NIGHTWING_BASE_URL`, `NIGHTWING_API_KEY`, `NIGHTWING_MODEL`
+  3. Config file: `~/.nightwing/config.yaml` `provider:` section
   4. Default: Anthropic direct via `ANTHROPIC_API_KEY`
-- **`clearwing config --set-provider`** — one-line provider setup
-  that persists to `~/.clearwing/config.yaml` without editing YAML
+- **`nightwing config --set-provider`** — one-line provider setup
+  that persists to `~/.nightwing/config.yaml` without editing YAML
   by hand. Accepts `base_url=...`, `api_key=...`, `model=...`
   pairs. Supports `${ENV_VAR}` interpolation for the api_key so
   secrets stay out of the file.
-- **`clearwing config --show-provider`** — prints the effective
+- **`nightwing config --show-provider`** — prints the effective
   resolved endpoint (model / base_url / source) for debugging why a
   particular backend was chosen.
 - **`docs/providers.md`** — copy-paste snippets for every supported
@@ -153,14 +153,14 @@ Format of the archive: [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.
   YAML `providers:` + `routes:` + `task_models:` section and builds
   the multi-endpoint routing the plan's §Provider routing section
   describes.
-- **`clearwing --version`** / **`-V`** flag (was missing — just
-  `clearwing --help` existed).
+- **`nightwing --version`** / **`-V`** flag (was missing — just
+  `nightwing --help` existed).
 - **`[ollama]` optional-dependencies extra** — `pip install
-  clearwing[ollama]` adds `langchain-ollama` for the native Ollama
+  nightwing[ollama]` adds `langchain-ollama` for the native Ollama
   transport (the OpenAI-compat endpoint at `http://localhost:11434/v1`
   works out of the box without this).
 - **`[google]` optional-dependencies extra** — `pip install
-  clearwing[google]` adds `langchain-google-genai` for Gemini.
+  nightwing[google]` adds `langchain-google-genai` for Gemini.
 - **`tests/test_providers_env.py`** — 32 tests covering the CLI/env/
   config/default precedence ladder, default-model guessing from
   known hosts, api_key placeholder behavior, `LLMEndpoint` helper
@@ -171,16 +171,16 @@ Format of the archive: [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.
   internal `EventBus` now publishes structured progress/stage events
   from the long-running pipelines so user-facing surfaces can render
   live updates without polling or parsing stdout. Wired emitters:
-  sourcehunt pool worker progress (`clearwing/sourcehunt/pool.py`),
-  sourcehunt stage transitions (`clearwing/sourcehunt/runner.py`),
-  sourcehunt campaign progress (`clearwing/sourcehunt/campaign.py`),
-  sourcehunt validator results (`clearwing/sourcehunt/validator.py`),
-  disclosure state updates (`clearwing/ui/commands/disclose.py`),
-  ossfuzz bench progress (`clearwing/bench/ossfuzz.py`), and eval
-  preprocessing progress (`clearwing/eval/preprocessing.py`).
+  sourcehunt pool worker progress (`nightwing/sourcehunt/pool.py`),
+  sourcehunt stage transitions (`nightwing/sourcehunt/runner.py`),
+  sourcehunt campaign progress (`nightwing/sourcehunt/campaign.py`),
+  sourcehunt validator results (`nightwing/sourcehunt/validator.py`),
+  disclosure state updates (`nightwing/ui/commands/disclose.py`),
+  ossfuzz bench progress (`nightwing/bench/ossfuzz.py`), and eval
+  preprocessing progress (`nightwing/eval/preprocessing.py`).
   Consumers: the TUI streaming-parser subscription
-  (`clearwing/ui/tui/streaming_parser.py`, `clearwing/ui/tui/app.py`)
-  and the web UI WebSocket bridge (`clearwing/ui/web/app.py`). Scope
+  (`nightwing/ui/tui/streaming_parser.py`, `nightwing/ui/tui/app.py`)
+  and the web UI WebSocket bridge (`nightwing/ui/web/app.py`). Scope
   note: this is not yet wired into `CoreEngine` (still uses the
   legacy `_trigger_callback` pattern) or the network-scan, vuln-scan,
   exploiter, patcher, ranker, or verifier paths — those continue to
@@ -188,10 +188,10 @@ Format of the archive: [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.
 
 ### Fixed
 
-- **`clearwing scan` returned 0 open ports for unprivileged users**.
+- **`nightwing scan` returned 0 open ports for unprivileged users**.
   `ScanConfig.scan_type` defaulted to `"syn"`, which routed every
   probe through scapy's raw-socket SYN scan in
-  `clearwing/scanning/port_scanner.py`. Without root (or `CAP_NET_RAW`)
+  `nightwing/scanning/port_scanner.py`. Without root (or `CAP_NET_RAW`)
   scapy silently dropped every packet ("No route found for IPv4
   destination ...") and the report showed a blank port list in
   ~80 ms even when the target had ports open. Default is now
@@ -233,10 +233,10 @@ Format of the archive: [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.
   `Path(...).as_posix()` so all file-keyed dict lookups
   (e.g. `semgrep_hints_by_file[rel_path]`) match on Windows instead of
   silently orphaning hints. Extends PR #18.
-- **`clearwing config --set-provider` config.yaml bloat regression**.
+- **`nightwing config --set-provider` config.yaml bloat regression**.
   The prior `cli.config.save()` path dumped the full merged default
   config (including the 1024-port scanning defaults) into
-  `~/.clearwing/config.yaml`, ballooning the file to ~1000 lines for
+  `~/.nightwing/config.yaml`, ballooning the file to ~1000 lines for
   a 3-key write. Both `setup` and `config --set-provider` now read
   the existing YAML, merge in the `provider:` section, and write
   back — preserving unrelated sections untouched and keeping the
@@ -250,7 +250,7 @@ Format of the archive: [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.
   the previous OpenAI-compat path that required in-band
   `<think>...</think>` tag stripping in every response handler.
 - **`ScanConfig.scan_type` default flipped from `"syn"` to `"connect"`**
-  (BREAKING for callers that relied on the old default). `clearwing scan`
+  (BREAKING for callers that relied on the old default). `nightwing scan`
   now works out of the box for unprivileged users — the TCP-connect
   scanner doesn't need raw-socket capability, so you no longer get an
   empty "0 open ports" report when running without `sudo` /
@@ -263,40 +263,40 @@ Format of the archive: [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.
   defaults the connect-timeout to 30 s. Before this bump, every
   runtime call through genai-pyo3 was vulnerable to an indefinite
   hang on a stalled TLS handshake, unresponsive proxy, or transient
-  mid-request drop — `clearwing doctor` was the most visible
+  mid-request drop — `nightwing doctor` was the most visible
   symptom but every sourcehunt / ranker / hunter call had the same
   exposure.
-- **`clearwing doctor` — removed the `ThreadPoolExecutor` wrapper
+- **`nightwing doctor` — removed the `ThreadPoolExecutor` wrapper
   around `_invoke_test`**. The 30 s timeout it enforced is now a
   library-level concern handled by genai-pyo3's default
   `connect_timeout`, so the worker-thread + `FuturesTimeout`
   plumbing (and the associated thread-leak-on-timeout behavior)
   is no longer needed. Doctor returns to a simple try / except
   around `llm.invoke`.
-- **`clearwing doctor` external-tool probe is now host-OS aware**: on
+- **`nightwing doctor` external-tool probe is now host-OS aware**: on
   macOS it checks for `dtruss` (the DTrace-based syscall tracer that
   ships with the OS) instead of `strace`, which is Linux-only. The
   Linux sandbox container still ships `strace` unchanged; this only
   removes the spurious "strace not on PATH" warning on Darwin hosts.
 - **`langchain-openai` is now a runtime dependency**, not a lazy
   `try/except ImportError` import. Every OpenAI-compatible endpoint
-  works out of the box after `pip install clearwing` — no extra
+  works out of the box after `pip install nightwing` — no extra
   install needed for OpenRouter / Ollama / LM Studio / vLLM.
-- **`clearwing sourcehunt` gains `--base-url` and `--api-key` flags**
+- **`nightwing sourcehunt` gains `--base-url` and `--api-key` flags**
   and threads them through to `SourceHuntRunner` via the new
   `ProviderManager.for_endpoint()` path. Previously sourcehunt was
   hardcoded to Anthropic.
-- **`clearwing interactive` preflight** — "no ANTHROPIC_API_KEY"
+- **`nightwing interactive` preflight** — "no ANTHROPIC_API_KEY"
   error message now lists all three credential sources (env var,
-  CLEARWING_* triple, CLI flags) and points at `docs/providers.md`.
-- **`~/.clearwing/config.yaml`** is auto-discovered on `Config()`
+  NIGHTWING_* triple, CLI flags) and points at `docs/providers.md`.
+- **`~/.nightwing/config.yaml`** is auto-discovered on `Config()`
   construction. Previously only explicit `Config(path)` worked.
 - **README install block** documents the full provider matrix
   alongside the `pip install git+...@v1.0.0` tagged-release path.
 
 ## [1.0.0] — 2026-04-14
 
-First tagged release under the `clearwing` name. Covers the full
+First tagged release under the `nightwing` name. Covers the full
 Phase 0–6 refactor that took the project from "works on my machine"
 to a shippable release: rebrand from `vulnexploit`, shim demolition,
 Finding-type unification, tools reorganization, graph hardening, full
@@ -307,7 +307,7 @@ CI gate, release-hygiene scaffolding, and MkDocs documentation site.
 - **Release hygiene scaffolding**: `SECURITY.md` responsible-disclosure
   policy, `CONTRIBUTING.md` dev-setup and PR-checklist guide,
   `CHANGELOG.md` (this file), `py.typed` PEP 561 marker so downstream
-  consumers get Clearwing's type information, `dependabot.yml` for
+  consumers get Nightwing's type information, `dependabot.yml` for
   pip + GitHub Actions (grouped weekly updates), `.github/ISSUE_TEMPLATE/`
   bug and feature templates with security-lane routing.
 - **Docs site** (MkDocs Material): `docs/index.md`, `docs/quickstart.md`,
@@ -320,10 +320,10 @@ CI gate, release-hygiene scaffolding, and MkDocs documentation site.
 - **`Makefile`** with `test / lint / type / build / clean / install-dev /
   gate / all / docs / docs-serve` targets that mirror the CI gate
   exactly. `make gate` is the local mirror.
-- **`clearwing/capabilities.py`** — runtime detection of optional
+- **`nightwing/capabilities.py`** — runtime detection of optional
   subsystems (guardrails, memory, telemetry, events, audit, knowledge)
   exposed as a `capabilities.has(name)` API. Replaces six
-  `try/except ImportError` blocks in `clearwing/agent/graph.py`.
+  `try/except ImportError` blocks in `nightwing/agent/graph.py`.
 - **`tests/test_tool_registry.py`** — snapshot test locking
   `get_all_tools()` at 63 tools with stable names and no duplicates,
   so tool reorgs can't silently drop coverage.
@@ -332,29 +332,29 @@ CI gate, release-hygiene scaffolding, and MkDocs documentation site.
 
 ### Changed
 
-- **Package rebranded** from `vulnexploit` to `clearwing`. The
+- **Package rebranded** from `vulnexploit` to `nightwing`. The
   on-disk package, PyPI name, CLI command, logger names, DB/log
   file names, config paths, and GitHub repo URL all flipped in one
   atomic commit. Existing `~/.vulnexploit/` state on user machines
-  will NOT carry over — Clearwing reads from `~/.clearwing/` and
+  will NOT carry over — Nightwing reads from `~/.nightwing/` and
   treats the old path as absent. Back up first if you need the old
   state. The new canonical remote is
-  `git@github.com:Lazarus-AI/clearwing.git`.
+  `git@github.com:Lazarus-AI/nightwing.git`.
 - **Finding types unified**. The sourcehunt `SourceFinding` TypedDict
-  is gone, replaced by the `clearwing.findings.Finding` dataclass
+  is gone, replaced by the `nightwing.findings.Finding` dataclass
   used across network and source-hunt pipelines. Two unrelated
   `Finding` classes renamed to eliminate the collision:
-  `clearwing/analysis/source_analyzer.py::Finding` → `AnalyzerFinding`,
-  `clearwing/safety/scoring/dedup.py::Finding` → `DedupRecord`. A
+  `nightwing/analysis/source_analyzer.py::Finding` → `AnalyzerFinding`,
+  `nightwing/safety/scoring/dedup.py::Finding` → `DedupRecord`. A
   transitional dict-style access shim on the `Finding` dataclass
   (`__getitem__`, `__setitem__`, `get()`, `__contains__`) keeps test
   fixtures that use dict literals working.
-- **`clearwing/agent/tools/`** reorganized into seven domain
+- **`nightwing/agent/tools/`** reorganized into seven domain
   subdirectories: `scan/`, `exploit/`, `hunt/`, `recon/`, `ops/`,
   `data/`, `meta/`. The top-level `__init__.py` is now a pure
   aggregator. `get_all_tools()` still returns the same 63 tools in
   the same order.
-- **`clearwing/agent/tools/hunt/hunter_tools.py`** (791-LOC god file)
+- **`nightwing/agent/tools/hunt/hunter_tools.py`** (791-LOC god file)
   split into four focused files under `hunt/`: `sandbox.py`
   (`HunterContext` + variant routing, 105 LOC), `discovery.py` (4
   read-only FS probes, 226 LOC), `analysis.py` (4 sandboxed
@@ -373,9 +373,9 @@ CI gate, release-hygiene scaffolding, and MkDocs documentation site.
   `twine check` — all six steps run on every push/PR across Python
   3.10, 3.11, 3.12.
 - **Typed-core policy**: `disallow_untyped_defs = true` +
-  `warn_unused_ignores = true` enforced on `clearwing.findings.*`,
-  `clearwing.capabilities`, `clearwing.sourcehunt.*`,
-  `clearwing.agent.tools.*`, and `clearwing.core.*` — 68 source files
+  `warn_unused_ignores = true` enforced on `nightwing.findings.*`,
+  `nightwing.capabilities`, `nightwing.sourcehunt.*`,
+  `nightwing.agent.tools.*`, and `nightwing.core.*` — 68 source files
   at zero mypy errors. No `# type: ignore[no-untyped-def]`
   suppressions; every annotation is real.
 - **README** trimmed from 508 → 139 lines. Tagline, install,
@@ -383,15 +383,15 @@ CI gate, release-hygiene scaffolding, and MkDocs documentation site.
   license. Full detail moved to `docs/`.
 - **All 22 deprecated shim packages deleted** (`vulnexploit.scanners`,
   `vulnexploit.exploiters`, `vulnexploit.payloads`, and 19 others).
-  Canonical paths under `clearwing.scanning.*`,
-  `clearwing.exploitation.*`, etc. are the only way to import these
+  Canonical paths under `nightwing.scanning.*`,
+  `nightwing.exploitation.*`, etc. are the only way to import these
   modules. A `DeprecationWarning`-as-error filter in `conftest.py`
   locks the trunk against accidental re-introduction.
 
 ### Fixed
 
 - **`ChatAnthropic(model=model)` → `ChatAnthropic(model_name=model)`**
-  in `clearwing/sourcehunt/runner.py::_build_llm_from_model_string`.
+  in `nightwing/sourcehunt/runner.py::_build_llm_from_model_string`.
   The `model=` kwarg was removed in recent `langchain-anthropic`; the
   old call site would have raised `TypeError` on first use of
   `--model <name>` on the sourcehunt CLI.
@@ -424,7 +424,7 @@ CI gate, release-hygiene scaffolding, and MkDocs documentation site.
   with a local `browser =` binding in `_ensure_browser` so the
   chained `.new_context(...)` call type-checks.
 - **Python 3.10–3.12 `NameError`** in
-  `clearwing/scanning/os_scanner.py` from a bare `except` pattern
+  `nightwing/scanning/os_scanner.py` from a bare `except` pattern
   that 3.13 tolerated but earlier versions didn't.
 - **225 tracked `__pycache__` files** removed from git. A new
   `.gitignore` keeps them out for good.
@@ -448,5 +448,5 @@ CI gate, release-hygiene scaffolding, and MkDocs documentation site.
   still clone external projects into `.reference/<name>` locally;
   `.gitignore` covers the path.
 
-[Unreleased]: https://github.com/Lazarus-AI/clearwing/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/Lazarus-AI/clearwing/releases/tag/v1.0.0
+[Unreleased]: https://github.com/Lazarus-AI/nightwing/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/Lazarus-AI/nightwing/releases/tag/v1.0.0

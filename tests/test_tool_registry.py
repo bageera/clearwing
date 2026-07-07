@@ -1,6 +1,6 @@
 """Snapshot test for the network-agent tool registry.
 
-Phase 4 reorg moves `clearwing/agent/tools/*.py` into domain subdirectories
+Phase 4 reorg moves `nightwing/agent/tools/*.py` into domain subdirectories
 (scan/, exploit/, hunt/, recon/, ops/, data/, meta/). This test locks the
 baseline so the reorg can't silently drop or re-register any tools.
 
@@ -10,17 +10,17 @@ becomes a test failure here rather than a silent degradation of the
 network-agent's capabilities.
 
 The source-hunt pipeline has its own tool registry driven by
-`build_hunter_agent()` in `clearwing/sourcehunt/hunter.py` — those are
+`build_hunter_agent()` in `nightwing/sourcehunt/hunter.py` — those are
 intentionally NOT counted here.
 """
 
 from __future__ import annotations
 
-from clearwing.agent.tools import get_all_tools
+from nightwing.agent.tools import get_all_tools
 
 # Locked baseline as of Phase 4 start. Update this only when deliberately
 # adding or removing a tool from the network-agent registry.
-EXPECTED_TOOL_COUNT = 255
+EXPECTED_TOOL_COUNT = 285
 
 
 EXPECTED_TOOL_NAMES: frozenset[str] = frozenset(

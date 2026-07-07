@@ -6,7 +6,7 @@ import base64
 
 import pytest
 
-from clearwing.exploitation.payloads import (
+from nightwing.exploitation.payloads import (
     ALL_PAYLOADS,
     AUTH_BYPASS_PAYLOADS,
     CMD_INJECTION_PAYLOADS,

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Standalone test script to verify OSINT improvements functionality.
-This script tests the core functionality without importing the full Clearwing project.
+This script tests the core functionality without importing the full Nightwing project.
 """
 
 import sys

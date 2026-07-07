@@ -18,8 +18,8 @@
 
 ### 1.2 Authorized Party
 - **Name:** Jon Bethea
-- **Role:** Lead Penetration Tester / Clearwing Autonomous Agent
-- **Organization:** Clearwing Security Operations
+- **Role:** Lead Penetration Tester / Nightwing Autonomous Agent
+- **Organization:** Nightwing Security Operations
 - **Authorization Code:** CW-2026-LAZARUS-001
 
 ---
@@ -380,7 +380,7 @@ By signing below, all parties acknowledge:
 
 | Role | Name | Organization | Signature | Date |
 |------|------|-------------|-----------|------|
-| **Pentest Lead** | Jon Bethea | Clearwing Security Operations | _________________________________ | ___________ |
+| **Pentest Lead** | Jon Bethea | Nightwing Security Operations | _________________________________ | ___________ |
 | **Lazarus AI CISO** | Jane Doe | Cyber Security & Infrastructure Services LLC | _________________________________ | ___________ |
 | **Lazarus AI Engineering Lead** | | | _________________________________ | ___________ |
 | **Lazarus AI Executive Sponsor** | | | _________________________________ | ___________ |
@@ -413,7 +413,7 @@ By signing below, all parties acknowledge:
 - [ ] /tmp/final_combined_pentest.html
 
 ### Appendix C: Tool Inventory
-- [ ] /tmp/clearwing_tool_matrix.md (220 tools)
+- [ ] /tmp/nightwing_tool_matrix.md (220 tools)
 - [ ] Phase 1-3: Base infrastructure
 - [ ] Phase 4: API + Database (10 tools)
 - [ ] Phase 5: Red Team / AD (3 tools)

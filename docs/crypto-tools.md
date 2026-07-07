@@ -4,8 +4,8 @@ Tools for analyzing, testing, and attacking cryptographic protocols in the
 network-pentest agent. Added to support the 1Password CTF engagement but
 applicable to any target using SRP, PBKDF2, AES-GCM, or TLS.
 
-All tools live under `clearwing/agent/tools/` and are registered via
-`get_all_tools()` in `clearwing/agent/tools/__init__.py`. Each tool module
+All tools live under `nightwing/agent/tools/` and are registered via
+`get_all_tools()` in `nightwing/agent/tools/__init__.py`. Each tool module
 exports a `get_*_tools()` function that returns its tools. The registration
 is lazy — importing one module does not pull in the others.
 
@@ -86,7 +86,7 @@ inspect_certificate(host, port=443, timeout=10) -> dict
 ## SRP Protocol Testing (`crypto/srp_tools.py`)
 
 Four tools for SRP-6a authentication testing. Backed by a full SRP-6a client
-implementation in `clearwing/crypto/srp.py`.
+implementation in `nightwing/crypto/srp.py`.
 
 ### `srp_handshake`
 
@@ -653,7 +653,7 @@ Shared statistical functions used by timing and credential tools:
 ## Knowledge Graph Integration
 
 All crypto tools automatically populate the knowledge graph via populator
-blocks in `clearwing/agent/runtime.py`. Entity types and relationships:
+blocks in `nightwing/agent/runtime.py`. Entity types and relationships:
 
 **Entity types:** `protocol`, `algorithm`, `key_material`, `certificate`,
 `kdf_config`
@@ -676,7 +676,7 @@ blocks in `clearwing/agent/runtime.py`. Entity types and relationships:
 
 ## Findings Schema
 
-Crypto findings use extended fields in `clearwing/findings/types.py`:
+Crypto findings use extended fields in `nightwing/findings/types.py`:
 
 | Field | Type | Example |
 |-------|------|---------|
@@ -696,7 +696,7 @@ Crypto findings use extended fields in `clearwing/findings/types.py`:
 
 ## Crypto Skill Pack
 
-Attack methodology playbooks in `clearwing/core/skills/crypto/`. Loaded via
+Attack methodology playbooks in `nightwing/core/skills/crypto/`. Loaded via
 `load_skills(skill_name="<name>")`.
 
 | Skill | File | Coverage |
@@ -732,7 +732,7 @@ cve_db_update(
 ) -> dict  # {"status": "success", "records": int, "db_path": str}
 ```
 
-The database is stored at `~/.clearwing/cve/cve.db`. If `zip_path` is provided,
+The database is stored at `~/.nightwing/cve/cve.db`. If `zip_path` is provided,
 uses the local file instead of downloading. Extracts all CVE JSON records,
 parses metadata (CVSS, CWE, affected products, descriptions), and builds an
 FTS5 index for full-text search.

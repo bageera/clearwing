@@ -9,7 +9,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from clearwing.sourcehunt.campaign import (
+from nightwing.sourcehunt.campaign import (
     CampaignCheckpoint,
     CampaignResult,
     CampaignRunner,
@@ -17,7 +17,7 @@ from clearwing.sourcehunt.campaign import (
     load_checkpoint,
     save_checkpoint,
 )
-from clearwing.sourcehunt.campaign_config import CampaignConfig, CampaignTargetConfig
+from nightwing.sourcehunt.campaign_config import CampaignConfig, CampaignTargetConfig
 
 
 def _make_config(**kwargs) -> CampaignConfig:
@@ -207,7 +207,7 @@ class TestPauseResume:
 
 class TestRunnerInjection:
     def test_inject_campaign_pool(self):
-        from clearwing.sourcehunt.runner import SourceHuntRunner
+        from nightwing.sourcehunt.runner import SourceHuntRunner
 
         runner = SourceHuntRunner(repo_url="test", depth="standard")
         mock_pool = MagicMock()
@@ -217,7 +217,7 @@ class TestRunnerInjection:
         assert runner._injected_historical_db is mock_db
 
     def test_inject_defaults_to_none(self):
-        from clearwing.sourcehunt.runner import SourceHuntRunner
+        from nightwing.sourcehunt.runner import SourceHuntRunner
 
         runner = SourceHuntRunner(repo_url="test", depth="standard")
         assert runner._injected_findings_pool is None
@@ -242,7 +242,7 @@ class TestCampaignRunnerIntegration:
         mock_result.verified_findings = [{"id": "f1"}]
 
         with patch(
-            "clearwing.sourcehunt.campaign.CampaignRunner._run_project",
+            "nightwing.sourcehunt.campaign.CampaignRunner._run_project",
             new_callable=AsyncMock,
             return_value=mock_result,
         ):
@@ -270,14 +270,14 @@ class TestCampaignRunnerIntegration:
 
 class TestCLIRegistration:
     def test_campaign_in_all_commands(self):
-        from clearwing.ui.commands import ALL_COMMANDS, campaign
+        from nightwing.ui.commands import ALL_COMMANDS, campaign
 
         assert campaign in ALL_COMMANDS
 
     def test_run_subcommand(self):
         import argparse
 
-        from clearwing.ui.commands import campaign
+        from nightwing.ui.commands import campaign
 
         parser = argparse.ArgumentParser()
         subs = parser.add_subparsers()
@@ -289,7 +289,7 @@ class TestCLIRegistration:
     def test_status_subcommand(self):
         import argparse
 
-        from clearwing.ui.commands import campaign
+        from nightwing.ui.commands import campaign
 
         parser = argparse.ArgumentParser()
         subs = parser.add_subparsers()
@@ -300,7 +300,7 @@ class TestCLIRegistration:
     def test_resume_subcommand(self):
         import argparse
 
-        from clearwing.ui.commands import campaign
+        from nightwing.ui.commands import campaign
 
         parser = argparse.ArgumentParser()
         subs = parser.add_subparsers()
@@ -311,7 +311,7 @@ class TestCLIRegistration:
     def test_dry_run_flag(self):
         import argparse
 
-        from clearwing.ui.commands import campaign
+        from nightwing.ui.commands import campaign
 
         parser = argparse.ArgumentParser()
         subs = parser.add_subparsers()

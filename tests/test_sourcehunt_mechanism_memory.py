@@ -10,7 +10,7 @@ from unittest.mock import AsyncMock
 import pytest
 from genai_pyo3 import ChatResponse
 
-from clearwing.sourcehunt.mechanism_memory import (
+from nightwing.sourcehunt.mechanism_memory import (
     Mechanism,
     MechanismExtractor,
     MechanismStore,
@@ -18,7 +18,7 @@ from clearwing.sourcehunt.mechanism_memory import (
     _tokenize,
     format_mechanisms_for_prompt,
 )
-from clearwing.sourcehunt.runner import SourceHuntRunner
+from nightwing.sourcehunt.runner import SourceHuntRunner
 
 # --- Mechanism dataclass ----------------------------------------------------
 

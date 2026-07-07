@@ -2,8 +2,8 @@
 
 import json
 
-from clearwing.agent.specialists import ExploitAgent, ReconAgent, ReporterAgent
-from clearwing.agent.specialists.planner_agent import Plan, PlannerAgent, Subtask
+from nightwing.agent.specialists import ExploitAgent, ReconAgent, ReporterAgent
+from nightwing.agent.specialists.planner_agent import Plan, PlannerAgent, Subtask
 
 # --- Subtask ---
 

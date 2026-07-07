@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Master orchestrator for the Clearwing LLM API pentest probe suite.
+"""Master orchestrator for the Nightwing LLM API pentest probe suite.
 
 Runs all probe modules in sequence, aggregates results, and produces a
 unified findings report.

@@ -1,5 +1,5 @@
 name: Feature request
-description: Propose a new capability or enhancement for Clearwing.
+description: Propose a new capability or enhancement for Nightwing.
 title: "[feat] "
 labels:
   - "enhancement"
@@ -18,7 +18,7 @@ body:
     id: problem
     attributes:
       label: What's the problem?
-      description: What are you trying to do that Clearwing makes hard or impossible today? Be specific — "make hunters smarter" is harder to act on than "the memory_safety specialist can't ask for the git blame of the line it's analyzing, which would help it distinguish recent regressions from long-standing code."
+      description: What are you trying to do that Nightwing makes hard or impossible today? Be specific — "make hunters smarter" is harder to act on than "the memory_safety specialist can't ask for the git blame of the line it's analyzing, which would help it distinguish recent regressions from long-standing code."
     validations:
       required: true
 
@@ -26,7 +26,7 @@ body:
     id: proposal
     attributes:
       label: Proposed solution
-      description: What would you like Clearwing to do? A sketch of the CLI flag, tool name, config key, or API surface you imagine is ideal.
+      description: What would you like Nightwing to do? A sketch of the CLI flag, tool name, config key, or API surface you imagine is ideal.
     validations:
       required: true
 

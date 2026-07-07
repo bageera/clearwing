@@ -1,8 +1,8 @@
-site_name: Clearwing
+site_name: Nightwing
 site_description: Autonomous vulnerability scanner and source-code hunter built on LangGraph
-site_url: https://lazarus-ai.github.io/clearwing/
-repo_url: https://github.com/Lazarus-AI/clearwing
-repo_name: Lazarus-AI/clearwing
+site_url: https://lazarus-ai.github.io/nightwing/
+repo_url: https://github.com/Lazarus-AI/nightwing
+repo_name: Lazarus-AI/nightwing
 edit_uri: edit/main/docs/
 
 theme:

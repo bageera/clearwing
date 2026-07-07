@@ -19,10 +19,10 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from genai_pyo3 import ChatResponse
 
-from clearwing.sourcehunt.pool import assign_tier
-from clearwing.sourcehunt.preprocessor import Preprocessor
-from clearwing.sourcehunt.ranker import Ranker
-from clearwing.sourcehunt.runner import SourceHuntResult, SourceHuntRunner
+from nightwing.sourcehunt.pool import assign_tier
+from nightwing.sourcehunt.preprocessor import Preprocessor
+from nightwing.sourcehunt.ranker import Ranker
+from nightwing.sourcehunt.runner import SourceHuntResult, SourceHuntRunner
 
 FIXTURE_C_PROPAGATION = Path(__file__).parent / "fixtures" / "vuln_samples" / "c_propagation"
 FIXTURE_PY_SQLI = Path(__file__).parent / "fixtures" / "vuln_samples" / "py_sqli"

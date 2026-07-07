@@ -8,12 +8,12 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from clearwing.sourcehunt.callgraph import (
+from nightwing.sourcehunt.callgraph import (
     CallGraph,
     CallGraphBuilder,
 )
-from clearwing.sourcehunt.preprocessor import Preprocessor
-from clearwing.sourcehunt.ranker import Ranker
+from nightwing.sourcehunt.preprocessor import Preprocessor
+from nightwing.sourcehunt.ranker import Ranker
 
 FIXTURE_C_PROPAGATION = Path(__file__).parent / "fixtures" / "vuln_samples" / "c_propagation"
 FIXTURE_PY_SQLI = Path(__file__).parent / "fixtures" / "vuln_samples" / "py_sqli"

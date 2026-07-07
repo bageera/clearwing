@@ -13,7 +13,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from clearwing.sandbox.container import (
+from nightwing.sandbox.container import (
     ExecResult,
     SandboxConfig,
     SandboxContainer,

@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from clearwing.sourcehunt.taint import (
+from nightwing.sourcehunt.taint import (
     C_SINKS,
     C_SOURCES,
     PYTHON_SINKS,

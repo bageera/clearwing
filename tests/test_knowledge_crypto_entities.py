@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from clearwing.data.knowledge import KnowledgeGraph
+from nightwing.data.knowledge import KnowledgeGraph
 
 
 class TestCryptoEntityTypes:

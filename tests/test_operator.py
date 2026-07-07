@@ -27,7 +27,7 @@ def _run(coro):
     return asyncio.run(coro)
 
 
-from clearwing.agent.operator import (
+from nightwing.agent.operator import (
     _OPERATOR_SYSTEM_PROMPT,
     OperatorAgent,
     OperatorConfig,
@@ -453,11 +453,11 @@ class TestOperatorRun:
         return mock_graph
 
     @patch(
-        "clearwing.agent.operator.OperatorAgent._adecide_next",
+        "nightwing.agent.operator.OperatorAgent._adecide_next",
         new_callable=AsyncMock,
     )
-    @patch("clearwing.agent.graph._create_llm")
-    @patch("clearwing.agent.operator.create_agent")
+    @patch("nightwing.agent.graph._create_llm")
+    @patch("nightwing.agent.operator.create_agent")
     def test_completes_when_goals_met(self, mock_create, mock_create_llm, mock_decide):
         mock_graph = self._make_mock_graph(["Scanning ports...", "All done."])
         mock_create.return_value = mock_graph
@@ -474,11 +474,11 @@ class TestOperatorRun:
         assert result.turns == 2
 
     @patch(
-        "clearwing.agent.operator.OperatorAgent._adecide_next",
+        "nightwing.agent.operator.OperatorAgent._adecide_next",
         new_callable=AsyncMock,
     )
-    @patch("clearwing.agent.graph._create_llm")
-    @patch("clearwing.agent.operator.create_agent")
+    @patch("nightwing.agent.graph._create_llm")
+    @patch("nightwing.agent.operator.create_agent")
     def test_escalates_on_unknown_question(self, mock_create, mock_create_llm, mock_decide):
         mock_graph = self._make_mock_graph(["What credentials should I use?"])
         mock_create.return_value = mock_graph
@@ -494,11 +494,11 @@ class TestOperatorRun:
         assert "SSH credentials" in result.escalation_question
 
     @patch(
-        "clearwing.agent.operator.OperatorAgent._adecide_next",
+        "nightwing.agent.operator.OperatorAgent._adecide_next",
         new_callable=AsyncMock,
     )
-    @patch("clearwing.agent.graph._create_llm")
-    @patch("clearwing.agent.operator.create_agent")
+    @patch("nightwing.agent.graph._create_llm")
+    @patch("nightwing.agent.operator.create_agent")
     def test_escalate_with_callback(self, mock_create, mock_create_llm, mock_decide):
         mock_graph = self._make_mock_graph(
             [
@@ -525,11 +525,11 @@ class TestOperatorRun:
         assert result.status == "completed"
 
     @patch(
-        "clearwing.agent.operator.OperatorAgent._adecide_next",
+        "nightwing.agent.operator.OperatorAgent._adecide_next",
         new_callable=AsyncMock,
     )
-    @patch("clearwing.agent.graph._create_llm")
-    @patch("clearwing.agent.operator.create_agent")
+    @patch("nightwing.agent.graph._create_llm")
+    @patch("nightwing.agent.operator.create_agent")
     def test_max_turns_stops(self, mock_create, mock_create_llm, mock_decide):
         mock_graph = self._make_mock_graph(["still scanning..."] * 5)
         mock_create.return_value = mock_graph
@@ -544,11 +544,11 @@ class TestOperatorRun:
         assert "max turns" in result.error.lower()
 
     @patch(
-        "clearwing.agent.operator.OperatorAgent._adecide_next",
+        "nightwing.agent.operator.OperatorAgent._adecide_next",
         new_callable=AsyncMock,
     )
-    @patch("clearwing.agent.graph._create_llm")
-    @patch("clearwing.agent.operator.create_agent")
+    @patch("nightwing.agent.graph._create_llm")
+    @patch("nightwing.agent.operator.create_agent")
     def test_on_complete_callback(self, mock_create, mock_create_llm, mock_decide):
         mock_graph = self._make_mock_graph(["done"])
         mock_create.return_value = mock_graph
@@ -568,11 +568,11 @@ class TestOperatorRun:
         assert results[0].status == "completed"
 
     @patch(
-        "clearwing.agent.operator.OperatorAgent._adecide_next",
+        "nightwing.agent.operator.OperatorAgent._adecide_next",
         new_callable=AsyncMock,
     )
-    @patch("clearwing.agent.graph._create_llm")
-    @patch("clearwing.agent.operator.create_agent")
+    @patch("nightwing.agent.graph._create_llm")
+    @patch("nightwing.agent.operator.create_agent")
     def test_on_message_callback(self, mock_create, mock_create_llm, mock_decide):
         mock_graph = self._make_mock_graph(["scanning..."])
         mock_create.return_value = mock_graph
@@ -592,8 +592,8 @@ class TestOperatorRun:
         agent_msgs = [m for m in messages if m[0] == "agent"]
         assert len(agent_msgs) >= 1
 
-    @patch("clearwing.agent.graph._create_llm")
-    @patch("clearwing.agent.operator.create_agent")
+    @patch("nightwing.agent.graph._create_llm")
+    @patch("nightwing.agent.operator.create_agent")
     def test_empty_response_ends_loop(self, mock_create, mock_create_llm):
         mock_graph = self._make_mock_graph([])  # no real responses
         mock_create.return_value = mock_graph

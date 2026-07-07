@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from clearwing.sandbox.container import SandboxConfig, SandboxContainer
+from nightwing.sandbox.container import SandboxConfig, SandboxContainer
 
 
 class TestSandboxConfigCpus:
@@ -146,12 +146,12 @@ class TestCopyTreeInto:
 
 
 class TestHunterSandboxWritableWorkspace:
-    @patch("clearwing.sandbox.hunter_sandbox.HunterSandbox._build_variant_image")
-    @patch("clearwing.sandbox.hunter_sandbox.HunterSandbox._get_client")
+    @patch("nightwing.sandbox.hunter_sandbox.HunterSandbox._build_variant_image")
+    @patch("nightwing.sandbox.hunter_sandbox.HunterSandbox._get_client")
     def test_spawn_writable_omits_ro_mount(self, mock_client, mock_build):
-        from clearwing.sandbox.hunter_sandbox import HunterSandbox
+        from nightwing.sandbox.hunter_sandbox import HunterSandbox
 
-        mock_build.return_value = "clearwing-sourcehunt:test123"
+        mock_build.return_value = "nightwing-sourcehunt:test123"
 
         manager = HunterSandbox(
             repo_path="/tmp/repo",
@@ -170,12 +170,12 @@ class TestHunterSandboxWritableWorkspace:
             if container == "/workspace":
                 pytest.fail(f"Found /workspace mount with mode={mode}, expected none")
 
-    @patch("clearwing.sandbox.hunter_sandbox.HunterSandbox._build_variant_image")
-    @patch("clearwing.sandbox.hunter_sandbox.HunterSandbox._get_client")
+    @patch("nightwing.sandbox.hunter_sandbox.HunterSandbox._build_variant_image")
+    @patch("nightwing.sandbox.hunter_sandbox.HunterSandbox._get_client")
     def test_spawn_writable_calls_copy_and_git(self, mock_client, mock_build):
-        from clearwing.sandbox.hunter_sandbox import HunterSandbox
+        from nightwing.sandbox.hunter_sandbox import HunterSandbox
 
-        mock_build.return_value = "clearwing-sourcehunt:test123"
+        mock_build.return_value = "nightwing-sourcehunt:test123"
 
         manager = HunterSandbox(
             repo_path="/tmp/repo",
@@ -199,9 +199,9 @@ class TestHunterSandboxWritableWorkspace:
         assert len(git_calls) == 1
 
     def test_deep_agent_mode_adds_packages(self):
-        from clearwing.sandbox.hunter_sandbox import HunterSandbox
+        from nightwing.sandbox.hunter_sandbox import HunterSandbox
 
-        with patch("clearwing.sandbox.hunter_sandbox.BuildSystemDetector.detect"):
+        with patch("nightwing.sandbox.hunter_sandbox.BuildSystemDetector.detect"):
             manager = HunterSandbox(
                 repo_path="/tmp/repo",
                 languages=["c"],
@@ -211,12 +211,12 @@ class TestHunterSandboxWritableWorkspace:
         for pkg in HunterSandbox.DEEP_AGENT_PACKAGES:
             assert pkg in manager.extra_packages
 
-    @patch("clearwing.sandbox.hunter_sandbox.HunterSandbox._build_variant_image")
-    @patch("clearwing.sandbox.hunter_sandbox.HunterSandbox._get_client")
+    @patch("nightwing.sandbox.hunter_sandbox.HunterSandbox._build_variant_image")
+    @patch("nightwing.sandbox.hunter_sandbox.HunterSandbox._get_client")
     def test_spawn_writable_passes_cpus(self, mock_client, mock_build):
-        from clearwing.sandbox.hunter_sandbox import HunterSandbox
+        from nightwing.sandbox.hunter_sandbox import HunterSandbox
 
-        mock_build.return_value = "clearwing-sourcehunt:test123"
+        mock_build.return_value = "nightwing-sourcehunt:test123"
 
         manager = HunterSandbox(
             repo_path="/tmp/repo",

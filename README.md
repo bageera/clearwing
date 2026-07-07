@@ -1,8 +1,9 @@
-# Clearwing
+# Nightwing
 
 <img width="400" alt="image" src="https://github.com/user-attachments/assets/c0444f24-32d8-4d62-af66-f1b7d8a123ba" />
 
-By Eric Hartford, Lazarus AI
+Forked from Clearwing by Eric Hartford, Lazarus AI.
+Renamed to Nightwing — a breakaway identity for a breakaway tool.
 
 Inspired by Anthropic's Glasswing.  
 
@@ -13,7 +14,7 @@ The challenge:  Produce similar results as Glasswing - using models everyone has
 provider (Anthropic, OpenAI, OpenRouter, Ollama, LM Studio, Together,
 Groq, DeepSeek, MiniMax, Gemini, any OpenAI-compatible endpoint).
 
-Clearwing is a dual-mode offensive-security tool:
+Nightwing is a dual-mode offensive-security tool:
 
 - **Network-pentest agent** — a ReAct-loop agent with 255 bind-tools
   that scans live targets, detects services and vulnerabilities,
@@ -51,7 +52,7 @@ Clearwing is a dual-mode offensive-security tool:
   ladder for model comparison, and an A/B testing framework for
   measuring whether preprocessing helps or hurts finding quality.
 
-**Authorized use only.** Clearwing is a dual-use offensive-security
+**Authorized use only.** Nightwing is a dual-use offensive-security
 tool. Run it only against targets you own or have explicit written
 authorization to test. Operators are responsible for scope, legal
 authorization, and disclosure. See `SECURITY.md`.
@@ -61,24 +62,24 @@ authorization, and disclosure. See `SECURITY.md`.
 **End users** — install the tagged release straight from GitHub:
 
 ```bash
-git clone https://github.com/Lazarus-AI/clearwing.git
-cd clearwing
+git clone https://github.com/Lazarus-AI/nightwing.git
+cd nightwing
 
-# uv sync is recommended because Clearwing pins genai-pyo3 through
+# uv sync is recommended because Nightwing pins genai-pyo3 through
 # tool.uv.sources in pyproject.toml.
 uv sync --all-extras
 source .venv/bin/activate  # fish: source .venv/bin/activate.fish
 
 # Interactive setup wizard — menu-driven provider selection,
-# credential entry, optional live test, persists to ~/.clearwing/config.yaml
-clearwing setup
+# credential entry, optional live test, persists to ~/.nightwing/config.yaml
+nightwing setup
 
 # Environment check — verifies Python, credentials, Docker daemon,
 # external tools, optional extras, and network reachability
-clearwing doctor
+nightwing doctor
 
-clearwing --version   # 1.0.0
-clearwing --help
+nightwing --version   # 1.0.0
+nightwing --help
 ```
 
 Or skip the wizard and configure directly:
@@ -89,9 +90,9 @@ export ANTHROPIC_API_KEY=sk-ant-...
 
 # Or any OpenAI-compatible endpoint — OpenRouter, Ollama, LM Studio,
 # vLLM, Together, Groq, DeepSeek, OpenAI:
-export CLEARWING_BASE_URL=https://openrouter.ai/api/v1
-export CLEARWING_API_KEY=sk-or-...
-export CLEARWING_MODEL=anthropic/claude-opus-4
+export NIGHTWING_BASE_URL=https://openrouter.ai/api/v1
+export NIGHTWING_API_KEY=sk-or-...
+export NIGHTWING_MODEL=anthropic/claude-opus-4
 ```
 
 See [`docs/providers.md`](docs/providers.md) for provider-specific
@@ -100,11 +101,11 @@ recipes and per-task routing.
 **Developers** — clone and install the locked development environment:
 
 ```bash
-git clone https://github.com/Lazarus-AI/clearwing.git
-cd clearwing
+git clone https://github.com/Lazarus-AI/nightwing.git
+cd nightwing
 uv sync --all-extras
 source .venv/bin/activate  # fish: source .venv/bin/activate.fish
-clearwing --help
+nightwing --help
 ```
 
 Requirements: Python 3.10+ and optionally Docker for the Kali container
@@ -114,7 +115,7 @@ Python 3.9–3.13), so no Rust toolchain is needed for installation.
 
 ## PentestContainer Architecture
 
-Clearwing now ships with **dual-distro container support** for standardized penetration testing workflows. A shared `PentestContainerManager` orchestrates both Kali Linux (full-featured) and ParrotOS (slim) containers, executing external CLI tools without polluting the host operating system.
+Nightwing now ships with **dual-distro container support** for standardized penetration testing workflows. A shared `PentestContainerManager` orchestrates both Kali Linux (full-featured) and ParrotOS (slim) containers, executing external CLI tools without polluting the host operating system.
 
 ### Supported Containers
 
@@ -373,11 +374,36 @@ run_aircrack_ng("/tmp/capture.cap", wordlist="/usr/share/wordlists/rockyou.txt")
 # AP and client discovery (monitor mode required)
 run_airodump_ng("wlan0mon", duration=60)
 
+# Enable monitor mode on a wireless interface
+run_airmon_ng("wlan0", action="start")
+
+# Packet injection — deauth to capture handshakes
+run_aireplay_ng("wlan0mon", attack_mode="deauth", options="--bssid AA:BB:CC:DD:EE:FF")
+
+# Create a rogue AP / evil twin
+run_airbase_ng("wlan0mon", "FreeWiFi", channel=6)
+
+# Decrypt WPA capture offline (no hardware needed)
+run_airdecap_ng("/tmp/capture.pcap", options="-e SSID -p PASSWORD")
+
+# Detect WPS-enabled APs
+run_wash("wlan0mon")
+
 # Automated WEP/WPA/WPS attacks
 run_wifite(options="--wps-only --pixie", duration=300)
 
 # WPS PIN brute-force (Pixie Dust)
 run_reaver("AA:BB:CC:DD:EE:FF", interface="wlan0mon", options="-K 1")
+
+# Passive wireless scanner (no injection needed)
+run_kismet("wlan0", duration=60)
+
+# Enterprise 802.1X credential harvesting
+run_eaphammer("wlan0mon", "CorpWiFi", duration=300)
+run_hostapd_wpe("wlan0mon", "/etc/hostapd-wpe/hostapd-wpe.conf")
+
+# Recover LEAP/MS-CHAPv2 from captures (offline)
+run_asleap("/tmp/capture.pcap", options="-W wordlist.txt")
 ```
 
 ### Phase 13: Mobile Pentesting
@@ -401,13 +427,63 @@ run_jadx("/tmp/target.apk", output_dir="/tmp/target-java")
 run_drozer("com.example.app", command="app.package.info")
 ```
 
-### Phase 14: Bluetooth & RF
+### Phase 14: Bluetooth, RFID & NFC
 ```python
 # BLE reconnaissance with bettercap
 run_bettercap_bluetooth(duration=60)
 
-# Bluetooth sniffing with Ubertooth (hardware required)
-run_ubertooth("scan", duration=60)
+# Classic Bluetooth device discovery (built-in BT works)
+run_bluez_scan(duration=15)
+run_bluez_info("AA:BB:CC:DD:EE:FF")
+
+# BLE link-layer jamming and hijacking
+run_btlejack(duration=60)
+
+# Proxmark3 — RFID tag read/write/sniff/clone (LF + HF)
+run_proxmark3("hf search")
+run_proxmark3("lf search")
+run_proxmark3("hf mf dump")
+
+# Mifare Classic key recovery (nested attack)
+run_mfoc(options="-O /tmp/dump.mfd")
+
+# NFC tag listing and read/write
+run_nfc_tool("list")
+run_nfc_tool("read")
+
+# Multi-protocol RFID toolkit
+run_rfidiot(action="read")
+```
+
+### Phase 14c: SDR / Radio Frequency
+```python
+# Check HackRF hardware presence
+run_hackrf_info()
+
+# Wideband spectrum sweep (find active frequencies)
+run_hackrf_sweep(freq_min=1, freq_max=6000, duration=30)
+
+# 433MHz ISM band decoder (weather stations, keyfobs, smart meters)
+run_rtl_433(frequency=433, duration=60)
+
+# Spectrum power profiling
+run_rtl_power(freq_min=1, freq_max=6000, duration=60)
+
+# Offline RF signal analysis from captures
+run_inspectrum("/tmp/signal.cf32")
+```
+
+### Phase 14d: IoT Radio Protocols
+```python
+# Zigbee network discovery
+run_zbstumbler(duration=30)
+run_killerbee("scan")
+
+# LoRaWAN gateway discovery
+run_lorawan_scanner(duration=60)
+
+# Sub-GHz ISM scanning (garage remotes, weather sensors)
+run_subghz_scan(frequency=433, duration=60)
 ```
 
 ### Phase 15: IoT & Hardware
@@ -540,39 +616,39 @@ All tools support dual-distro execution (`distro="kali"` or `distro="parrot"`) a
 
 ```bash
 # Network scan a single target
-clearwing scan 192.168.1.10 -p 22,80,443 --detect-services
+nightwing scan 192.168.1.10 -p 22,80,443 --detect-services
 
 # Source-code hunt a repo (standard depth — sandboxed LLM hunters,
 # adversarial verifier, mechanism memory, variant loop)
-clearwing sourcehunt https://github.com/example/project \
+nightwing sourcehunt https://github.com/example/project \
     --depth standard
 
 # N-day exploit pipeline — build and exploit known CVEs
-clearwing sourcehunt https://github.com/example/project \
+nightwing sourcehunt https://github.com/example/project \
     --nday --cve-list CVE-2024-1234,CVE-2024-5678
 
 # Reverse engineering — hunt vulnerabilities in closed-source binaries
-clearwing sourcehunt /path/to/binary --reveng --arch x86_64
+nightwing sourcehunt /path/to/binary --reveng --arch x86_64
 
 # Campaign-scale orchestration across multiple projects
-clearwing campaign run campaign.yaml
+nightwing campaign run campaign.yaml
 
 # Responsible disclosure workflow
-clearwing disclose queue ./results/sourcehunt/sh-*/
-clearwing disclose review
+nightwing disclose queue ./results/sourcehunt/sh-*/
+nightwing disclose review
 
 # OSS-Fuzz crash severity benchmark
-clearwing bench ossfuzz --corpus-dir ./oss-fuzz-projects --mode standard
+nightwing bench ossfuzz --corpus-dir ./oss-fuzz-projects --mode standard
 
 # A/B test whether preprocessing helps or hurts
-clearwing eval preprocessing --project https://github.com/example/project \
+nightwing eval preprocessing --project https://github.com/example/project \
     --configs glasswing_minimal,sourcehunt_full --runs 3
 
 # Interactive ReAct chat with the full tool set
-clearwing interactive
+nightwing interactive
 
 # Non-interactive CI mode with SARIF output for GitHub Code Scanning
-clearwing ci --config .clearwing.ci.yaml --sarif results.sarif
+nightwing ci --config .nightwing.ci.yaml --sarif results.sarif
 ```
 
 See [`docs/quickstart.md`](docs/quickstart.md) for a fuller walkthrough
@@ -580,7 +656,7 @@ including credentials, session resume, and mission-mode operation.
 
 ## Running sourcehunt on a local repo (FFmpeg example)
 
-The `clearwing sourcehunt <url>` CLI clones a remote URL. To hunt an
+The `nightwing sourcehunt <url>` CLI clones a remote URL. To hunt an
 already-cloned tree (e.g. FFmpeg) with the native-async pipeline and a
 self-hosted OpenAI-compatible backend, drive `SourceHuntRunner` directly:
 
@@ -591,8 +667,8 @@ git clone https://github.com/FFmpeg/FFmpeg.git
 # 2. Run sourcehunt against the local checkout
 uv run python -u - <<'PY'
 import logging
-from clearwing.llm.native import AsyncLLMClient
-from clearwing.sourcehunt.runner import SourceHuntRunner
+from nightwing.llm.native import AsyncLLMClient
+from nightwing.sourcehunt.runner import SourceHuntRunner
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(name)s: %(message)s')
 
@@ -645,7 +721,7 @@ runner's own artifacts are only written at the end.
 ```
 ┌──────────────────────┐      ┌────────────────────────────────┐
 │ Network-pentest agent│      │ Source-code hunter             │
-│ clearwing.agent.graph│      │ clearwing.sourcehunt.runner    │
+│ nightwing.agent.graph│      │ nightwing.sourcehunt.runner    │
 │  (255 tools, ReAct)  │      │                                │
 │                      │      │ preprocess → rank → pool →     │
 │                      │      │   hunter → verify → exploit →  │
@@ -681,7 +757,7 @@ Deep dives live in [`docs/`](docs/):
 | [`docs/api.md`](docs/api.md) | API reference (mkdocstrings autogen) |
 
 Once the GitHub Pages workflow ships, docs will be hosted at
-<https://lazarus-ai.github.io/clearwing/>.
+<https://lazarus-ai.github.io/nightwing/>.
 
 ## Development
 
@@ -689,14 +765,14 @@ Once the GitHub Pages workflow ships, docs will be hosted at
 uv sync --all-extras
 source .venv/bin/activate  # fish: source .venv/bin/activate.fish
 pytest -q
-ruff check clearwing/ tests/
-ruff format --check clearwing/ tests/
+ruff check nightwing/ tests/
+ruff format --check nightwing/ tests/
 mypy --follow-imports=silent \
-  clearwing/findings \
-  clearwing/sourcehunt \
-  clearwing/capabilities.py \
-  clearwing/agent/tools \
-  clearwing/core
+  nightwing/findings \
+  nightwing/sourcehunt \
+  nightwing/capabilities.py \
+  nightwing/agent/tools \
+  nightwing/core
 python -m mkdocs serve --dev-addr 127.0.0.1:8000
 ```
 
@@ -707,11 +783,11 @@ checklist.
 
 There are two lanes, and they go to different places:
 
-- **Vulnerabilities *in* Clearwing** → GitHub Security Advisories
-  (<https://github.com/Lazarus-AI/clearwing/security/advisories/new>).
+- **Vulnerabilities *in* Nightwing** → GitHub Security Advisories
+  (<https://github.com/Lazarus-AI/nightwing/security/advisories/new>).
   See [`SECURITY.md`](SECURITY.md) for scope, SLA, and safe-harbor.
-- **Vulnerabilities Clearwing *finds* in someone else's software** →
-  that vendor's disclosure channel. `clearwing sourcehunt
+- **Vulnerabilities Nightwing *finds* in someone else's software** →
+  that vendor's disclosure channel. `nightwing sourcehunt
   --export-disclosures` generates pre-filled MITRE CVE-request and
   HackerOne templates for every finding at
   `evidence_level >= root_cause_explained`.

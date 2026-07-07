@@ -11,13 +11,13 @@ from __future__ import annotations
 from pathlib import Path
 from unittest.mock import MagicMock
 
-from clearwing.findings.types import Finding
-from clearwing.llm import HumanMessage
-from clearwing.sourcehunt.hunter import build_hunter_agent
-from clearwing.sourcehunt.pool import HunterPool, HuntPoolConfig
-from clearwing.sourcehunt.preprocessor import Preprocessor
-from clearwing.sourcehunt.runner import SourceHuntRunner
-from clearwing.sourcehunt.state import (
+from nightwing.findings.types import Finding
+from nightwing.llm import HumanMessage
+from nightwing.sourcehunt.hunter import build_hunter_agent
+from nightwing.sourcehunt.pool import HunterPool, HuntPoolConfig
+from nightwing.sourcehunt.preprocessor import Preprocessor
+from nightwing.sourcehunt.runner import SourceHuntRunner
+from nightwing.sourcehunt.state import (
     EVIDENCE_LEVELS,
     FileTarget,
     SourceHuntState,

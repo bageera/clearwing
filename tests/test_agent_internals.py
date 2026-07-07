@@ -1,9 +1,9 @@
 """Tests for the agent graph updates — flag detection, state expansion, guardrail integration."""
 
-from clearwing.agent.prompts import build_system_prompt
-from clearwing.agent.runtime import FLAG_PATTERNS, detect_flags
-from clearwing.agent.state import AgentState
-from clearwing.agent.tools import get_all_tools
+from nightwing.agent.prompts import build_system_prompt
+from nightwing.agent.runtime import FLAG_PATTERNS, detect_flags
+from nightwing.agent.state import AgentState
+from nightwing.agent.tools import get_all_tools
 
 
 class TestAgentState:

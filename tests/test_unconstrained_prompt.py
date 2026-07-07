@@ -4,11 +4,11 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
-from clearwing.sourcehunt.hunter import (
+from nightwing.sourcehunt.hunter import (
     _build_unconstrained_prompt,
     build_hunter_agent,
 )
-from clearwing.sourcehunt.state import FileTarget
+from nightwing.sourcehunt.state import FileTarget
 
 
 def _make_file_target(

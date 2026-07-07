@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from clearwing.agent.prompts import SYSTEM_PROMPT_TEMPLATE
-from clearwing.agent.tools import get_all_tools
-from clearwing.agent.tools.meta.sourcehunt_tools import (
+from nightwing.agent.prompts import SYSTEM_PROMPT_TEMPLATE
+from nightwing.agent.tools import get_all_tools
+from nightwing.agent.tools.meta.sourcehunt_tools import (
     _RECENT_SESSIONS,
     get_sourcehunt_tools,
     hunt_source_code,

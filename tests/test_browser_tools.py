@@ -1,6 +1,6 @@
 """Tests for browser tools module (unit tests, no real browser)."""
 
-from clearwing.agent.tools.recon.browser_tools import (
+from nightwing.agent.tools.recon.browser_tools import (
     _browser_state,
     browser_close,
     browser_list_tabs,

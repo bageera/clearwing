@@ -1,16 +1,16 @@
 # Security Policy
 
-Clearwing is an offensive-security tool. That creates two distinct
+Nightwing is an offensive-security tool. That creates two distinct
 reporting lanes that are easy to conflate — please read the scope
 below before filing.
 
 ## Scope
 
-**In scope — vulnerabilities in clearwing itself.** For example:
+**In scope — vulnerabilities in nightwing itself.** For example:
 - Sandbox escapes from the hunter's Docker container into the host.
-- Auth bypasses in the web UI (`clearwing webui`) or the MCP server.
+- Auth bypasses in the web UI (`nightwing webui`) or the MCP server.
 - Command injection via tool arguments that escape the subprocess
-  quoting Clearwing applies before dispatching.
+  quoting Nightwing applies before dispatching.
 - Credential leakage in logs, reports, the knowledge graph, or the
   mechanism store.
 - Disclosure-template injection via finding fields that get written
@@ -20,24 +20,24 @@ below before filing.
 - Supply-chain issues in the distributed wheel or sdist (missing
   `py.typed`, stray absolute paths, bundled secrets, etc.).
 
-**Out of scope — vulnerabilities that Clearwing *finds*.** When a
+**Out of scope — vulnerabilities that Nightwing *finds*.** When a
 sourcehunt run or a network scan surfaces a bug in someone else's
-software, that is not a vulnerability in Clearwing — it's expected
+software, that is not a vulnerability in Nightwing — it's expected
 output. Please report those to the affected vendor through their
-own disclosure channel. Clearwing's
+own disclosure channel. Nightwing's
 `--export-disclosures` flag produces MITRE CVE-request and HackerOne
 templates specifically to help with this hand-off.
 
 Out-of-scope findings we will close without action:
-- Reports that Clearwing "allowed" a scan against a target — this is
+- Reports that Nightwing "allowed" a scan against a target — this is
   the tool's purpose; authorization is the operator's responsibility.
 - Reports that sandbox images include known-vulnerable compilers or
   libraries — the sandboxes are disposable, unreachable from the
   network, and never hold production data.
-- Reports that an LLM provider Clearwing talks to (Anthropic, OpenAI,
+- Reports that an LLM provider Nightwing talks to (Anthropic, OpenAI,
   local models) is insecure — that is the provider's responsibility.
-- Issues in third-party Python packages Clearwing depends on —
-  please file upstream and ping us here only if Clearwing needs a
+- Issues in third-party Python packages Nightwing depends on —
+  please file upstream and ping us here only if Nightwing needs a
   pin bump to propagate the fix.
 
 ## How to report
@@ -45,17 +45,17 @@ Out-of-scope findings we will close without action:
 Use **GitHub Security Advisories** — the private disclosure channel
 built into the repo:
 
-1. Go to <https://github.com/Lazarus-AI/clearwing/security/advisories/new>
+1. Go to <https://github.com/Lazarus-AI/nightwing/security/advisories/new>
 2. Fill in the report. Include:
    - A short, specific title.
-   - Affected version(s) (git SHA or release tag — `clearwing --version`).
+   - Affected version(s) (git SHA or release tag — `nightwing --version`).
    - Reproduction steps. Sandboxed PoCs are welcome and encouraged.
    - Impact assessment. What does exploitation give the attacker?
    - Your preferred credit line.
 
 Do **not** open a public GitHub issue for anything with security
 impact. If you don't have a GitHub account, email the maintainer at
-<eric@quixi.ai> with subject `clearwing security:` — encryption is
+<eric@quixi.ai> with subject `nightwing security:` — encryption is
 optional but if you want it, say so in the first message and we'll
 arrange a key exchange.
 
@@ -73,7 +73,7 @@ arrange a key exchange.
 
 ## Safe harbor
 
-Security research on Clearwing that follows this policy is
+Security research on Nightwing that follows this policy is
 authorized. We won't pursue legal action against researchers who:
 
 - Report privately via the channels above before going public.
@@ -83,7 +83,7 @@ authorized. We won't pursue legal action against researchers who:
   don't own.
 - Give us a reasonable window to fix before public disclosure.
 
-This is not a bug-bounty program — Clearwing is MIT-licensed
+This is not a bug-bounty program — Nightwing is MIT-licensed
 open source and there is no monetary reward. We do give credit in
 the CHANGELOG and the release notes, and we're happy to provide
 a public statement of appreciation you can link from a CV.

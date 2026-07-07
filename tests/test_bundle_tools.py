@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from unittest.mock import patch
 
-import clearwing.agent.tools.recon.bundle_tools as bun_mod
-from clearwing.agent.tools.recon.bundle_tools import (
+import nightwing.agent.tools.recon.bundle_tools as bun_mod
+from nightwing.agent.tools.recon.bundle_tools import (
     extract_api_routes,
     fetch_js_bundles,
     get_bundle_tools,

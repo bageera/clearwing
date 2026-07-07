@@ -14,9 +14,9 @@ from pathlib import Path
 
 import pytest
 
-from clearwing.sourcehunt.disclosure_db import DisclosureDB, _compute_priority
-from clearwing.sourcehunt.disclosure_workflow import DisclosureWorkflow
-from clearwing.sourcehunt.state import DisclosureState
+from nightwing.sourcehunt.disclosure_db import DisclosureDB, _compute_priority
+from nightwing.sourcehunt.disclosure_workflow import DisclosureWorkflow
+from nightwing.sourcehunt.state import DisclosureState
 
 
 def _make_finding(**kwargs) -> dict:
@@ -409,14 +409,14 @@ class TestTimelineAlerts:
 
 class TestCLIRegistration:
     def test_disclose_in_all_commands(self):
-        from clearwing.ui.commands import ALL_COMMANDS, disclose
+        from nightwing.ui.commands import ALL_COMMANDS, disclose
 
         assert disclose in ALL_COMMANDS
 
     def test_add_parser(self):
         import argparse
 
-        from clearwing.ui.commands import disclose
+        from nightwing.ui.commands import disclose
 
         parser = argparse.ArgumentParser()
         subs = parser.add_subparsers()
@@ -427,7 +427,7 @@ class TestCLIRegistration:
     def test_validate_subcommand(self):
         import argparse
 
-        from clearwing.ui.commands import disclose
+        from nightwing.ui.commands import disclose
 
         parser = argparse.ArgumentParser()
         subs = parser.add_subparsers()
@@ -440,7 +440,7 @@ class TestCLIRegistration:
     def test_timeline_subcommand(self):
         import argparse
 
-        from clearwing.ui.commands import disclose
+        from nightwing.ui.commands import disclose
 
         parser = argparse.ArgumentParser()
         subs = parser.add_subparsers()

@@ -8,14 +8,14 @@ from pathlib import Path
 
 import pytest
 
-from clearwing.sandbox.container import SandboxConfig
-from clearwing.sandbox.seccomp_profiles import (
+from nightwing.sandbox.container import SandboxConfig
+from nightwing.sandbox.seccomp_profiles import (
     HUNTER_SECCOMP,
     get_seccomp_profile,
     write_seccomp_profile,
 )
-from clearwing.sourcehunt.audit import SecurityAuditLog
-from clearwing.sourcehunt.behavior_monitor import (
+from nightwing.sourcehunt.audit import SecurityAuditLog
+from nightwing.sourcehunt.behavior_monitor import (
     FILE_WRITE_THRESHOLD,
     BehaviorMonitor,
 )
@@ -97,7 +97,7 @@ class TestSeccompProfiles:
 
 class TestArtifactStore:
     def test_store_and_retrieve_exploit(self):
-        from clearwing.sourcehunt.artifact_store import ArtifactStore
+        from nightwing.sourcehunt.artifact_store import ArtifactStore
 
         with tempfile.TemporaryDirectory() as td:
             store = ArtifactStore(base_dir=Path(td))
@@ -108,7 +108,7 @@ class TestArtifactStore:
             assert retrieved == data
 
     def test_access_logged(self):
-        from clearwing.sourcehunt.artifact_store import ArtifactStore
+        from nightwing.sourcehunt.artifact_store import ArtifactStore
 
         with tempfile.TemporaryDirectory() as td:
             store = ArtifactStore(base_dir=Path(td))
@@ -123,7 +123,7 @@ class TestArtifactStore:
             assert entry["operator"] == "researcher"
 
     def test_store_poc(self):
-        from clearwing.sourcehunt.artifact_store import ArtifactStore
+        from nightwing.sourcehunt.artifact_store import ArtifactStore
 
         with tempfile.TemporaryDirectory() as td:
             store = ArtifactStore(base_dir=Path(td))
@@ -132,7 +132,7 @@ class TestArtifactStore:
             assert store.retrieve(path, approved_by="reviewer-1") == b"poc data"
 
     def test_store_transcript(self):
-        from clearwing.sourcehunt.artifact_store import ArtifactStore
+        from nightwing.sourcehunt.artifact_store import ArtifactStore
 
         with tempfile.TemporaryDirectory() as td:
             store = ArtifactStore(base_dir=Path(td))
@@ -143,7 +143,7 @@ class TestArtifactStore:
     def test_retrieve_without_approval_raises(self):
         """Regression: `export_requires_approval=True` was silent config.
         retrieve() must refuse the call when no `approved_by` is given."""
-        from clearwing.sourcehunt.artifact_store import (
+        from nightwing.sourcehunt.artifact_store import (
             ArtifactExportDenied,
             ArtifactStore,
         )
@@ -155,7 +155,7 @@ class TestArtifactStore:
                 store.retrieve(path)  # no approved_by — must deny
 
     def test_retrieve_with_approval_disabled_skips_check(self):
-        from clearwing.sourcehunt.artifact_store import (
+        from nightwing.sourcehunt.artifact_store import (
             ArtifactPolicy,
             ArtifactStore,
         )
@@ -171,7 +171,7 @@ class TestArtifactStore:
     def test_retrieve_rejects_path_outside_base_dir(self):
         """Regression: retrieve() used to read and decrypt any Path,
         even one pointing outside the artifact store."""
-        from clearwing.sourcehunt.artifact_store import (
+        from nightwing.sourcehunt.artifact_store import (
             ArtifactExportDenied,
             ArtifactPolicy,
             ArtifactStore,
@@ -192,7 +192,7 @@ class TestArtifactStore:
         """Regression: `tied_to_disclosure=True` was silent config.
         purge_expired must skip artifacts whose finding is still in an
         active disclosure state."""
-        from clearwing.sourcehunt.artifact_store import (
+        from nightwing.sourcehunt.artifact_store import (
             ArtifactPolicy,
             ArtifactStore,
         )
@@ -219,7 +219,7 @@ class TestArtifactStore:
             assert not dropped.exists()
 
     def test_list_artifacts(self):
-        from clearwing.sourcehunt.artifact_store import ArtifactStore
+        from nightwing.sourcehunt.artifact_store import ArtifactStore
 
         with tempfile.TemporaryDirectory() as td:
             store = ArtifactStore(base_dir=Path(td))
@@ -232,7 +232,7 @@ class TestArtifactStore:
             assert "poc" in categories
 
     def test_purge_expired(self):
-        from clearwing.sourcehunt.artifact_store import ArtifactPolicy, ArtifactStore
+        from nightwing.sourcehunt.artifact_store import ArtifactPolicy, ArtifactStore
 
         with tempfile.TemporaryDirectory() as td:
             policy = ArtifactPolicy(retention_days=0)
@@ -372,25 +372,25 @@ class TestSecurityAuditLog:
 
 class TestRunnerSecurityOptions:
     def test_behavior_monitor_default_enabled(self):
-        from clearwing.sourcehunt.runner import SourceHuntRunner
+        from nightwing.sourcehunt.runner import SourceHuntRunner
 
         runner = SourceHuntRunner(repo_url="test", depth="standard")
         assert runner._enable_behavior_monitor is True
 
     def test_artifact_store_default_disabled(self):
-        from clearwing.sourcehunt.runner import SourceHuntRunner
+        from nightwing.sourcehunt.runner import SourceHuntRunner
 
         runner = SourceHuntRunner(repo_url="test", depth="standard")
         assert runner._enable_artifact_store is False
 
     def test_gvisor_runtime_none_by_default(self):
-        from clearwing.sourcehunt.runner import SourceHuntRunner
+        from nightwing.sourcehunt.runner import SourceHuntRunner
 
         runner = SourceHuntRunner(repo_url="test", depth="standard")
         assert runner._gvisor_runtime is None
 
     def test_gvisor_runtime_configurable(self):
-        from clearwing.sourcehunt.runner import SourceHuntRunner
+        from nightwing.sourcehunt.runner import SourceHuntRunner
 
         runner = SourceHuntRunner(
             repo_url="test",
@@ -407,7 +407,7 @@ class TestCLIFlags:
     def test_gvisor_flag(self):
         import argparse
 
-        from clearwing.ui.commands import sourcehunt
+        from nightwing.ui.commands import sourcehunt
 
         parser = argparse.ArgumentParser()
         subs = parser.add_subparsers()
@@ -418,7 +418,7 @@ class TestCLIFlags:
     def test_encrypt_artifacts_flag(self):
         import argparse
 
-        from clearwing.ui.commands import sourcehunt
+        from nightwing.ui.commands import sourcehunt
 
         parser = argparse.ArgumentParser()
         subs = parser.add_subparsers()
@@ -429,7 +429,7 @@ class TestCLIFlags:
     def test_no_behavior_monitor_flag(self):
         import argparse
 
-        from clearwing.ui.commands import sourcehunt
+        from nightwing.ui.commands import sourcehunt
 
         parser = argparse.ArgumentParser()
         subs = parser.add_subparsers()

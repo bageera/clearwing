@@ -7,11 +7,11 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from clearwing.data.memory.episodic_memory import Episode, EpisodicMemory
-from clearwing.data.memory.semantic_memory import Knowledge, SemanticMemory
-from clearwing.data.memory.session_store import SessionInfo, SessionStore
-from clearwing.data.memory.summarizer import ContextSummarizer
-from clearwing.llm import AIMessage, HumanMessage
+from nightwing.data.memory.episodic_memory import Episode, EpisodicMemory
+from nightwing.data.memory.semantic_memory import Knowledge, SemanticMemory
+from nightwing.data.memory.session_store import SessionInfo, SessionStore
+from nightwing.data.memory.summarizer import ContextSummarizer
+from nightwing.llm import AIMessage, HumanMessage
 
 # =========================================================================
 # SessionStore

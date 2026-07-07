@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from unittest.mock import patch
 
-import clearwing.agent.tools.crypto.credential_tools as cred_mod
-from clearwing.agent.tools.crypto.credential_tools import (
+import nightwing.agent.tools.crypto.credential_tools as cred_mod
+from nightwing.agent.tools.crypto.credential_tools import (
     analyze_2skd_entropy,
     enumerate_secret_key_format,
     get_credential_tools,
@@ -111,7 +111,7 @@ class TestSecretKeyValidation:
 
         with (
             patch.object(cred_mod, "interrupt", return_value=True),
-            patch("clearwing.agent.tools.crypto.srp_tools._http_post", mock_http_post),
+            patch("nightwing.agent.tools.crypto.srp_tools._http_post", mock_http_post),
         ):
             result = test_secret_key_validation.invoke(
                 {
@@ -142,8 +142,8 @@ class TestSecretKeyValidation:
 
         with (
             patch.object(cred_mod, "interrupt", return_value=True),
-            patch("clearwing.agent.tools.crypto.srp_tools._http_post", mock_http_post),
-            patch("clearwing.agent.tools.crypto.srp_tools._timed_post", mock_timed_post),
+            patch("nightwing.agent.tools.crypto.srp_tools._http_post", mock_http_post),
+            patch("nightwing.agent.tools.crypto.srp_tools._timed_post", mock_timed_post),
         ):
             result = test_secret_key_validation.invoke(
                 {
@@ -189,8 +189,8 @@ class TestSecretKeyValidation:
 
         with (
             patch.object(cred_mod, "interrupt", return_value=True),
-            patch("clearwing.agent.tools.crypto.srp_tools._http_post", mock_http_post),
-            patch("clearwing.agent.tools.crypto.srp_tools._timed_post", mock_timed_post),
+            patch("nightwing.agent.tools.crypto.srp_tools._http_post", mock_http_post),
+            patch("nightwing.agent.tools.crypto.srp_tools._timed_post", mock_timed_post),
         ):
             result = test_secret_key_validation.invoke(
                 {
@@ -229,8 +229,8 @@ class TestSecretKeyValidation:
 
         with (
             patch.object(cred_mod, "interrupt", return_value=True),
-            patch("clearwing.agent.tools.crypto.srp_tools._http_post", mock_http_post),
-            patch("clearwing.agent.tools.crypto.srp_tools._timed_post", mock_timed_post),
+            patch("nightwing.agent.tools.crypto.srp_tools._http_post", mock_http_post),
+            patch("nightwing.agent.tools.crypto.srp_tools._timed_post", mock_timed_post),
         ):
             result = test_secret_key_validation.invoke(
                 {
@@ -264,8 +264,8 @@ class TestSecretKeyValidation:
 
         with (
             patch.object(cred_mod, "interrupt", return_value=True),
-            patch("clearwing.agent.tools.crypto.srp_tools._http_post", mock_http_post),
-            patch("clearwing.agent.tools.crypto.srp_tools._timed_post", mock_timed_post),
+            patch("nightwing.agent.tools.crypto.srp_tools._http_post", mock_http_post),
+            patch("nightwing.agent.tools.crypto.srp_tools._timed_post", mock_timed_post),
         ):
             result = test_secret_key_validation.invoke(
                 {
@@ -300,7 +300,7 @@ class TestEnumerateSecretKeyFormat:
 
         with (
             patch.object(cred_mod, "interrupt", return_value=True),
-            patch("clearwing.agent.tools.crypto.srp_tools._http_post", mock_http_post),
+            patch("nightwing.agent.tools.crypto.srp_tools._http_post", mock_http_post),
         ):
             result = enumerate_secret_key_format.invoke(
                 {
@@ -320,7 +320,7 @@ class TestEnumerateSecretKeyFormat:
 
         with (
             patch.object(cred_mod, "interrupt", return_value=True),
-            patch("clearwing.agent.tools.crypto.srp_tools._http_post", mock_http_post),
+            patch("nightwing.agent.tools.crypto.srp_tools._http_post", mock_http_post),
         ):
             result = enumerate_secret_key_format.invoke(
                 {
@@ -338,7 +338,7 @@ class TestEnumerateSecretKeyFormat:
 
         with (
             patch.object(cred_mod, "interrupt", return_value=True),
-            patch("clearwing.agent.tools.crypto.srp_tools._http_post", mock_http_post),
+            patch("nightwing.agent.tools.crypto.srp_tools._http_post", mock_http_post),
         ):
             result = enumerate_secret_key_format.invoke(
                 {
@@ -358,7 +358,7 @@ class TestEnumerateSecretKeyFormat:
 
         with (
             patch.object(cred_mod, "interrupt", return_value=True),
-            patch("clearwing.agent.tools.crypto.srp_tools._http_post", mock_http_post),
+            patch("nightwing.agent.tools.crypto.srp_tools._http_post", mock_http_post),
         ):
             result = enumerate_secret_key_format.invoke(
                 {

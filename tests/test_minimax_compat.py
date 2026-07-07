@@ -8,8 +8,8 @@ need in-band ``<think>`` tag handling.
 
 from __future__ import annotations
 
-from clearwing.providers.catalog import preset_by_key
-from clearwing.providers.env import (
+from nightwing.providers.catalog import preset_by_key
+from nightwing.providers.env import (
     _default_anthropic_compat_model,
     _is_anthropic_compat_base_url,
     resolve_llm_endpoint,

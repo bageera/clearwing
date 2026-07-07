@@ -2043,8 +2043,8 @@ The only remaining theoretical attack vectors are:
 Fixed a circular import that broke the entire test suite:
 
 ```
-clearwing.agent.tooling → clearwing.llm.native → clearwing.llm.__init__
-  → clearwing.llm.chat → clearwing.agent.tooling (ensure_agent_tool)
+nightwing.agent.tooling → nightwing.llm.native → nightwing.llm.__init__
+  → nightwing.llm.chat → nightwing.agent.tooling (ensure_agent_tool)
 ```
 
 `ensure_agent_tool` at line 139 of `tooling.py` hadn't been defined yet when
@@ -2053,7 +2053,7 @@ clearwing.agent.tooling → clearwing.llm.native → clearwing.llm.__init__
 
 ### 6.2 Feature 4.12 — Credential Attack Tools
 
-Implemented 4 tools in `clearwing/agent/tools/crypto/credential_tools.py`
+Implemented 4 tools in `nightwing/agent/tools/crypto/credential_tools.py`
 (already wired and tested from a prior session):
 
 | Tool | Type | Purpose |

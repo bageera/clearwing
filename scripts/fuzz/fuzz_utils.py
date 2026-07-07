@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Shared fuzzing utilities for Clearwing LLM API pentest suite.
+"""Shared fuzzing utilities for Nightwing LLM API pentest suite.
 
 Provides common HTTP transport, result tracking, analysis helpers,
 and payload generation utilities used by all probe modules.
@@ -25,7 +25,7 @@ import requests
 API_VERSION = "2026-03-31"
 DEFAULT_TIMEOUT = 120
 DEFAULT_DELAY = 2.0
-USER_AGENT = "Clearwing-LLM-Fuzz/0.1.0"
+USER_AGENT = "Nightwing-LLM-Fuzz/0.1.0"
 
 
 def _generate_id(prefix: str = "probe", length: int = 8) -> str:

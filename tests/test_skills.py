@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from clearwing.core.skills.loader import SkillInfo, SkillLoader
+from nightwing.core.skills.loader import SkillInfo, SkillLoader
 
 
 class TestSkillInfo:

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from clearwing.runners.parallel import ParallelExecutor, ParallelScanConfig, TargetResult
+from nightwing.runners.parallel import ParallelExecutor, ParallelScanConfig, TargetResult
 
 
 class TestTargetResult:

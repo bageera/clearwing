@@ -1,7 +1,7 @@
 # Web API — `/ws/agent` event schema
 
-The Clearwing web UI backend (`clearwing.ui.web.app`, started by
-`clearwing serve`) exposes a FastAPI server with a single real-time
+The Nightwing web UI backend (`nightwing.ui.web.app`, started by
+`nightwing serve`) exposes a FastAPI server with a single real-time
 WebSocket endpoint. Commit `dd5f093` wired the in-process
 [`EventBus`](architecture.md) into that WebSocket so external
 consumers (dashboards, CI tailers, custom TUIs) can follow campaign /
@@ -9,7 +9,7 @@ sourcehunt / validator / disclosure / benchmark / eval progress
 without polling the REST API.
 
 This page documents every message that crosses the wire. Field types
-are drawn from the dataclasses in `clearwing/core/event_payloads.py`
+are drawn from the dataclasses in `nightwing/core/event_payloads.py`
 and the `emit_*` call sites — no "optional" marker appears here
 unless the underlying payload type is genuinely `T | None`.
 
@@ -17,7 +17,7 @@ unless the underlying payload type is genuinely `T | None`.
 
 | | |
 |---|---|
-| URL | `ws://<host>:<port>/ws/agent` (default host/port: whatever `clearwing serve` binds to) |
+| URL | `ws://<host>:<port>/ws/agent` (default host/port: whatever `nightwing serve` binds to) |
 | Subprotocol | none — plain JSON-text frames |
 | Auth | none at the transport layer; access control is the deployer's responsibility |
 | CORS | `allow_origins=["*"]` — the frontend is served from the same FastAPI app |
@@ -94,7 +94,7 @@ from the bus — `started`, the streaming `agent_message` reply, and
 the inline `error` frame. Their shapes are documented under
 [Inline server frames](#inline-server-frames).
 
-Payload serialization rules (`clearwing/ui/web/app.py` lines
+Payload serialization rules (`nightwing/ui/web/app.py` lines
 303–317):
 
 - `dict`, `list`, `str`, `int`, `float`, `bool`, `None` → passed
@@ -243,7 +243,7 @@ errors go through the standard `{type, data}` envelope.
 
 ### `campaign_progress`
 
-Fires from `clearwing/sourcehunt/campaign.py` whenever a project in a
+Fires from `nightwing/sourcehunt/campaign.py` whenever a project in a
 multi-project campaign transitions (start, finish, error). Payload
 is `CampaignProgressPayload`.
 
@@ -277,7 +277,7 @@ is `CampaignProgressPayload`.
 ### `sourcehunt_stage`
 
 Fires at every sourcehunt pipeline transition in
-`clearwing/sourcehunt/runner.py`: `preprocess`, `rank`, `hunt`,
+`nightwing/sourcehunt/runner.py`: `preprocess`, `rank`, `hunt`,
 `exploit`, `report`. Payload is `SourcehuntStagePayload`.
 
 | Field | Type | Notes |
@@ -307,7 +307,7 @@ Fires at every sourcehunt pipeline transition in
 
 ### `hunt_progress`
 
-Fires from the hunter pool (`clearwing/sourcehunt/pool.py`) after
+Fires from the hunter pool (`nightwing/sourcehunt/pool.py`) after
 every per-file worker returns. Payload is `HuntProgressPayload`.
 
 | Field | Type | Notes |
@@ -339,7 +339,7 @@ every per-file worker returns. Payload is `HuntProgressPayload`.
 
 ### `validation_result`
 
-Fires from `clearwing/sourcehunt/validator.py` after the adversarial
+Fires from `nightwing/sourcehunt/validator.py` after the adversarial
 second-pass validator issues a verdict. Payload is
 `ValidationResultPayload`.
 
@@ -366,7 +366,7 @@ second-pass validator issues a verdict. Payload is
 
 ### `disclosure_update`
 
-Fires from `clearwing/ui/commands/disclose.py` on every disclosure
+Fires from `nightwing/ui/commands/disclose.py` on every disclosure
 workflow transition. Payload is `DisclosureUpdatePayload`.
 
 | Field | Type | Notes |
@@ -392,7 +392,7 @@ workflow transition. Payload is `DisclosureUpdatePayload`.
 
 ### `benchmark_progress`
 
-Fires from `clearwing/bench/ossfuzz.py` after every benchmark target
+Fires from `nightwing/bench/ossfuzz.py` after every benchmark target
 finishes. Payload is `BenchmarkProgressPayload`.
 
 | Field | Type | Notes |
@@ -420,7 +420,7 @@ finishes. Payload is `BenchmarkProgressPayload`.
 
 ### `eval_progress`
 
-Fires from `clearwing/eval/preprocessing.py` on every eval run —
+Fires from `nightwing/eval/preprocessing.py` on every eval run —
 once per run with `status="running"` or `"cached"`, and once again
 with `"completed"` or `"error"` when the run settles. Payload is
 `EvalProgressPayload`.

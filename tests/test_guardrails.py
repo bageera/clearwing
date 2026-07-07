@@ -2,9 +2,9 @@
 
 import base64
 
-from clearwing.safety.guardrails.input_guardrails import MAX_BASE64_DEPTH, InputGuardrail
-from clearwing.safety.guardrails.output_guardrails import OutputGuardrail
-from clearwing.safety.guardrails.patterns import (
+from nightwing.safety.guardrails.input_guardrails import MAX_BASE64_DEPTH, InputGuardrail
+from nightwing.safety.guardrails.output_guardrails import OutputGuardrail
+from nightwing.safety.guardrails.patterns import (
     DANGEROUS_COMMAND_PATTERNS,
     INJECTION_PATTERNS,
     UNICODE_HOMOGRAPHS,

@@ -8,7 +8,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from clearwing.eval.metrics import (
+from nightwing.eval.metrics import (
     ConfigResult,
     ConfigRunResult,
     EvalMetrics,
@@ -19,7 +19,7 @@ from clearwing.eval.metrics import (
     load_eval_result,
     save_eval_result,
 )
-from clearwing.eval.preprocessing import (
+from nightwing.eval.preprocessing import (
     CONFIGURATIONS,
     EvalConfig,
     resolve_config,
@@ -332,13 +332,13 @@ class TestConfigResolution:
 
 class TestRunnerFlags:
     def test_preprocessing_true_is_default(self):
-        from clearwing.sourcehunt.runner import SourceHuntRunner
+        from nightwing.sourcehunt.runner import SourceHuntRunner
 
         runner = SourceHuntRunner(repo_url="https://example.com/repo")
         assert runner._preprocessing is True
 
     def test_preprocessing_false_stored(self):
-        from clearwing.sourcehunt.runner import SourceHuntRunner
+        from nightwing.sourcehunt.runner import SourceHuntRunner
 
         runner = SourceHuntRunner(
             repo_url="https://example.com/repo",
@@ -347,7 +347,7 @@ class TestRunnerFlags:
         assert runner._preprocessing is False
 
     def test_seed_harness_crashes_stored(self):
-        from clearwing.sourcehunt.runner import SourceHuntRunner
+        from nightwing.sourcehunt.runner import SourceHuntRunner
 
         runner = SourceHuntRunner(
             repo_url="https://example.com/repo",
@@ -356,7 +356,7 @@ class TestRunnerFlags:
         assert runner._seed_harness_crashes is True
 
     def test_seed_harness_crashes_default_false(self):
-        from clearwing.sourcehunt.runner import SourceHuntRunner
+        from nightwing.sourcehunt.runner import SourceHuntRunner
 
         runner = SourceHuntRunner(repo_url="https://example.com/repo")
         assert runner._seed_harness_crashes is False
@@ -369,7 +369,7 @@ class TestEvalCLI:
     def test_eval_preprocessing_flag(self):
         import argparse
 
-        from clearwing.ui.commands import eval
+        from nightwing.ui.commands import eval
 
         parser = argparse.ArgumentParser()
         subs = parser.add_subparsers()
@@ -388,7 +388,7 @@ class TestEvalCLI:
     def test_eval_configs_parsing(self):
         import argparse
 
-        from clearwing.ui.commands import eval
+        from nightwing.ui.commands import eval
 
         parser = argparse.ArgumentParser()
         subs = parser.add_subparsers()
@@ -409,7 +409,7 @@ class TestEvalCLI:
     def test_eval_budget_flag(self):
         import argparse
 
-        from clearwing.ui.commands import eval
+        from nightwing.ui.commands import eval
 
         parser = argparse.ArgumentParser()
         subs = parser.add_subparsers()
@@ -429,7 +429,7 @@ class TestEvalCLI:
     def test_eval_runs_flag(self):
         import argparse
 
-        from clearwing.ui.commands import eval
+        from nightwing.ui.commands import eval
 
         parser = argparse.ArgumentParser()
         subs = parser.add_subparsers()
@@ -449,7 +449,7 @@ class TestEvalCLI:
     def test_eval_ground_truth_flag(self):
         import argparse
 
-        from clearwing.ui.commands import eval
+        from nightwing.ui.commands import eval
 
         parser = argparse.ArgumentParser()
         subs = parser.add_subparsers()
@@ -470,7 +470,7 @@ class TestEvalCLI:
     def test_eval_compare_flag(self):
         import argparse
 
-        from clearwing.ui.commands import eval
+        from nightwing.ui.commands import eval
 
         parser = argparse.ArgumentParser()
         subs = parser.add_subparsers()
@@ -489,7 +489,7 @@ class TestEvalCLI:
     def test_eval_compare_format(self):
         import argparse
 
-        from clearwing.ui.commands import eval
+        from nightwing.ui.commands import eval
 
         parser = argparse.ArgumentParser()
         subs = parser.add_subparsers()

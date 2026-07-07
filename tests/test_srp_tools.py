@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from clearwing.agent.tools.crypto.srp_tools import (
+from nightwing.agent.tools.crypto.srp_tools import (
     get_srp_tools,
     srp_extract_verifier_info,
     srp_fuzz_parameters,
@@ -59,7 +59,7 @@ class TestSRPFuzzNoInterrupt:
     def test_returns_error_when_declined(self):
         from unittest.mock import patch
 
-        with patch("clearwing.agent.tools.crypto.srp_tools.interrupt", return_value=False):
+        with patch("nightwing.agent.tools.crypto.srp_tools.interrupt", return_value=False):
             result = srp_fuzz_parameters.invoke(
                 {
                     "target": "http://127.0.0.1:1",
@@ -74,7 +74,7 @@ class TestSRPTimingNoInterrupt:
     def test_returns_error_when_declined(self):
         from unittest.mock import patch
 
-        with patch("clearwing.agent.tools.crypto.srp_tools.interrupt", return_value=False):
+        with patch("nightwing.agent.tools.crypto.srp_tools.interrupt", return_value=False):
             result = srp_timing_attack.invoke(
                 {
                     "target": "http://127.0.0.1:1",
@@ -89,7 +89,7 @@ class TestSRPTimingValidation:
     def test_rejects_too_few_samples(self):
         from unittest.mock import patch
 
-        with patch("clearwing.agent.tools.crypto.srp_tools.interrupt", return_value=True):
+        with patch("nightwing.agent.tools.crypto.srp_tools.interrupt", return_value=True):
             result = srp_timing_attack.invoke(
                 {
                     "target": "http://127.0.0.1:1",
@@ -103,7 +103,7 @@ class TestSRPTimingValidation:
     def test_rejects_unknown_test_type(self):
         from unittest.mock import patch
 
-        with patch("clearwing.agent.tools.crypto.srp_tools.interrupt", return_value=True):
+        with patch("nightwing.agent.tools.crypto.srp_tools.interrupt", return_value=True):
             result = srp_timing_attack.invoke(
                 {
                     "target": "http://127.0.0.1:1",
@@ -118,7 +118,7 @@ class TestSRPFuzzUnknownVectors:
     def test_rejects_unknown_category(self):
         from unittest.mock import patch
 
-        with patch("clearwing.agent.tools.crypto.srp_tools.interrupt", return_value=True):
+        with patch("nightwing.agent.tools.crypto.srp_tools.interrupt", return_value=True):
             result = srp_fuzz_parameters.invoke(
                 {
                     "target": "http://127.0.0.1:1",

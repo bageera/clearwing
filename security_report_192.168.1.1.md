@@ -171,5 +171,5 @@ The router at 192.168.1.1 (Spectrum ASKEY SBE1V1K) has **19 security findings**:
 
 ## Scan Files
 
-- **Script:** `/Users/jonbethea/projects/blacktech/clearwing/scan_router.py`
-- **JSON Results:** `/Users/jonbethea/projects/blacktech/clearwing/scan_results_192.168.1.1.json`
+- **Script:** `/Users/jonbethea/projects/blacktech/nightwing/scan_router.py`
+- **JSON Results:** `/Users/jonbethea/projects/blacktech/nightwing/scan_results_192.168.1.1.json`

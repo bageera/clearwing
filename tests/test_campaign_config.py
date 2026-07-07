@@ -6,7 +6,7 @@ import tempfile
 
 import pytest
 
-from clearwing.sourcehunt.campaign_config import (
+from nightwing.sourcehunt.campaign_config import (
     CampaignConfig,
     CampaignTargetConfig,
     load_campaign_config,

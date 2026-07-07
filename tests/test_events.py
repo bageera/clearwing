@@ -2,7 +2,7 @@
 
 import threading
 
-from clearwing.core.events import EventBus, EventType
+from nightwing.core.events import EventBus, EventType
 
 
 def _reset_bus():

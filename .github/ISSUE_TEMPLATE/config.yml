@@ -1,16 +1,16 @@
 blank_issues_enabled: false
 contact_links:
-  - name: Security vulnerability in Clearwing
-    url: https://github.com/Lazarus-AI/clearwing/security/advisories/new
+  - name: Security vulnerability in Nightwing
+    url: https://github.com/Lazarus-AI/nightwing/security/advisories/new
     about: |
       Do NOT file a public issue for security impact. Use GitHub
       Security Advisories — the private disclosure channel. See
       SECURITY.md for the scope and response-time SLA.
-  - name: Vulnerability Clearwing found in someone else's software
-    url: https://github.com/Lazarus-AI/clearwing/blob/main/SECURITY.md
+  - name: Vulnerability Nightwing found in someone else's software
+    url: https://github.com/Lazarus-AI/nightwing/blob/main/SECURITY.md
     about: |
-      Vulnerabilities in targets Clearwing scanned are NOT bugs in
-      Clearwing — they're expected output. Please report those to
+      Vulnerabilities in targets Nightwing scanned are NOT bugs in
+      Nightwing — they're expected output. Please report those to
       the affected vendor through their own disclosure channel.
-      Clearwing's `--export-disclosures` flag generates MITRE CVE
+      Nightwing's `--export-disclosures` flag generates MITRE CVE
       and HackerOne templates to help.

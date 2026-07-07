@@ -1,21 +1,21 @@
-# Contributing to Clearwing
+# Contributing to Nightwing
 
 Thanks for wanting to help. This doc covers dev setup, the CI gate,
 the PR checklist, and commit style.
 
 ## Dev setup
 
-Clearwing targets Python 3.10+. Use `uv`, not raw `pip`.
+Nightwing targets Python 3.10+. Use `uv`, not raw `pip`.
 The fastest path to a working dev environment:
 
 ```bash
 # Install uv once: https://docs.astral.sh/uv/
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
-git clone https://github.com/Lazarus-AI/clearwing.git
-cd clearwing
+git clone https://github.com/Lazarus-AI/nightwing.git
+cd nightwing
 uv sync --all-extras
-uv run clearwing --help
+uv run nightwing --help
 ```
 
 `uv sync --all-extras` reads `pyproject.toml` + `uv.lock` and builds a
@@ -49,9 +49,9 @@ Individual targets:
 
 | Target | What it runs |
 |---|---|
-| `uv run make lint` | `ruff check clearwing/ tests/` + `ruff format --check clearwing/ tests/` |
+| `uv run make lint` | `ruff check nightwing/ tests/` + `ruff format --check nightwing/ tests/` |
 | `uv run make format` / `uv run make fmt` | `ruff format` + `ruff check --fix` (writes changes) |
-| `uv run make type` | `mypy --follow-imports=silent clearwing/findings clearwing/sourcehunt clearwing/capabilities.py` |
+| `uv run make type` | `mypy --follow-imports=silent nightwing/findings nightwing/sourcehunt nightwing/capabilities.py` |
 | `uv run make test` | `pytest -q` |
 | `uv run make test-strict` | `pytest -q --strict-markers --strict-config` (CI mode) |
 | `uv run make build` | `python -m build` + `twine check dist/*` (auto-cleans first) |
@@ -128,7 +128,7 @@ Rules:
 - Wrap the body at ~72 chars too — `git log` on a terminal doesn't
   soft-wrap, and neither do most code-review tools.
 - Reference the phase number (`Phase 5c:`) for refactor work that
-  tracks against the [refactor plan](https://github.com/Lazarus-AI/clearwing/blob/main/docs/refactor-plan.md).
+  tracks against the [refactor plan](https://github.com/Lazarus-AI/nightwing/blob/main/docs/refactor-plan.md).
 - If the change has a non-obvious reason (avoided a race, worked
   around a library bug, responds to a code review concern) —
   explain it. Future-you will want to know.
@@ -151,13 +151,13 @@ Example: `refactor/hunt-split-discovery-tools`
 
 ## Running against a real target
 
-Clearwing is an offensive-security tool. Do not run it against
+Nightwing is an offensive-security tool. Do not run it against
 systems you don't own or aren't explicitly authorized to test.
 See `SECURITY.md` for the distinction between "vulnerabilities in
-Clearwing" (report to us) and "vulnerabilities Clearwing finds in
+Nightwing" (report to us) and "vulnerabilities Nightwing finds in
 other software" (report to that vendor).
 
-## Reporting vulnerabilities in Clearwing itself
+## Reporting vulnerabilities in Nightwing itself
 
 See [`SECURITY.md`](SECURITY.md). **Don't** open a public issue for
 security impact — use GitHub Security Advisories or email the

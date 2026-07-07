@@ -18,7 +18,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 from genai_pyo3 import ChatResponse
 
-from clearwing.sourcehunt.verifier import (
+from nightwing.sourcehunt.verifier import (
     VERIFIER_SYSTEM_PROMPT_V01,
     VERIFIER_SYSTEM_PROMPT_V02,
     Verifier,

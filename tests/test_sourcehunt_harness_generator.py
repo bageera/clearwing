@@ -13,8 +13,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 from genai_pyo3 import ChatResponse
 
-from clearwing.sandbox.container import ExecResult
-from clearwing.sourcehunt.harness_generator import (
+from nightwing.sandbox.container import ExecResult
+from nightwing.sourcehunt.harness_generator import (
     HarnessGenerator,
     HarnessGeneratorConfig,
     HarnessGeneratorResult,
@@ -22,7 +22,7 @@ from clearwing.sourcehunt.harness_generator import (
     _parse_sanitizer_report,
     _strip_markdown_fences,
 )
-from clearwing.sourcehunt.pool import HunterPool, HuntPoolConfig
+from nightwing.sourcehunt.pool import HunterPool, HuntPoolConfig
 
 FIXTURE_C_PROPAGATION = Path(__file__).parent / "fixtures" / "vuln_samples" / "c_propagation"
 
@@ -379,7 +379,7 @@ class TestHuntPoolSeededCrashPlumbing:
         )
         pool = HunterPool(cfg)
 
-        with patch("clearwing.sourcehunt.hunter.build_hunter_agent") as mock_build:
+        with patch("nightwing.sourcehunt.hunter.build_hunter_agent") as mock_build:
             mock_build.return_value = (MagicMock(), MagicMock(session_id="s1"))
             pool._build_hunter_for_file(ft, sandbox=None)
             kwargs = mock_build.call_args.kwargs

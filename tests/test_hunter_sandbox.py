@@ -8,11 +8,11 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from clearwing.sandbox.builders import (
+from nightwing.sandbox.builders import (
     DEFAULT_BASE_IMAGES,
     BuildSystemDetector,
 )
-from clearwing.sandbox.hunter_sandbox import HunterSandbox
+from nightwing.sandbox.hunter_sandbox import HunterSandbox
 
 
 @pytest.fixture
@@ -126,7 +126,7 @@ class TestHunterSandboxBuildImage:
 
         sb = HunterSandbox(repo_path=str(temp_repo))
         tag = sb.build_image()
-        assert tag.startswith("clearwing-sourcehunt:")
+        assert tag.startswith("nightwing-sourcehunt:")
         mock_docker.images.build.assert_called_once()
         kwargs = mock_docker.images.build.call_args.kwargs
         assert kwargs["tag"] == tag
@@ -203,7 +203,7 @@ class TestHunterSandboxSpawn:
         assert volumes[repo_abs]["bind"] == "/workspace"
         assert volumes[repo_abs]["mode"] == "ro"
         # Session id was injected into env
-        assert kwargs["environment"]["CLEARWING_SESSION_ID"] == "test-session"
+        assert kwargs["environment"]["NIGHTWING_SESSION_ID"] == "test-session"
 
     def test_spawn_passes_inline_seccomp_json_not_path(self, temp_repo: Path, mock_docker):
         """Regression: Docker's Engine API rejects path-form seccomp options

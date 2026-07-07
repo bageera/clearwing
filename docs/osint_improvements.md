@@ -1,6 +1,6 @@
 # OSINT Tool Improvements Summary
 
-This document summarizes the improvements made to the Clearwing OSINT capabilities.
+This document summarizes the improvements made to the Nightwing OSINT capabilities.
 
 ## 1. Enhanced Data Management (recon_store.py)
 

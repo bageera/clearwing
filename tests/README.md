@@ -1,6 +1,6 @@
-# Clearwing Tests
+# Nightwing Tests
 
-This directory contains test cases for Clearwing modules.
+This directory contains test cases for Nightwing modules.
 
 ## Running Tests
 
@@ -55,7 +55,7 @@ Generate HTML coverage report:
 ```bash
 make test-coverage
 # or manually:
-pytest --cov=clearwing --cov-report=term-missing --cov-report=html
+pytest --cov=nightwing --cov-report=term-missing --cov-report=html
 # view at:
 open htmlcov/index.html
 ```

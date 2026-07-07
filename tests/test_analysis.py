@@ -5,8 +5,8 @@ import tempfile
 import textwrap
 from pathlib import Path
 
-from clearwing.analysis.source_analyzer import AnalysisResult, AnalyzerFinding, SourceAnalyzer
-from clearwing.analysis.taint_tracker import TAINT_SINKS, TAINT_SOURCES, TaintFlow, TaintTracker
+from nightwing.analysis.source_analyzer import AnalysisResult, AnalyzerFinding, SourceAnalyzer
+from nightwing.analysis.taint_tracker import TAINT_SINKS, TAINT_SOURCES, TaintFlow, TaintTracker
 
 # ---------------------------------------------------------------------------
 # SourceAnalyzer tests

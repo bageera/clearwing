@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from clearwing.agent.tools.recon.proxy_tools import (
+from nightwing.agent.tools.recon.proxy_tools import (
     ProxyHistory,
     _proxy_history,
     get_proxy_tools,

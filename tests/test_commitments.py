@@ -6,7 +6,7 @@ import json
 import tempfile
 from pathlib import Path
 
-from clearwing.sourcehunt.commitment import (
+from nightwing.sourcehunt.commitment import (
     Commitment,
     CommitmentLog,
     CommitmentType,
@@ -280,7 +280,7 @@ class TestCLIRegistration:
     def test_verify_subcommand(self):
         import argparse
 
-        from clearwing.ui.commands import disclose
+        from nightwing.ui.commands import disclose
 
         parser = argparse.ArgumentParser()
         subs = parser.add_subparsers()
@@ -295,7 +295,7 @@ class TestCLIRegistration:
     def test_commitments_subcommand(self):
         import argparse
 
-        from clearwing.ui.commands import disclose
+        from nightwing.ui.commands import disclose
 
         parser = argparse.ArgumentParser()
         subs = parser.add_subparsers()
@@ -306,7 +306,7 @@ class TestCLIRegistration:
     def test_commitments_format_flag(self):
         import argparse
 
-        from clearwing.ui.commands import disclose
+        from nightwing.ui.commands import disclose
 
         parser = argparse.ArgumentParser()
         subs = parser.add_subparsers()

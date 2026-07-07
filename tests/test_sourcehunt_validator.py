@@ -21,9 +21,9 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from clearwing.sourcehunt.calibration import CalibrationRecord, CalibrationStore
-from clearwing.sourcehunt.state import AxisResult, ValidatorVerdict
-from clearwing.sourcehunt.validator import (
+from nightwing.sourcehunt.calibration import CalibrationRecord, CalibrationStore
+from nightwing.sourcehunt.state import AxisResult, ValidatorVerdict
+from nightwing.sourcehunt.validator import (
     VALIDATOR_QUICK_PROMPT,
     VALIDATOR_SYSTEM_PROMPT,
     Validator,
@@ -586,13 +586,13 @@ class TestFileContext:
 
 class TestRunnerIntegration:
     def test_validator_mode_v2_default(self):
-        from clearwing.sourcehunt.runner import SourceHuntRunner
+        from nightwing.sourcehunt.runner import SourceHuntRunner
 
         r = SourceHuntRunner(repo_url="test", depth="standard")
         assert r.validator_mode == "v2"
 
     def test_validator_mode_v1_legacy(self):
-        from clearwing.sourcehunt.runner import SourceHuntRunner
+        from nightwing.sourcehunt.runner import SourceHuntRunner
 
         r = SourceHuntRunner(
             repo_url="test",
@@ -602,13 +602,13 @@ class TestRunnerIntegration:
         assert r.validator_mode == "v1"
 
     def test_calibration_store_created_by_default(self):
-        from clearwing.sourcehunt.runner import SourceHuntRunner
+        from nightwing.sourcehunt.runner import SourceHuntRunner
 
         r = SourceHuntRunner(repo_url="test", depth="standard")
         assert r._calibration_store is not None
 
     def test_calibration_disabled(self):
-        from clearwing.sourcehunt.runner import SourceHuntRunner
+        from nightwing.sourcehunt.runner import SourceHuntRunner
 
         r = SourceHuntRunner(
             repo_url="test",

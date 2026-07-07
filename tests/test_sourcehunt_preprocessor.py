@@ -11,7 +11,7 @@ from pathlib import Path
 
 import pytest
 
-from clearwing.sourcehunt.preprocessor import (
+from nightwing.sourcehunt.preprocessor import (
     Preprocessor,
     PreprocessResult,
     _file_defines_constants,

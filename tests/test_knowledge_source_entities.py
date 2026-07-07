@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from clearwing.data.knowledge import KnowledgeGraph
-from clearwing.sourcehunt.runner import SourceHuntRunner
+from nightwing.data.knowledge import KnowledgeGraph
+from nightwing.sourcehunt.runner import SourceHuntRunner
 
 
 def _finding(**kwargs) -> dict:

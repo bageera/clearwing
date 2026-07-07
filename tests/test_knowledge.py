@@ -4,7 +4,7 @@ import json
 
 import pytest
 
-from clearwing.data.knowledge import KnowledgeGraph
+from nightwing.data.knowledge import KnowledgeGraph
 
 
 @pytest.fixture

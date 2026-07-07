@@ -20,7 +20,7 @@ import tempfile
 from dataclasses import asdict
 from unittest.mock import MagicMock
 
-from clearwing.sourcehunt.elaboration import (
+from nightwing.sourcehunt.elaboration import (
     ElaborationAgent,
     _build_elaboration_prompt,
     build_elaboration_tools,
@@ -29,7 +29,7 @@ from clearwing.sourcehunt.elaboration import (
     load_session_findings,
     prioritize_for_elaboration,
 )
-from clearwing.sourcehunt.state import ElaborationResult
+from nightwing.sourcehunt.state import ElaborationResult
 
 
 def _make_finding(**kwargs) -> dict:
@@ -220,7 +220,7 @@ class TestElaborationAgentNoSandbox:
 
 class TestElaborationTools:
     def test_tools_include_record(self):
-        from clearwing.agent.tools.hunt.sandbox import HunterContext
+        from nightwing.agent.tools.hunt.sandbox import HunterContext
 
         ctx = HunterContext(repo_path="/tmp", file_path="src/main.c")
         finding = _make_finding()
@@ -231,7 +231,7 @@ class TestElaborationTools:
         assert "read_file" in tool_names
 
     def test_sets_ctx_elaboration_result(self):
-        from clearwing.agent.tools.hunt.sandbox import HunterContext
+        from nightwing.agent.tools.hunt.sandbox import HunterContext
 
         ctx = HunterContext(repo_path="/tmp", file_path="src/main.c")
         finding = _make_finding()
@@ -252,7 +252,7 @@ class TestElaborationTools:
         assert ctx.elaboration_result.upgraded_impact == "code_execution"
 
     def test_partial_elaboration(self):
-        from clearwing.agent.tools.hunt.sandbox import HunterContext
+        from nightwing.agent.tools.hunt.sandbox import HunterContext
 
         ctx = HunterContext(repo_path="/tmp", file_path="src/main.c")
         finding = _make_finding()
@@ -271,7 +271,7 @@ class TestElaborationTools:
         assert ctx.elaboration_result.blocking_mitigations == ["CFI", "KASLR"]
 
     def test_successful_elaboration(self):
-        from clearwing.agent.tools.hunt.sandbox import HunterContext
+        from nightwing.agent.tools.hunt.sandbox import HunterContext
 
         ctx = HunterContext(repo_path="/tmp", file_path="src/main.c")
         finding = _make_finding()
@@ -394,13 +394,13 @@ class TestElaborationPrompt:
 
 class TestRunnerElaboration:
     def test_elaboration_disabled_by_default(self):
-        from clearwing.sourcehunt.runner import SourceHuntRunner
+        from nightwing.sourcehunt.runner import SourceHuntRunner
 
         r = SourceHuntRunner(repo_url="test", depth="standard")
         assert r.enable_elaboration is False
 
     def test_elaboration_enabled_with_flag(self):
-        from clearwing.sourcehunt.runner import SourceHuntRunner
+        from nightwing.sourcehunt.runner import SourceHuntRunner
 
         r = SourceHuntRunner(
             repo_url="test",
@@ -410,7 +410,7 @@ class TestRunnerElaboration:
         assert r.enable_elaboration is True
 
     def test_apply_elaboration_creates_new_finding(self):
-        from clearwing.sourcehunt.runner import _apply_elaboration
+        from nightwing.sourcehunt.runner import _apply_elaboration
 
         finding = _make_finding(id="original-123")
         elab_result = ElaborationResult(
@@ -434,7 +434,7 @@ class TestRunnerElaboration:
         assert finding["id"] == "original-123"
 
     def test_apply_elaboration_preserves_original(self):
-        from clearwing.sourcehunt.runner import _apply_elaboration
+        from nightwing.sourcehunt.runner import _apply_elaboration
 
         finding = _make_finding(id="original-456", severity="high")
         elab_result = ElaborationResult(

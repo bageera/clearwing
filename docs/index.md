@@ -1,11 +1,11 @@
-# Clearwing
+# Nightwing
 
 **Autonomous vulnerability scanner and source-code hunter.** Built on
 `genai-pyo3`, a native Rust-backed LLM runtime speaking every major
 provider (Anthropic, OpenAI, OpenRouter, Ollama, LM Studio, Together,
 Groq, DeepSeek, MiniMax, Gemini, any OpenAI-compatible endpoint).
 
-Clearwing is a dual-mode offensive-security tool:
+Nightwing is a dual-mode offensive-security tool:
 
 - **Network-pentest agent** — a ReAct-loop agent that scans live
   targets, enumerates services, detects vulnerabilities, attempts
@@ -29,8 +29,8 @@ Clearwing is a dual-mode offensive-security tool:
 | [**Quickstart**](quickstart.md) | Install, run a network scan, run a sourcehunt pass, read the results |
 | [**LLM providers**](providers.md) | OpenRouter / Ollama / LM Studio / vLLM / Together / Groq / DeepSeek / OpenAI — CLI + env + config.yaml recipes for each |
 | [**Architecture**](architecture.md) | How the ReAct loops, sandboxes, capabilities layer, Finding dataclass, and knowledge graph fit together |
-| [**CLI reference**](cli.md) | Every `clearwing <subcommand>` flag, with examples |
-| [**API reference**](api.md) | `clearwing.findings.Finding`, the sourcehunt runner, auto-generated from docstrings |
+| [**CLI reference**](cli.md) | Every `nightwing <subcommand>` flag, with examples |
+| [**API reference**](api.md) | `nightwing.findings.Finding`, the sourcehunt runner, auto-generated from docstrings |
 | [**Web API (WebSocket)**](web-api.md) | `/ws/agent` client/server message schema for the event-streaming web UI backend |
 | [**Crypto tools**](crypto-tools.md) | TLS, SRP, KDF, vault encryption, timing, WebCrypto, and credential attack tools — full reference |
 | [**1Password CTF**](1password_ctf.md) | CTF runbook: target analysis, toolchain mapping, step-by-step attack procedures, decision tree |
@@ -49,16 +49,16 @@ See `CHANGELOG.md` at the repo root for the running change list.
 ## Not for
 
 - Running scans against targets you don't own or aren't authorized
-  to test. Clearwing is an offensive tool and provides no technical
+  to test. Nightwing is an offensive tool and provides no technical
   barrier to misuse — authorization is entirely the operator's
   responsibility.
-- Replacing your security team. Clearwing surfaces candidate
+- Replacing your security team. Nightwing surfaces candidate
   findings; triage and fix decisions stay with humans.
 
 ## Reporting
 
-- Vulnerabilities **in** Clearwing → `SECURITY.md` (GitHub Security
+- Vulnerabilities **in** Nightwing → `SECURITY.md` (GitHub Security
   Advisories).
-- Vulnerabilities Clearwing **finds in other software** → that
-  vendor's disclosure channel. `clearwing sourcehunt --export-disclosures`
+- Vulnerabilities Nightwing **finds in other software** → that
+  vendor's disclosure channel. `nightwing sourcehunt --export-disclosures`
   generates MITRE and HackerOne templates as a starting point.
