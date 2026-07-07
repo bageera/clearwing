@@ -112,6 +112,11 @@ results/figma/
 scripts/figma/
 figma_repos/
 
+# Root-level scan reports (not source — engagement output)
+security_report_*.md
+*_REPORT*.md
+FINDINGS_*.md
+
 # Local research checkouts. Originally started as submodules but never
 # wired up with .gitmodules or .git/modules/; the 5 dangling gitlinks
 # were dropped from the index in the Phase 5 "gitlink cleanup" commit.
