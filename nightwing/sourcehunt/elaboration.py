@@ -510,11 +510,10 @@ class ElaborationAgent:
                     pass
 
     def _spawn_sandbox(self) -> Any:
-        if self.sandbox_manager is not None:
-            return self.sandbox_manager.spawn(
-                writable_workspace=True,
-                timeout_seconds=self._band["timeout_seconds"],
-            )
-        if self.sandbox_factory is not None:
-            return self.sandbox_factory()
-        return None
+        from .exploiter import spawn_sandbox
+
+        return spawn_sandbox(
+            self.sandbox_manager,
+            self.sandbox_factory,
+            timeout_seconds=self._band["timeout_seconds"],
+        )

@@ -198,9 +198,9 @@ class RevengSandbox:
 
     def _get_client(self) -> Any:
         if self._client is None:
-            import docker
+            from ..sandbox.container import get_docker_client
 
-            self._client = docker.from_env()
+            self._client = get_docker_client()
         return self._client
 
     def build_image(self) -> str:

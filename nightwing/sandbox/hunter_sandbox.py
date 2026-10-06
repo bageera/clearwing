@@ -24,7 +24,7 @@ from .builders import (
     compute_sanitizer_env,
     validate_sanitizer_combo,
 )
-from .container import SandboxConfig, SandboxContainer
+from .container import SandboxConfig, SandboxContainer, get_docker_client
 from .seccomp_profiles import get_seccomp_profile
 
 logger = logging.getLogger(__name__)
@@ -92,9 +92,7 @@ class HunterSandbox:
 
     def _get_client(self):
         if self._client is None:
-            import docker
-
-            self._client = docker.from_env()
+            self._client = get_docker_client()
         return self._client
 
     def build_image(self) -> str:

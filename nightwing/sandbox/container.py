@@ -19,6 +19,22 @@ from dataclasses import dataclass, field
 logger = logging.getLogger(__name__)
 
 
+def get_docker_client():
+    """Return a docker-py client for the local daemon, or raise a helpful ImportError.
+
+    Single shared factory for every docker-touching module
+    (SandboxContainer, HunterSandbox, RevengSandbox, pentest containers).
+    """
+    try:
+        import docker
+    except ImportError as e:
+        raise ImportError(
+            "The 'docker' Python package is required for Docker features. "
+            "Install it with: pip install docker"
+        ) from e
+    return docker.from_env()
+
+
 @dataclass
 class ExecResult:
     """Result from a single command executed inside a sandbox container."""
@@ -85,9 +101,7 @@ class SandboxContainer:
 
     def _get_client(self):
         if self._client is None:
-            import docker  # local import — keeps the module importable without docker
-
-            self._client = docker.from_env()
+            self._client = get_docker_client()
         return self._client
 
     def start(self) -> str:
