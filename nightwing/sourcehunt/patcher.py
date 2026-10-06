@@ -19,7 +19,6 @@ from __future__ import annotations
 
 import json
 import logging
-import re
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, cast
@@ -208,14 +207,12 @@ class AutoPatcher:
         return msg
 
     def _parse_response(self, content: str) -> dict | None:
-        match = re.search(r"\{[\s\S]*\}", content)
-        if not match:
-            return None
+        from nightwing.llm.native import extract_json_object
+
         try:
-            parsed = json.loads(match.group(0))
-        except json.JSONDecodeError:
+            return extract_json_object(content)
+        except ValueError:
             return None
-        return parsed if isinstance(parsed, dict) else None
 
 
 def apply_patch_attempt(
@@ -237,14 +234,12 @@ def apply_patch_attempt(
         )
     else:
         # Legacy dict path
-        finding["auto_patch"] = attempt.diff if attempt.diff else None  # type: ignore[index]
-        finding["auto_patch_validated"] = (  # type: ignore[index]
-            attempt.validated if attempt.attempted else None
-        )
+        finding["auto_patch"] = attempt.diff if attempt.diff else None
+        finding["auto_patch_validated"] = attempt.validated if attempt.attempted else None
         if attempt.validated:
             from nightwing.findings.types import EVIDENCE_LEVELS as _EL
 
-            current = finding.get("evidence_level", "suspicion")  # type: ignore[union-attr]
+            current = finding.get("evidence_level", "suspicion")
             if _EL.index("patch_validated") > _EL.index(current):
-                finding["evidence_level"] = "patch_validated"  # type: ignore[index]
+                finding["evidence_level"] = "patch_validated"
     return finding

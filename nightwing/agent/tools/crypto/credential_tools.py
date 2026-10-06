@@ -6,7 +6,7 @@ import base64
 import json
 import math
 import os
-from typing import Any
+from typing import Any, cast
 
 from nightwing.agent.tooling import interrupt, tool
 from nightwing.agent.tools.crypto.kdf_tools import (
@@ -488,7 +488,7 @@ def enumerate_secret_key_format(
     if enrollment_result.get("reveals_format") or enrollment_result.get("reveals_generation"):
         predictability_risks.append("Enrollment endpoint leaks key format or generation details.")
 
-    effective_entropy = format_analysis["total_entropy_bits"]
+    effective_entropy = cast(int, format_analysis["total_entropy_bits"])
     if effective_entropy >= 128:
         entropy_assessment = (
             f"Secret Key provides ~{effective_entropy:.0f} bits of entropy. "

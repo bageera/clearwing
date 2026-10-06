@@ -5,7 +5,7 @@ from __future__ import annotations
 import base64
 import json
 import logging
-from typing import Any
+from typing import Any, cast
 
 from nightwing.agent.tooling import interrupt, tool
 
@@ -572,11 +572,11 @@ _SEVERITY_MAP = {
 
 def _build_aead_payload(blob: str, request_template: str) -> dict:
     if request_template:
-        return json.loads(request_template.replace("{{BLOB}}", blob))
+        return cast(dict, json.loads(request_template.replace("{{BLOB}}", blob)))
     return {"enc": blob}
 
 
-def _collect_baseline(http_post, url: str, blob: str, template: str, samples: int) -> dict:
+def _collect_baseline(http_post: Any, url: str, blob: str, template: str, samples: int) -> dict:
     statuses, bodies, times = [], [], []
     for _ in range(samples):
         status, _hdrs, body, dur = http_post(url, _build_aead_payload(blob, template))
@@ -587,7 +587,7 @@ def _collect_baseline(http_post, url: str, blob: str, template: str, samples: in
 
 
 def _test_single_modification(
-    http_post,
+    http_post: Any,
     url: str,
     parsed: dict,
     mod_type: str,

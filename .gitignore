@@ -116,6 +116,7 @@ figma_repos/
 security_report_*.md
 *_REPORT*.md
 FINDINGS_*.md
+scan_results_*.json
 
 # Local research checkouts. Originally started as submodules but never
 # wired up with .gitmodules or .git/modules/; the 5 dangling gitlinks

@@ -6,6 +6,8 @@ complementary primitives for exploit chaining.
 
 from __future__ import annotations
 
+from typing import Any, cast
+
 from nightwing.llm import NativeToolSpec
 
 from .sandbox import HunterContext
@@ -23,7 +25,7 @@ def build_pool_query_tools(ctx: HunterContext) -> list[NativeToolSpec]:
         if ctx.findings_pool is None:
             return "Findings pool not available."
 
-        results = ctx.findings_pool.query(
+        results = cast("Any", ctx.findings_pool).query(
             primitive_type=primitive_type or None,
             cwe=cwe or None,
             file_path=file_path or None,

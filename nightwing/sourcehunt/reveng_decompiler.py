@@ -196,7 +196,7 @@ class RevengSandbox:
         self._image_tag: str | None = None
         self._spawned: list = []
 
-    def _get_client(self):
+    def _get_client(self) -> Any:
         if self._client is None:
             import docker
 
@@ -256,8 +256,12 @@ class RevengSandbox:
         binary_dir = os.path.dirname(os.path.abspath(binary_path))
         binary_name = os.path.basename(binary_path)
 
+        image = self._image_tag
+        if image is None:
+            raise RuntimeError("Failed to build reveng sandbox image")
+
         config = SandboxConfig(
-            image=self._image_tag,
+            image=image,
             network_mode="none",
             mounts=[
                 (binary_dir, "/workspace/binary", "ro"),
@@ -289,7 +293,7 @@ class RevengSandbox:
                 pass
             return None
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         """Stop all spawned containers."""
         for container in self._spawned:
             try:

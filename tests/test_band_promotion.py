@@ -222,6 +222,7 @@ class TestHunterRunResult:
             def __init__(self):
                 self.usage = FakeUsage()
                 self.provider_model_name = "test-model"
+                self.reasoning_content = None
 
             def first_text(self):
                 return "No vulnerabilities found."
@@ -279,6 +280,7 @@ class TestBudgetEnforcement:
             def __init__(self):
                 self.usage = FakeUsage()
                 self.provider_model_name = "test-model"
+                self.reasoning_content = None
 
             def first_text(self):
                 return ""

@@ -6,7 +6,7 @@ import logging
 import threading
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, cast
 from urllib.parse import urlparse
 
 from nightwing.agent.tooling import tool
@@ -81,7 +81,7 @@ def _get_cookies() -> list[dict]:
 
         ctx = _browser_state.get("context")
         if ctx is not None:
-            return ctx.cookies()
+            return cast(list[dict], ctx.cookies())
     except Exception:
         logger.warning("Silent exception in auth_recorder", exc_info=True)
         pass
@@ -362,7 +362,7 @@ def _try_extract_srp(tab_name: str, crypto_entries: list[dict]) -> dict | None:
     try:
         from nightwing.agent.tools.recon.webcrypto_hooks import extract_srp_values
 
-        return extract_srp_values.invoke({"tab_name": tab_name})
+        return cast(dict, extract_srp_values.invoke({"tab_name": tab_name}))
     except Exception:
         logger.warning("Silent exception in auth_recorder", exc_info=True)
         return None
@@ -386,6 +386,7 @@ def _diff_responses(proxy_a: list[dict], proxy_b: list[dict]) -> list[dict]:
         a = proxy_a[i] if i < len(proxy_a) else None
         b = proxy_b[i] if i < len(proxy_b) else None
         if a is None:
+            assert b is not None
             diffs.append(
                 {
                     "step": i,

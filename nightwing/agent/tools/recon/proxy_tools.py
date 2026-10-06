@@ -107,6 +107,12 @@ class ProxyHistory:
         with self._lock:
             return len(self._entries)
 
+    @property
+    def entries(self) -> list[ProxyRequest]:
+        """Public read-only access to the entries list (copy)."""
+        with self._lock:
+            return list(self._entries)
+
     def export(self, path: str) -> None:
         """Export history to a JSON file."""
         with self._lock:

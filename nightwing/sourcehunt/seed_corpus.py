@@ -148,7 +148,9 @@ def _extract_git_cve_history(
                 count = counts_per_file.get(file_path, 0)
                 if count >= max_entries_per_file:
                     continue
-                for cve_id in current_cves or [None]:
+                fallback: list[str | None] = [None]
+                cve_ids = current_cves if current_cves else fallback
+                for cve_id in cve_ids:
                     entries.append(
                         SeedCorpusEntry(
                             file_path=file_path,

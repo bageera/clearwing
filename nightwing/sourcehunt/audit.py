@@ -12,6 +12,7 @@ import threading
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any
 
 
 def _default_log_path() -> Path:
@@ -44,7 +45,7 @@ class SecurityAuditLog:
         target: str,
         operator: str = "system",
         approved_by: str | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> SecurityAuditEntry:
         entry = SecurityAuditEntry(
             timestamp=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),

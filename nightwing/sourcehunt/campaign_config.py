@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-import yaml
+import yaml  # type: ignore[import-untyped]
 
 _VALID_DEPTHS = {"quick", "standard", "deep"}
 
@@ -53,7 +53,7 @@ class CampaignConfig:
         default_factory=lambda: ["sarif", "markdown", "json"],
     )
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if not self.output_dir:
             from nightwing.core.config import default_results_dir
 

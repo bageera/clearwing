@@ -311,12 +311,12 @@ class TestRevengPipeline:
 
 class TestHunterSpecialist:
     def test_reveng_in_specialist_prompts(self):
-        from nightwing.sourcehunt.hunter import _SPECIALIST_PROMPTS
+        from nightwing.sourcehunt.prompts.specialists import _SPECIALIST_PROMPTS
 
         assert "reveng" in _SPECIALIST_PROMPTS
 
     def test_reveng_in_deep_specialist_focus(self):
-        from nightwing.sourcehunt.hunter import _DEEP_SPECIALIST_FOCUS
+        from nightwing.sourcehunt.prompts.specialists import _DEEP_SPECIALIST_FOCUS
 
         assert "reveng" in _DEEP_SPECIALIST_FOCUS
         assert "binary" in _DEEP_SPECIALIST_FOCUS["reveng"].lower()

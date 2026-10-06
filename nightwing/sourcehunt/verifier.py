@@ -22,6 +22,7 @@ from dataclasses import dataclass
 from itertools import islice
 from typing import Any, cast
 
+from nightwing.findings.types import Severity
 from nightwing.llm import AsyncLLMClient
 
 from .state import EVIDENCE_LEVELS, EvidenceLevel, Finding, evidence_at_or_above
@@ -445,14 +446,12 @@ class Verifier:
         return msg
 
     def _parse_patch_oracle_response(self, content: str) -> dict | None:
-        match = re.search(r"\{[\s\S]*\}", content)
-        if not match:
-            return None
+        from nightwing.llm.native import extract_json_object
+
         try:
-            parsed = json.loads(match.group(0))
-        except json.JSONDecodeError:
+            return extract_json_object(content)
+        except ValueError:
             return None
-        return parsed if isinstance(parsed, dict) else None
 
 
 def apply_verifier_result(
@@ -469,7 +468,7 @@ def apply_verifier_result(
     if isinstance(finding, Finding):
         finding.mark_verified(
             is_real=result.is_real,
-            severity_verified=result.severity_verified,
+            severity_verified=cast(Severity | None, result.severity_verified),
             evidence_level=result.evidence_level,
             pro_argument=result.pro_argument,
             counter_argument=result.counter_argument,
@@ -483,26 +482,26 @@ def apply_verifier_result(
                 finding.bump_evidence("root_cause_explained")
     else:
         # Legacy dict path
-        finding["verified"] = result.is_real  # type: ignore[index]
-        finding["severity_verified"] = result.severity_verified  # type: ignore[index]
-        finding["verifier_pro_argument"] = result.pro_argument  # type: ignore[index]
-        finding["verifier_counter_argument"] = result.counter_argument  # type: ignore[index]
-        finding["verifier_tie_breaker"] = result.tie_breaker  # type: ignore[index]
-        finding["verifier_session_id"] = session_id  # type: ignore[index]
-        current = finding.get("evidence_level", "suspicion")  # type: ignore[union-attr]
+        finding["verified"] = result.is_real
+        finding["severity_verified"] = result.severity_verified
+        finding["verifier_pro_argument"] = result.pro_argument
+        finding["verifier_counter_argument"] = result.counter_argument
+        finding["verifier_tie_breaker"] = result.tie_breaker
+        finding["verifier_session_id"] = session_id
+        current = finding.get("evidence_level", "suspicion")
         if current not in EVIDENCE_LEVELS:
             current = "suspicion"
         new = result.evidence_level
         if new not in EVIDENCE_LEVELS:
             new = "suspicion"
         if EVIDENCE_LEVELS.index(new) > EVIDENCE_LEVELS.index(current):
-            finding["evidence_level"] = new  # type: ignore[index]
+            finding["evidence_level"] = new
         if result.patch_oracle_attempted:
-            finding["patch_oracle_passed"] = result.patch_oracle_passed  # type: ignore[index]
+            finding["patch_oracle_passed"] = result.patch_oracle_passed
             if result.patch_oracle_passed:
-                level = finding.get("evidence_level", "suspicion")  # type: ignore[union-attr]
+                level = finding.get("evidence_level", "suspicion")
                 if level not in EVIDENCE_LEVELS:
                     level = "suspicion"
                 if EVIDENCE_LEVELS.index("root_cause_explained") > EVIDENCE_LEVELS.index(level):
-                    finding["evidence_level"] = "root_cause_explained"  # type: ignore[index]
+                    finding["evidence_level"] = "root_cause_explained"
     return finding

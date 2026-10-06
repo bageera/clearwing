@@ -174,7 +174,7 @@ class ValidatorVerdict:
     patch_oracle_diff: str = ""
     patch_oracle_notes: str = ""
 
-    def to_verifier_result(self):
+    def to_verifier_result(self) -> Any:
         from nightwing.sourcehunt.verifier import VerifierResult
 
         return VerifierResult(

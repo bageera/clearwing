@@ -8,7 +8,7 @@ import threading
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from nightwing.agent.tooling import tool
 
@@ -298,7 +298,7 @@ def _flush_js_log(tab_name: str) -> list[dict]:
 
     if raw and tab_name in _crypto_logs:
         _crypto_logs[tab_name].add_batch(raw)
-    return raw
+    return cast(list[dict], raw)
 
 
 # ---------------------------------------------------------------------------
@@ -441,7 +441,7 @@ def clear_webcrypto_log(tab_name: str = "default") -> dict:
 def _extract_algo_name(entry: CryptoLogEntry) -> str:
     algo = entry.algorithm
     if isinstance(algo, dict):
-        return algo.get("name", algo.get("hex", ""))
+        return cast(str, algo.get("name", algo.get("hex", "")))
     return ""
 
 

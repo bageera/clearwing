@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import logging
 import re
+from collections.abc import Sequence
 from dataclasses import dataclass
 
 from .callgraph import CallGraph
@@ -140,7 +141,7 @@ def extract_entry_points_batch(
 def _classify_function(
     func_name: str,
     file_path: str,
-    tags: list[str],
+    tags: Sequence[str],
     language: str,
 ) -> str | None:
     """Return an entry_point_type string or None for fallback."""

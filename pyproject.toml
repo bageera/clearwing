@@ -34,9 +34,6 @@ dependencies = [
     "aiohttp>=3.8.0",
     "pyyaml>=6.0",
     "rich>=13.0.0",
-    # Network protocols
-    "asyncssh>=2.13.0",
-    "pysmb>=1.2.6",
     # Reporting
     "jinja2>=3.1.0",
     "defusedxml>=0.7.0",
@@ -47,15 +44,11 @@ dependencies = [
     "textual>=0.47.0",
     # Web UI
     "fastapi>=0.100.0",
-    "uvicorn>=0.20.0",
-    "websockets>=11.0",
-    # Token counting
-    "tiktoken>=0.5.0",
+    "uvicorn[standard]>=0.20.0",
     # Knowledge graph
     "networkx>=3.0",
     # Memory
     "numpy>=1.24.0",
-    "chromadb>=1.0.0",
     # Source-hunt pipeline — callgraph extraction
     "tree-sitter>=0.21.0",
     "tree-sitter-c>=0.21.0",
@@ -71,6 +64,11 @@ metasploit = ["pymetasploit3>=1.0.0"]
 browser = ["playwright>=1.40.0"]
 vector = [
     "sentence-transformers>=2.2.0",
+    "chromadb>=1.0.0",
+]
+network = [
+    "asyncssh>=2.13.0",
+    "pysmb>=1.2.6",
 ]
 dev = [
     "pytest>=7.0.0",
@@ -95,7 +93,7 @@ docs = [
     "mkdocstrings[python]>=0.24.0",
 ]
 all = [
-    "nightwing[metasploit,browser,vector,dev,docs]",
+    "nightwing[metasploit,browser,vector,network,dev,docs]",
 ]
 
 [project.urls]

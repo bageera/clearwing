@@ -16,7 +16,7 @@ import re
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from nightwing.agent.tools.hunt import (
     HunterContext,
@@ -86,7 +86,7 @@ def _sanitize_path_component(value: str) -> str:
 
 def _trajectory_path(ctx: HunterContext) -> Path:
     if ctx.trajectory_dir is not None:
-        return Path(ctx.trajectory_dir) / "transcript.jsonl"
+        return Path(cast(str, ctx.trajectory_dir)) / "transcript.jsonl"
     session = _sanitize_path_component(ctx.session_id or "no_session")
     rel_file = _sanitize_path_component((ctx.file_path or "unknown").replace("/", "__"))
     return _trajectory_base_dir() / session / f"{rel_file}.jsonl"

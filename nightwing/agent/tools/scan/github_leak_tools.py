@@ -11,6 +11,7 @@ import json
 import logging
 import os
 import urllib.error
+import urllib.parse
 import urllib.request
 from typing import Any
 
@@ -67,7 +68,7 @@ def search_github_code(
     while len(results) < max_results:
         url = (
             f"{_GITHUB_API}/search/code"
-            f"?q={urllib.request.quote(query)}"
+            f"?q={urllib.parse.quote(query)}"
             f"&per_page={per_page}&page={page}"
         )
         try:
@@ -143,7 +144,7 @@ def search_github_commits(
     while len(results) < max_results:
         url = (
             f"{_GITHUB_API}/search/commits"
-            f"?q={urllib.request.quote(query)}"
+            f"?q={urllib.parse.quote(query)}"
             f"&per_page={per_page}&page={page}"
         )
         try:

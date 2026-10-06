@@ -138,14 +138,12 @@ class VariantPatternGenerator:
         return f"Verified finding:\n{json.dumps(view, indent=2)}"
 
     def _parse_response(self, content: str) -> dict | None:
-        match = re.search(r"\{[\s\S]*\}", content)
-        if not match:
-            return None
+        from nightwing.llm.native import extract_json_object
+
         try:
-            parsed = json.loads(match.group(0))
-        except json.JSONDecodeError:
+            return extract_json_object(content)
+        except ValueError:
             return None
-        return parsed if isinstance(parsed, dict) else None
 
 
 # --- Variant searcher -------------------------------------------------------

@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import logging
 import urllib.error
+import urllib.parse
 import urllib.request
 from typing import Any
 
@@ -42,7 +43,7 @@ def query_crt_sh(
     Returns:
         Dict with subdomains, certificate IDs, issuers, and entry timestamps.
     """
-    url = _CRT_SH_URL.format(urllib.request.quote(domain))
+    url = _CRT_SH_URL.format(urllib.parse.quote(domain))
     logger.info("Querying crt.sh: %s", url)
 
     try:
@@ -115,9 +116,9 @@ def query_certspotter(
     Returns:
         Dict with issuances, dns_names, issuer details, and pagination cursor.
     """
-    url = _CERTSPOTTER_URL.format(urllib.request.quote(domain))
+    url = _CERTSPOTTER_URL.format(urllib.parse.quote(domain))
     if after_id:
-        url += f"&after={urllib.request.quote(after_id)}"
+        url += f"&after={urllib.parse.quote(after_id)}"
 
     logger.info("Querying certspotter: %s", url)
 

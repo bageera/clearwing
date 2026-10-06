@@ -30,7 +30,7 @@ Severity = Literal["critical", "high", "medium", "low", "info"]
 
 
 @contextlib.contextmanager
-def _calibration_lock(path: Path):
+def _calibration_lock(path: Path) -> Any:
     """Serialize calibration-log reads/writes.
 
     Acquires the module-level threading lock (in-process) and an

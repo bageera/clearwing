@@ -18,10 +18,11 @@ import time
 import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from nightwing.core.event_payloads import SourcehuntStagePayload
 from nightwing.core.events import EventBus
+from nightwing.findings.types import Severity
 from nightwing.llm.native import AsyncLLMClient
 from nightwing.providers import (
     ENV_ANTHROPIC_KEY,
@@ -52,19 +53,22 @@ from .pool import HunterPool, HuntPoolConfig, TierBudget
 from .preprocessor import Preprocessor, PreprocessResult
 from .ranker import Ranker, RankerConfig
 from .state import (
+    ElaborationResult,
     EvidenceLevel,
     FileTarget,
     Finding,
     PipelineStatus,
     StageOutcome,
+    ValidatorVerdict,
     evidence_at_or_above,
     filter_by_evidence,
 )
+from .validator import Validator
 from .variant_loop import (
     VariantLoop,
     VariantPatternGenerator,
 )
-from .verifier import Verifier, apply_verifier_result
+from .verifier import Verifier, VerifierResult, apply_verifier_result
 
 logger = logging.getLogger(__name__)
 
@@ -120,7 +124,7 @@ _IMPACT_TO_SEVERITY = {
 }
 
 
-def _apply_elaboration(finding: Finding, elab_result) -> Finding:
+def _apply_elaboration(finding: Finding, elab_result: ElaborationResult) -> Finding:
     """Create a new finding from a successful elaboration."""
     import uuid
 
@@ -128,26 +132,27 @@ def _apply_elaboration(finding: Finding, elab_result) -> Finding:
         elab_result.upgraded_impact or "",
         "high",
     )
-    return {
-        "id": f"elab-{uuid.uuid4().hex[:8]}",
-        "related_finding_id": finding.get("id", "unknown"),
-        "file": finding.get("file", ""),
-        "line_number": finding.get("line_number"),
-        "end_line": finding.get("end_line"),
-        "finding_type": finding.get("finding_type", "unknown"),
-        "cwe": finding.get("cwe"),
-        "severity": sev,
-        "severity_verified": sev,
-        "evidence_level": "exploit_demonstrated",
-        "verified": True,
-        "description": (f"Elaborated from {finding.get('id', '?')}: {elab_result.upgrade_path}"),
-        "exploit": elab_result.upgraded_exploit_code or "",
-        "exploit_success": True,
-        "exploit_impact": elab_result.upgraded_impact or "",
-        "discovered_by": "elaboration_agent",
-        "elaboration_upgrade_path": elab_result.upgrade_path,
-        "exploit_chained_findings": elab_result.chained_findings,
-    }
+    result = Finding(
+        id=f"elab-{uuid.uuid4().hex[:8]}",
+        related_finding_id=finding.get("id", "unknown"),
+        file=finding.get("file", ""),
+        line_number=finding.get("line_number"),
+        end_line=finding.get("end_line"),
+        finding_type=finding.get("finding_type", "unknown"),
+        cwe=finding.get("cwe", ""),
+        severity=sev,  # type: ignore[arg-type]
+        severity_verified=sev,  # type: ignore[arg-type]
+        evidence_level="exploit_demonstrated",
+        verified=True,
+        description=(f"Elaborated from {finding.get('id', '?')}: {elab_result.upgrade_path}"),
+        exploit=elab_result.upgraded_exploit_code or "",
+        exploit_success=True,
+        discovered_by="elaboration_agent",
+    )
+    result["exploit_impact"] = elab_result.upgraded_impact or ""
+    result["elaboration_upgrade_path"] = elab_result.upgrade_path
+    result["exploit_chained_findings"] = elab_result.chained_findings
+    return result
 
 
 @dataclass
@@ -319,7 +324,7 @@ class SourceHuntRunner:
             adversarial_threshold = (
                 adversarial_threshold
                 if adversarial_threshold != "static_corroboration"
-                else f.adversarial_threshold
+                else cast(EvidenceLevel | None, f.adversarial_threshold)
             )
             validator_mode = validator_mode if validator_mode != "v2" else f.validator_mode
             exploit_mode = exploit_mode or f.exploit_mode
@@ -785,8 +790,9 @@ class SourceHuntRunner:
 
         # Build a per-file Semgrep hint lookup so hunters get their file's hits
         semgrep_hints_by_file: dict[str, list[dict]] = {}
-        for sf in state.preprocess_result.semgrep_findings:
-            semgrep_hints_by_file.setdefault(sf.get("file", ""), []).append(sf)
+        if state.preprocess_result is not None:
+            for sf in state.preprocess_result.semgrep_findings:
+                semgrep_hints_by_file.setdefault(sf.get("file", ""), []).append(sf)
 
         # v0.3: Recall cross-run mechanisms and inject them into every hunter's
         # hint list as a synthetic entry. The hunter's prompt wraps these in
@@ -806,7 +812,11 @@ class SourceHuntRunner:
     ) -> None:
         """Stage 2.7: entry-point extraction (spec 004)."""
         entry_points_by_file: dict = {}
-        if self._shard_entry_points and state.preprocess_result.callgraph is not None:
+        if (
+            self._shard_entry_points
+            and state.preprocess_result is not None
+            and state.preprocess_result.callgraph is not None
+        ):
             total_loc = sum(ft.get("loc", 0) for ft in state.files)
             if total_loc >= self._min_project_loc:
                 try:
@@ -1042,13 +1052,16 @@ class SourceHuntRunner:
             )
 
             subsystem_targets: list = []
+            callgraph = (
+                state.preprocess_result.callgraph if state.preprocess_result is not None else None
+            )
             if self._subsystem_paths:
                 for sp in self._subsystem_paths:
                     try:
                         st = subsystem_from_path(
                             sp,
                             state.files,
-                            callgraph=state.preprocess_result.callgraph,
+                            callgraph=callgraph,
                             entry_points_by_file=state.entry_points_by_file,
                         )
                         subsystem_targets.append(st)
@@ -1057,7 +1070,7 @@ class SourceHuntRunner:
             else:
                 subsystem_targets = identify_subsystems_auto(
                     state.files,
-                    callgraph=state.preprocess_result.callgraph,
+                    callgraph=callgraph,
                     entry_points_by_file=state.entry_points_by_file,
                 )
 
@@ -1085,7 +1098,7 @@ class SourceHuntRunner:
                         session_id_prefix=f"{self._session_id}-subsys",
                         sandbox_manager=self._sandbox_manager,
                         campaign_hint=self._campaign_hint,
-                        callgraph=state.preprocess_result.callgraph,
+                        callgraph=callgraph,
                     )
                 )
                 try:
@@ -1491,7 +1504,7 @@ class SourceHuntRunner:
                 disclosure_db = DisclosureDB()
                 try:
                     disclosure_db.queue_findings(
-                        state.verified,
+                        cast(list[dict], state.verified),
                         self.repo_url,
                         self._session_id,
                     )
@@ -1527,7 +1540,7 @@ class SourceHuntRunner:
             if committable:
                 commitment_log = CommitmentLog()
                 for f in committable:
-                    commitment_log.commit_finding(f, project=self.repo_url)
+                    commitment_log.commit_finding(cast(dict, f), project=self.repo_url)
                 logger.info(
                     "Committed %d findings to commitment log",
                     len(committable),
@@ -1733,7 +1746,13 @@ class SourceHuntRunner:
                 )
         return verified, rejected
 
-    async def _run_patch_oracle_v1(self, v, finding, repo_path, result):
+    async def _run_patch_oracle_v1(
+        self,
+        v: Verifier,
+        finding: Finding,
+        repo_path: str,
+        result: VerifierResult,
+    ) -> VerifierResult:
         try:
             oracle_sandbox = None
             oracle_rerun_poc = None
@@ -1765,7 +1784,13 @@ class SourceHuntRunner:
             logger.debug("Patch-oracle pass failed", exc_info=True)
         return result
 
-    async def _run_patch_oracle_v2(self, val, finding, repo_path, verdict):
+    async def _run_patch_oracle_v2(
+        self,
+        val: Validator,
+        finding: Finding,
+        repo_path: str,
+        verdict: ValidatorVerdict,
+    ) -> ValidatorVerdict:
         try:
             oracle_sandbox = None
             oracle_rerun_poc = None
@@ -1797,7 +1822,12 @@ class SourceHuntRunner:
             logger.debug("Patch-oracle pass failed", exc_info=True)
         return verdict
 
-    def _record_calibration(self, finding, verdict, discoverer_sev):
+    def _record_calibration(
+        self,
+        finding: Finding,
+        verdict: ValidatorVerdict,
+        discoverer_sev: str | None,
+    ) -> None:
         if self._calibration_store is None:
             return
         try:
@@ -1810,8 +1840,8 @@ class SourceHuntRunner:
                     finding_id=finding.get("id", ""),
                     session_id=self._session_id,
                     cwe=finding.get("cwe", ""),
-                    discoverer_severity=discoverer_sev or "unknown",
-                    validator_severity=verdict.severity_validated,
+                    discoverer_severity=cast(Severity, discoverer_sev or "unknown"),
+                    validator_severity=cast(Severity | None, verdict.severity_validated),
                     axes={k: v.passed for k, v in verdict.axes.items()},
                     timestamp=datetime.datetime.now(datetime.timezone.utc).isoformat(),
                 )
@@ -1966,7 +1996,7 @@ class SourceHuntRunner:
         self,
         start_time: float,
         repo_path: str,
-        preprocess_result: PreprocessResult,
+        preprocess_result: PreprocessResult | None,
         files_ranked: int,
         pipeline_status: PipelineStatus | None = None,
     ) -> SourceHuntResult:
@@ -2005,7 +2035,7 @@ class SourceHuntRunner:
     def _merge_static_findings(
         self,
         existing: list[Finding],
-        preprocess_result: PreprocessResult,
+        preprocess_result: PreprocessResult | None,
     ) -> list[Finding]:
         """Promote SourceAnalyzer static findings into the Finding shape.
 
@@ -2013,6 +2043,8 @@ class SourceHuntRunner:
         regex/AST hits, not just suspicion.
         """
         out = list(existing)
+        if preprocess_result is None:
+            return out
         for sf in preprocess_result.static_findings:
             out.append(
                 Finding(

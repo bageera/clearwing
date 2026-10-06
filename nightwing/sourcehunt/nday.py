@@ -209,19 +209,20 @@ class NdayPipeline:
             "succeed on the vulnerable build and fail on the patched build."
         )
 
-        return {
-            "id": f"nday-{candidate.cve_id}",
-            "file": file_path,
-            "line_number": 0,
-            "cwe": "",
-            "severity": "critical",
-            "description": description,
-            "evidence_level": "root_cause_explained",
-            "related_cve": candidate.cve_id,
-            "poc": "",
-            "nday_diff": candidate.diff_text,
-            "verified": True,
-        }
+        f = Finding(
+            id=f"nday-{candidate.cve_id}",
+            file=file_path,
+            line_number=0,
+            cwe="",
+            severity="critical",
+            description=description,
+            evidence_level="root_cause_explained",
+            related_cve=candidate.cve_id,
+            poc="",
+            verified=True,
+        )
+        f.extra["nday_diff"] = candidate.diff_text
+        return f
 
     async def _validate_exploit(
         self,

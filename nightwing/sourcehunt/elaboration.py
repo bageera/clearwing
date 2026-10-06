@@ -17,7 +17,7 @@ import math
 import re
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from nightwing.llm import AsyncLLMClient, NativeToolSpec
 
@@ -302,7 +302,7 @@ def load_finding_from_session(
     for f_data in data.get("findings", []) + data.get("verified_findings", []):
         fid = f_data.get("id", "") if isinstance(f_data, dict) else ""
         if fid == finding_id:
-            return f_data
+            return cast(Finding, f_data)
     return None
 
 
@@ -317,7 +317,7 @@ def load_session_findings(
         data = json.loads(json_path.read_text(encoding="utf-8"))
     except (json.JSONDecodeError, OSError):
         return []
-    return data.get("findings", [])
+    return cast(list[Finding], data.get("findings", []))
 
 
 def find_latest_session(output_dir: str) -> str | None:
@@ -472,7 +472,7 @@ class ElaborationAgent:
                     transcript_path = str(tp)
 
             if ctx.elaboration_result is not None:
-                result = ctx.elaboration_result
+                result = cast(ElaborationResult, ctx.elaboration_result)
                 result.cost = run_result.cost_usd if run_result else 0.0
                 result.transcript_path = transcript_path
                 return result
@@ -509,7 +509,7 @@ class ElaborationAgent:
                     logger.debug("Silent exception in elaboration", exc_info=True)
                     pass
 
-    def _spawn_sandbox(self):
+    def _spawn_sandbox(self) -> Any:
         if self.sandbox_manager is not None:
             return self.sandbox_manager.spawn(
                 writable_workspace=True,

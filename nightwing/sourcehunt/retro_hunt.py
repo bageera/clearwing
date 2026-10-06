@@ -18,7 +18,6 @@ from __future__ import annotations
 import json
 import logging
 import os
-import re
 import subprocess
 import tempfile
 import uuid
@@ -197,14 +196,13 @@ class RetroHunter:
             logger.debug("Retro-hunt rule-gen LLM call failed", exc_info=True)
             return None
         content = response.content if isinstance(response.content, str) else str(response.content)
-        match = re.search(r"\{[\s\S]*\}", content)
-        if not match:
-            return None
         try:
-            parsed = json.loads(match.group(0))
-        except json.JSONDecodeError:
+            from nightwing.llm.native import extract_json_object
+
+            parsed = extract_json_object(content)
+        except ValueError:
             return None
-        return parsed if isinstance(parsed, dict) else None
+        return parsed
 
     def _format_semgrep_rule(self, rule_info: dict) -> str:
         """Build a minimal Semgrep rule YAML from the parsed rule_info dict."""

@@ -12,7 +12,7 @@ import logging
 import os
 import time
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, cast
 
 from .exploiter import EXPLOIT_BUDGET_BANDS, AgenticExploiter, ExploiterResult
 from .reveng_decompiler import (
@@ -29,6 +29,7 @@ from .reveng_reconstructor import (
     RevengReconstructor,
     validate_reconstruction,
 )
+from .state import Finding
 
 logger = logging.getLogger(__name__)
 
@@ -309,7 +310,7 @@ class RevengPipeline:
             output_dir=self._output_dir,
             project_name=self._project_name,
         )
-        return await exploiter.aattempt(finding)
+        return await exploiter.aattempt(cast(Finding, finding))
 
     def _to_dict(self, finding: Any) -> dict:
         """Convert a Finding to a plain dict if needed."""

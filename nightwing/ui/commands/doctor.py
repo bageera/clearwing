@@ -526,6 +526,8 @@ def _check_optional_extras() -> DoctorSection:
             "vector",
             "Vector store backend for mechanism memory (TF-IDF remains fallback)",
         ),
+        ("asyncssh", "network", "SSH credential checks (password_crackers SSH path)"),
+        ("smb", "network", "SMB credential checks (password_crackers SMB path)"),
     ]
 
     for module, extras_key, purpose in extras:

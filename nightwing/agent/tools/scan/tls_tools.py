@@ -8,7 +8,7 @@ import ssl
 import urllib.error
 import urllib.request
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, cast
 
 from nightwing.agent.tooling import interrupt, tool
 
@@ -536,8 +536,8 @@ def inspect_certificate(
     cert_info = _parse_cert_dict(cert_dict)
     der_info = _parse_cert_der(der) if der else {"key_bits": 0, "signature_algorithm": "unknown"}
 
-    key_bits = der_info["key_bits"]
-    sig_algo = der_info["signature_algorithm"]
+    key_bits = cast(int, der_info["key_bits"])
+    sig_algo = cast(str, der_info["signature_algorithm"])
     strength = _key_strength_rating(key_bits)
 
     days_left = _days_remaining(cert_info["not_after"])

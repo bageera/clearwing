@@ -25,14 +25,16 @@ def _generate_one_code() -> str:
     """Generate a single recovery code in 1PRK format."""
     chars = []
     for _ in range(_RECOVERY_RANDOM_CHARS):
-        chars.append(_RECOVERY_CHARSET[int.from_bytes(os.urandom(1)) % len(_RECOVERY_CHARSET)])
+        chars.append(
+            _RECOVERY_CHARSET[int.from_bytes(os.urandom(1), "big") % len(_RECOVERY_CHARSET)]
+        )
     raw = "".join(chars)
     segments = [
         raw[i : i + _RECOVERY_SEGMENT_LEN] for i in range(0, len(raw), _RECOVERY_SEGMENT_LEN)
     ]
     while len(segments) < _RECOVERY_SEGMENTS:
         extra = "".join(
-            _RECOVERY_CHARSET[int.from_bytes(os.urandom(1)) % len(_RECOVERY_CHARSET)]
+            _RECOVERY_CHARSET[int.from_bytes(os.urandom(1), "big") % len(_RECOVERY_CHARSET)]
             for _ in range(_RECOVERY_SEGMENT_LEN)
         )
         segments.append(extra)

@@ -14,6 +14,7 @@ import re
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any, cast
 
 logger = logging.getLogger(__name__)
 
@@ -136,7 +137,7 @@ def fetch_recent_cves(repo_path: str, days: int = 90) -> list[NdayCandidate]:
 class NdayFilter:
     """Cheap LLM-based triage to filter CVEs for exploitability."""
 
-    def __init__(self, llm):
+    def __init__(self, llm: Any) -> None:
         self._llm = llm
 
     async def afilter(self, candidates: list[NdayCandidate]) -> list[NdayCandidate]:
@@ -188,7 +189,7 @@ class NdayFilter:
         json_match = re.search(r"\[.*\]", text, re.DOTALL)
         if json_match:
             try:
-                return json.loads(json_match.group())
+                return cast(list[dict], json.loads(json_match.group()))
             except json.JSONDecodeError:
                 pass
         return []
