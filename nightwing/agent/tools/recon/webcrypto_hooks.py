@@ -286,9 +286,13 @@ _context_hooks_installed = False
 
 def _flush_js_log(tab_name: str) -> list[dict]:
     """Pull new entries from the browser-side log and ingest them."""
-    from nightwing.agent.tools.recon.browser_tools import _get_page
+    from nightwing.agent.tools.recon import browser_tools
 
-    page = _get_page(tab_name)
+    if browser_tools._browser_state["browser"] is None:
+        # No browser session running — there is nothing to pull, and
+        # _get_page would force-launch one just to answer [].
+        return []
+    page = browser_tools._get_page(tab_name)
     try:
         raw = page.evaluate(
             "window.__nightwing_crypto_flush ? window.__nightwing_crypto_flush() : []"

@@ -26,6 +26,11 @@ def _reset_state():
     yield
     _crypto_logs.clear()
     _hooks_installed.clear()
+    # Tear down a real browser a test may have launched (install test does),
+    # so later modules asserting pristine browser state aren't leaked into.
+    from nightwing.agent.tools.recon.browser_tools import browser_close
+
+    browser_close.invoke({})
 
 
 # --- CryptoLog ---
@@ -203,11 +208,30 @@ class TestJSPayload:
             assert method in _WEBCRYPTO_INSTRUMENT_JS, f"Missing hook for {method}"
 
 
+def _chromium_available() -> bool:
+    """True when Playwright's chromium binaries have been downloaded.
+
+    The install test launches a real (headless) browser; environments
+    without the browser binaries — CI installs only ``[dev]`` — skip it.
+    """
+    try:
+        from playwright.sync_api import sync_playwright
+    except ImportError:
+        return False
+    try:
+        with sync_playwright() as pw:
+            return pw.chromium.executable_path != "false"
+    except Exception:
+        return False
+
+
 # --- Error paths (no browser) ---
 
 
 class TestInstallOnBlankPage:
     def test_succeeds_with_init_script(self):
+        if not _chromium_available():
+            pytest.skip("Playwright chromium browsers not installed")
         result = install_webcrypto_hooks.invoke({})
         assert result["success"] is True
         assert result["methods_hooked"] == _SUBTLE_METHODS
