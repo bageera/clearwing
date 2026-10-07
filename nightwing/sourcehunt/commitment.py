@@ -14,6 +14,10 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .state import Finding
 
 
 class CommitmentType(str, Enum):
@@ -110,7 +114,7 @@ def verify_commitment(document: str, commitment: Commitment) -> bool:
     return actual == commitment.digest
 
 
-def _build_report_document(finding: dict) -> str:
+def _build_report_document(finding: Finding | dict) -> str:
     return json.dumps(
         {
             "finding_id": finding.get("id", ""),
@@ -154,7 +158,7 @@ class CommitmentLog:
             with open(self._path, "a", encoding="utf-8") as f:
                 f.write(json.dumps(record) + "\n")
 
-    def commit_finding(self, finding: dict, project: str = "") -> list[Commitment]:
+    def commit_finding(self, finding: Finding | dict, project: str = "") -> list[Commitment]:
         severity = finding.get("severity_verified") or finding.get("severity", "")
         cwe = finding.get("cwe", "")
         finding_id = finding.get("id", "")

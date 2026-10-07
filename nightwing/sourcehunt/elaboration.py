@@ -19,6 +19,7 @@ import time
 from pathlib import Path
 from typing import Any, cast
 
+from nightwing.findings.types import from_json_dict
 from nightwing.llm import AsyncLLMClient, NativeToolSpec
 
 from .exploiter import EXPLOIT_BUDGET_BANDS
@@ -302,7 +303,7 @@ def load_finding_from_session(
     for f_data in data.get("findings", []) + data.get("verified_findings", []):
         fid = f_data.get("id", "") if isinstance(f_data, dict) else ""
         if fid == finding_id:
-            return cast(Finding, f_data)
+            return from_json_dict(f_data)
     return None
 
 
@@ -317,7 +318,7 @@ def load_session_findings(
         data = json.loads(json_path.read_text(encoding="utf-8"))
     except (json.JSONDecodeError, OSError):
         return []
-    return cast(list[Finding], data.get("findings", []))
+    return [from_json_dict(f) for f in data.get("findings", []) if isinstance(f, dict)]
 
 
 def find_latest_session(output_dir: str) -> str | None:

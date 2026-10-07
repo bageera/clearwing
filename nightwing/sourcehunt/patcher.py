@@ -226,20 +226,9 @@ def apply_patch_attempt(
     assignment for plain-dict callers. Only validated patches bump the
     evidence level.
     """
-    if isinstance(finding, Finding):
-        finding.apply_patch_result(
-            diff=attempt.diff,
-            validated=attempt.validated,
-            attempted=attempt.attempted,
-        )
-    else:
-        # Legacy dict path
-        finding["auto_patch"] = attempt.diff if attempt.diff else None
-        finding["auto_patch_validated"] = attempt.validated if attempt.attempted else None
-        if attempt.validated:
-            from nightwing.findings.types import EVIDENCE_LEVELS as _EL
-
-            current = finding.get("evidence_level", "suspicion")
-            if _EL.index("patch_validated") > _EL.index(current):
-                finding["evidence_level"] = "patch_validated"
+    finding.apply_patch_result(
+        diff=attempt.diff,
+        validated=attempt.validated,
+        attempted=attempt.attempted,
+    )
     return finding

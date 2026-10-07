@@ -13,10 +13,24 @@ import json
 import logging
 import sqlite3
 import time
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from .state import DisclosureState
+
+if TYPE_CHECKING:
+    from .state import Finding
+
+
+def _finding_to_json(f: Finding | dict) -> str:
+    """Serialize a finding (Finding dataclass or plain dict) to JSON without data loss."""
+    if isinstance(f, dict):
+        return json.dumps(f, default=str)
+    from dataclasses import asdict
+
+    return json.dumps(asdict(f), default=str)
+
 
 logger = logging.getLogger(__name__)
 
@@ -129,7 +143,7 @@ def _default_db_path() -> Path:
     return nightwing_home() / "sourcehunt" / "disclosures.db"
 
 
-def _compute_priority(finding: dict) -> float:
+def _compute_priority(finding: Finding | dict) -> float:
     sev = (finding.get("severity_verified") or finding.get("severity") or "info").lower()
     score = float(_SEVERITY_SCORES.get(sev, 20))
     if finding.get("severity_disagreement"):
@@ -139,7 +153,7 @@ def _compute_priority(finding: dict) -> float:
     return score
 
 
-def _batch_key_for(finding: dict, repo_url: str) -> str:
+def _batch_key_for(finding: Finding | dict, repo_url: str) -> str:
     return repo_url
 
 
@@ -162,7 +176,7 @@ class DisclosureDB:
 
     def queue_findings(
         self,
-        findings: list[dict],
+        findings: Sequence[Finding | dict],
         repo_url: str,
         session_id: str,
     ) -> int:
@@ -207,7 +221,7 @@ class DisclosureDB:
                         now,
                         now,
                         batch_key,
-                        json.dumps(f, default=str)[:50000],
+                        _finding_to_json(f)[:50000],
                     ),
                 )
                 count += 1

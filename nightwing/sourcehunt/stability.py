@@ -14,7 +14,7 @@ from __future__ import annotations
 import logging
 import re
 from dataclasses import dataclass, replace
-from typing import Any, cast
+from typing import Any
 
 from nightwing.llm import AsyncLLMClient
 
@@ -267,8 +267,7 @@ class StabilityVerifier:
         if not hardened_poc:
             return replace(result, hardened=True, hardening_improved=False)
 
-        hardened_finding = dict(cast(dict, finding))
-        hardened_finding["poc"] = hardened_poc
+        hardened_finding = replace(finding, poc=hardened_poc)
 
         no_harden_config = replace(self.config, enable_hardening=False)
         retest = StabilityVerifier(
@@ -276,7 +275,7 @@ class StabilityVerifier:
             config=no_harden_config,
         )
         try:
-            retest_result = await retest.averify(cast(Finding, hardened_finding))
+            retest_result = await retest.averify(hardened_finding)
         except Exception:
             logger.warning("Hardening retest failed", exc_info=True)
             return replace(result, hardened=True, hardening_improved=False)

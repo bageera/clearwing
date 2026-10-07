@@ -8,6 +8,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 from genai_pyo3 import ChatResponse
 
+from nightwing.findings.types import Finding
 from nightwing.sourcehunt.patcher import (
     AutoPatcher,
     PatchAttempt,
@@ -25,21 +26,20 @@ def _run(coro):
     return asyncio.run(coro)
 
 
-def _make_finding(**kwargs) -> dict:
-    base = {
-        "id": "f1",
-        "file": "src/codec.c",
-        "line_number": 47,
-        "cwe": "CWE-787",
-        "severity": "critical",
-        "verified": True,
-        "evidence_level": "root_cause_explained",
-        "description": "memcpy overflow",
-        "code_snippet": "memcpy(buf, input, len);",
-        "crash_evidence": "ASan: heap-buffer-overflow",
-    }
-    base.update(kwargs)
-    return base
+def _make_finding(**kwargs) -> Finding:
+    fields = dict(
+        id="f1",
+        file="src/codec.c",
+        line_number=47,
+        cwe="CWE-787",
+        severity="critical",
+        verified=True,
+        evidence_level="root_cause_explained",
+        description="memcpy overflow",
+        code_snippet="memcpy(buf, input, len);",
+        crash_evidence="ASan: heap-buffer-overflow",
+    )
+    return Finding(**{**fields, **kwargs})
 
 
 # --- Eligibility gate ------------------------------------------------------

@@ -380,6 +380,27 @@ def from_cicd_dict(d: dict, *, target: str | None = None) -> Finding:
     return f
 
 
+def from_json_dict(d: dict) -> Finding:
+    """Rebuild a Finding from a serialized one (asdict/__dict__ shape or legacy dict).
+
+    Unknown keys land in ``extra``; severity/evidence strings are validated.
+    """
+    import dataclasses
+
+    field_names = {f.name for f in dataclasses.fields(Finding)}
+    kwargs: dict[str, Any] = {}
+    extra = {}
+    for k, v in d.items():
+        if k in field_names:
+            kwargs[k] = v
+        else:
+            extra[k] = v
+    f = Finding(**kwargs)
+    if extra:
+        f.extra.update(extra)
+    return f
+
+
 def from_analysis_finding(finding: Any) -> Finding:
     """Build a Finding from a `nightwing.analysis.source_analyzer.AnalyzerFinding`.
 

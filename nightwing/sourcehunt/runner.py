@@ -1504,7 +1504,7 @@ class SourceHuntRunner:
                 disclosure_db = DisclosureDB()
                 try:
                     disclosure_db.queue_findings(
-                        cast(list[dict], state.verified),
+                        state.verified,
                         self.repo_url,
                         self._session_id,
                     )
@@ -1540,7 +1540,7 @@ class SourceHuntRunner:
             if committable:
                 commitment_log = CommitmentLog()
                 for f in committable:
-                    commitment_log.commit_finding(cast(dict, f), project=self.repo_url)
+                    commitment_log.commit_finding(f, project=self.repo_url)
                 logger.info(
                     "Committed %d findings to commitment log",
                     len(committable),

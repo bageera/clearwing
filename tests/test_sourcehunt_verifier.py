@@ -18,6 +18,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 from genai_pyo3 import ChatResponse
 
+from nightwing.findings.types import Finding
 from nightwing.sourcehunt.verifier import (
     VERIFIER_SYSTEM_PROMPT_V01,
     VERIFIER_SYSTEM_PROMPT_V02,
@@ -43,21 +44,20 @@ def _run(coro):
     return asyncio.run(coro)
 
 
-def _make_finding(**kwargs) -> dict:
-    base = {
-        "id": "hunter-abc",
-        "file": "src/codec_a.c",
-        "line_number": 9,
-        "finding_type": "memory_safety",
-        "cwe": "CWE-787",
-        "severity": "critical",
-        "description": "memcpy with unchecked length",
-        "code_snippet": "memcpy(frame, input, input_len);",
-        "evidence_level": "static_corroboration",
-        "discovered_by": "hunter:general",
-    }
-    base.update(kwargs)
-    return base
+def _make_finding(**kwargs) -> Finding:
+    fields = dict(
+        id="hunter-abc",
+        file="src/codec_a.c",
+        line_number=9,
+        finding_type="memory_safety",
+        cwe="CWE-787",
+        severity="critical",
+        description="memcpy with unchecked length",
+        code_snippet="memcpy(frame, input, input_len);",
+        evidence_level="static_corroboration",
+        discovered_by="hunter:general",
+    )
+    return Finding(**{**fields, **kwargs})
 
 
 # --- v0.1 / v0.2 prompt selection -------------------------------------------

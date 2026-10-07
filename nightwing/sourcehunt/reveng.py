@@ -12,7 +12,7 @@ import logging
 import os
 import time
 from dataclasses import dataclass, field
-from typing import Any, cast
+from typing import Any
 
 from .exploiter import EXPLOIT_BUDGET_BANDS, AgenticExploiter, ExploiterResult
 from .reveng_decompiler import (
@@ -77,7 +77,7 @@ class RevengResult:
     static_analysis: StaticAnalysisResult | None = None
     decompilation: DecompilationResult | None = None
     reconstruction: ReconstructionResult | None = None
-    findings: list[dict] = field(default_factory=list)
+    findings: list[Finding] = field(default_factory=list)
     exploit_results: list[ExploiterResult] = field(default_factory=list)
     status: str = "pending"
     total_cost_usd: float = 0.0
@@ -247,7 +247,7 @@ class RevengPipeline:
         container: Any,
         binary_name: str,
         static_summary: str,
-    ) -> list[dict]:
+    ) -> list[Finding]:
         """Run a NativeHunter with the reveng prompt against the binary."""
         from nightwing.agent.tools.hunt.deep_agent import build_deep_agent_tools
         from nightwing.agent.tools.hunt.sandbox import HunterContext
@@ -295,11 +295,11 @@ class RevengPipeline:
         except asyncio.TimeoutError:
             logger.info("Reveng hunt timed out for %s", binary_name)
 
-        return [self._to_dict(f) for f in ctx.findings]
+        return list(ctx.findings)
 
     async def _attempt_exploit(
         self,
-        finding: dict,
+        finding: Finding,
         container: Any,
     ) -> ExploiterResult:
         """Feed a confirmed finding to AgenticExploiter."""
@@ -310,13 +310,4 @@ class RevengPipeline:
             output_dir=self._output_dir,
             project_name=self._project_name,
         )
-        return await exploiter.aattempt(cast(Finding, finding))
-
-    def _to_dict(self, finding: Any) -> dict:
-        """Convert a Finding to a plain dict if needed."""
-        if isinstance(finding, dict):
-            return finding
-        try:
-            return dict(finding)
-        except (TypeError, ValueError):
-            return {"id": str(finding), "description": str(finding)}
+        return await exploiter.aattempt(finding)

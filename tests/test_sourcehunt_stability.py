@@ -16,6 +16,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
+from nightwing.findings.types import Finding
 from nightwing.sourcehunt.stability import (
     StabilityConfig,
     StabilityVerifier,
@@ -24,23 +25,22 @@ from nightwing.sourcehunt.stability import (
 from nightwing.sourcehunt.state import StabilityResult
 
 
-def _make_finding(**kwargs) -> dict:
-    base = {
-        "id": "hunter-abc",
-        "file": "src/codec_a.c",
-        "line_number": 9,
-        "finding_type": "memory_safety",
-        "cwe": "CWE-787",
-        "severity": "high",
-        "description": "memcpy overflow",
-        "code_snippet": "memcpy(frame, input, input_len);",
-        "crash_evidence": "==1==ERROR: AddressSanitizer: heap-buffer-overflow",
-        "poc": "AAAA" * 100,
-        "evidence_level": "crash_reproduced",
-        "verified": True,
-    }
-    base.update(kwargs)
-    return base
+def _make_finding(**kwargs) -> Finding:
+    fields = dict(
+        id="hunter-abc",
+        file="src/codec_a.c",
+        line_number=9,
+        finding_type="memory_safety",
+        cwe="CWE-787",
+        severity="high",
+        description="memcpy overflow",
+        code_snippet="memcpy(frame, input, input_len);",
+        crash_evidence="==1==ERROR: AddressSanitizer: heap-buffer-overflow",
+        poc="AAAA" * 100,
+        evidence_level="crash_reproduced",
+        verified=True,
+    )
+    return Finding(**{**fields, **kwargs})
 
 
 class _FakeExecResult:
