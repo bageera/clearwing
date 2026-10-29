@@ -41,7 +41,13 @@ def create_app():
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
+        # Local-only tool UI: the frontend is served same-origin below. A
+        # wildcard origin with credentials lets any web page the operator
+        # visits drive the local agent cross-origin.
+        allow_origins=[
+            "http://localhost:8899",
+            "http://127.0.0.1:8899",
+        ],
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
