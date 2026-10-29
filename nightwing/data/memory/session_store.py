@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 import uuid
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
@@ -58,6 +59,13 @@ def _datetime_decoder(dct: dict) -> dict:
     return dct
 
 
+def _safe_session_id(session_id: str) -> str:
+    """Reject path separators/traversal before a session_id is joined into a path."""
+    if not session_id or not re.fullmatch(r"[A-Za-z0-9_-]+", session_id):
+        raise ValueError(f"invalid session_id: {session_id!r}")
+    return session_id
+
+
 class SessionStore:
     """Persists Nightwing sessions as JSON files on disk."""
 
@@ -86,7 +94,7 @@ class SessionStore:
 
     def save(self, session: SessionInfo) -> None:
         """Serialize *session* to JSON and write to BASE_DIR/{session_id}.json."""
-        path = self.BASE_DIR / f"{session.session_id}.json"
+        path = self.BASE_DIR / f"{_safe_session_id(session.session_id)}.json"
         data = asdict(session)
         path.write_text(
             json.dumps(data, cls=_DateTimeEncoder, indent=2),
@@ -95,7 +103,7 @@ class SessionStore:
 
     def load(self, session_id: str) -> SessionInfo:
         """Load a session from disk by its ID."""
-        path = self.BASE_DIR / f"{session_id}.json"
+        path = self.BASE_DIR / f"{_safe_session_id(session_id)}.json"
         if not path.exists():
             raise FileNotFoundError(f"Session file not found: {path}")
         raw = json.loads(path.read_text(encoding="utf-8"))
@@ -129,6 +137,6 @@ class SessionStore:
 
     def delete(self, session_id: str) -> None:
         """Remove the session file for *session_id*."""
-        path = self.BASE_DIR / f"{session_id}.json"
+        path = self.BASE_DIR / f"{_safe_session_id(session_id)}.json"
         if path.exists():
             path.unlink()
