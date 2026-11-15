@@ -388,9 +388,9 @@ class Verifier:
 
         Returns:
             (passed, diff, notes) where:
-              passed: True if the fix appears to eliminate the crash.
-              diff: The fix diff (or empty string).
-              notes: Free-form notes about the attempt.
+                passed: True if the fix appears to eliminate the crash.
+                diff: The fix diff (or empty string).
+                notes: Free-form notes about the attempt.
         """
         user_msg = self._build_patch_oracle_message(finding, file_content)
         try:

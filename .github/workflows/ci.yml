@@ -33,38 +33,41 @@ jobs:
           enable-cache: true
           cache-dependency-glob: uv.lock
 
-      - name: Install package
+      - name: Install package (uv.lock-pinned)
         run: |
-          uv pip install --system -e '.[dev]'
+          uv sync --frozen --extra dev --python "$(command -v python)"
 
       - name: Ruff check
-        run: ruff check nightwing/ tests/
+        run: uv run --no-sync ruff check nightwing/ tests/
 
       - name: Ruff format (check)
-        run: ruff format --check nightwing/ tests/
+        run: uv run --no-sync ruff format --check nightwing/ tests/
 
       - name: Mypy scoped gate
         run: |
-          mypy --follow-imports=silent \
+          uv run --no-sync mypy --follow-imports=silent \
             nightwing/findings \
             nightwing/sourcehunt \
             nightwing/capabilities.py \
             nightwing/agent/tools \
+            nightwing/agent/runtime.py \
+            nightwing/agent/protocols.py \
+            nightwing/providers/manager.py \
             nightwing/core
 
       - name: Run pytest with coverage
         run: |
-          python -m pytest -q --strict-markers --strict-config \
+          uv run --no-sync python -m pytest -q --strict-markers --strict-config \
             --cov=nightwing --cov-report=term-missing --cov-report=xml
 
       - name: Coverage report
-        run: coverage report --fail-under=65
+        run: uv run --no-sync coverage report --fail-under=65
 
       - name: Build wheel + sdist
-        run: python -m build
+        run: uv run --no-sync python -m build
 
       - name: Validate artifacts
-        run: twine check dist/*
+        run: uv run --no-sync twine check dist/*
 
   security:
     name: dependency audit (pip-audit)
@@ -77,8 +80,16 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install pip-audit
-        run: pip install pip-audit
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
 
-      - name: Audit dependencies
-        run: pip-audit --strict --desc
+      - name: Install package (uv.lock-pinned)
+        run: |
+          uv sync --frozen --python "$(command -v python)"
+
+      - name: Dependency audit
+        run: |
+          uv run --no-sync --with pip-audit pip-audit --strict --desc

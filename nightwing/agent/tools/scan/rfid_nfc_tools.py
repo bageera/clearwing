@@ -8,6 +8,7 @@ and NFC tag reading, writing, sniffing, and cloning.
 """
 
 import logging
+import shlex
 from typing import Any
 
 from nightwing.agent.tooling import tool
@@ -49,7 +50,7 @@ def run_proxmark3(
     device (e.g. --device /dev/ttyACM0).
     """
 
-    cmd = f"pm3 -c {command!r} {options}"
+    cmd = f"pm3 -c {shlex.quote(command)} {options}"
     logger.info("[%s] proxmark3: %s", distro, cmd)
     return run_in_pentest_container(
         cmd,

@@ -35,27 +35,31 @@ jobs:
           enable-cache: true
           cache-dependency-glob: uv.lock
 
-      - name: Install package
-        run: uv pip install --system -e '.[dev]'
+      - name: Install package (uv.lock-pinned)
+        run: |
+          uv sync --frozen --extra dev --python "$(command -v python)"
 
       - name: Ruff check
-        run: ruff check nightwing/ tests/
+        run: uv run --no-sync ruff check nightwing/ tests/
 
       - name: Ruff format (check)
-        run: ruff format --check nightwing/ tests/
+        run: uv run --no-sync ruff format --check nightwing/ tests/
 
       - name: Mypy scoped gate
         run: |
-          mypy --follow-imports=silent \
+          uv run --no-sync mypy --follow-imports=silent \
             nightwing/findings \
             nightwing/sourcehunt \
             nightwing/capabilities.py \
             nightwing/agent/tools \
+            nightwing/agent/runtime.py \
+            nightwing/agent/protocols.py \
+            nightwing/providers/manager.py \
             nightwing/core
 
       - name: Run pytest with coverage
         run: |
-          python -m pytest -q --strict-markers --strict-config \
+          uv run --no-sync python -m pytest -q --strict-markers --strict-config \
             --cov=nightwing --cov-report=term-missing
 
   # Build wheel + sdist on one Python version (they're pure-Python,
@@ -81,13 +85,14 @@ jobs:
           cache-dependency-glob: uv.lock
 
       - name: Install build dependencies
-        run: uv pip install --system -e '.[dev]'
+        run: |
+          uv sync --frozen --extra dev --python "$(command -v python)"
 
       - name: Build wheel + sdist
-        run: python -m build
+        run: uv run --no-sync python -m build
 
       - name: Validate artifacts
-        run: twine check dist/*
+        run: uv run --no-sync twine check dist/*
 
       - name: Extract version from tag
         id: version

@@ -42,7 +42,7 @@ each subsystem.
 
 ::: nightwing.agent.graph.build_react_graph
 ::: nightwing.agent.graph.create_agent
-::: nightwing.agent.graph.detect_flags
+::: nightwing.agent.runtime.detect_flags
 
 ## `nightwing.agent.tools`
 

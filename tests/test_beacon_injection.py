@@ -23,7 +23,8 @@ class TestBeaconTemplateInjection:
         ast.parse(src)
         tree = ast.parse(src)
         c2_assign = next(
-            n for n in ast.walk(tree)
+            n
+            for n in ast.walk(tree)
             if isinstance(n, ast.Assign) and getattr(n.targets[0], "id", "") == "C2"
         )
         assert isinstance(c2_assign.value, ast.Constant)
@@ -37,8 +38,10 @@ class TestBeaconTemplateInjection:
         # an executable ast.Call
         calls = [n for n in ast.walk(tree) if isinstance(n, ast.Call)]
         assert not any(
-            isinstance(c.func, ast.Attribute) and c.func.attr == "system" and
-            isinstance(c.func.value, ast.Name) and c.func.value.id == "os"
+            isinstance(c.func, ast.Attribute)
+            and c.func.attr == "system"
+            and isinstance(c.func.value, ast.Name)
+            and c.func.value.id == "os"
             for c in calls
         )
 

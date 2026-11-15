@@ -15,8 +15,9 @@ def handle(cli, args):
         import uvicorn
     except ImportError:
         cli.console.print(
-            "[red]uvicorn is required for the web UI. "
-            "Install with: pip install 'nightwing[web]'[/red]"
+            "[red]uvicorn is required for the web UI but was not found. "
+            "It ships as a core dependency — reinstall the package: "
+            "pip install 'uvicorn[standard]'[/red]"
         )
         return
 

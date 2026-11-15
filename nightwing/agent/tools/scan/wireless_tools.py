@@ -5,6 +5,7 @@ PentestContainerManager dual-distro infrastructure.
 """
 
 import logging
+import shlex
 from typing import Any
 
 from nightwing.agent.tooling import tool
@@ -273,7 +274,9 @@ def run_airbase_ng(
     Hardware: Requires a monitor-mode-capable USB Wi-Fi adapter.
     """
 
-    cmd = f"airbase-ng -a 00:11:22:33:44:55 -e {ssid!r} -c {channel} {options} {interface}"
+    cmd = (
+        f"airbase-ng -a 00:11:22:33:44:55 -e {shlex.quote(ssid)} -c {channel} {options} {interface}"
+    )
     logger.info("[%s] airbase-ng: %s", distro, cmd)
     return run_in_pentest_container(
         cmd,
@@ -553,7 +556,7 @@ def run_eaphammer(
     (e.g. `apt-get install eaphammer`).
     """
 
-    cmd = f"timeout {duration} eaphammer -i {interface} --essid {ssid!r} {options}"
+    cmd = f"timeout {duration} eaphammer -i {interface} --essid {shlex.quote(ssid)} {options}"
     logger.info("[%s] eaphammer: %s", distro, cmd)
     return run_in_pentest_container(
         cmd,

@@ -45,10 +45,11 @@ jobs:
           cache-dependency-glob: uv.lock
 
       - name: Install docs dependencies
-        run: uv pip install --system -e '.[docs]'
+        run: |
+          uv sync --frozen --extra docs --python "$(command -v python)"
 
       - name: Build
-        run: mkdocs build --strict
+        run: uv run --no-sync mkdocs build --strict
 
       - name: Upload artifact
         if: github.ref == 'refs/heads/main'

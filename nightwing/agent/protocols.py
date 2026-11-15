@@ -8,6 +8,7 @@ single concrete LLM implementation.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import Any, Protocol, runtime_checkable
 
 from nightwing.llm.chat import AIMessage, BaseMessage
@@ -17,7 +18,11 @@ from nightwing.llm.chat import AIMessage, BaseMessage
 class LLMInvokable(Protocol):
     """Anything that can be ``await``-ed with a list of messages."""
 
-    async def ainvoke(self, messages: list[BaseMessage]) -> AIMessage: ...
+    async def ainvoke(
+        self,
+        messages: list[BaseMessage],
+        on_text_delta: Callable[[str], None] | None = None,
+    ) -> AIMessage: ...
 
 
 class SystemPromptFactory(Protocol):

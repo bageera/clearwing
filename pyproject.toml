@@ -37,9 +37,16 @@ dependencies = [
     # Reporting
     "jinja2>=3.1.0",
     "defusedxml>=0.7.0",
-    "genai-pyo3>=0.1.16",
+    # Vendored LLM binding. 0.1.16 is the last release where
+    # ChatResponse.first_text()/tool_calls() are methods; 0.7.4 turned them
+    # into properties, which breaks ~28 call sites (mypy + runtime TypeError).
+    # Widen only after auditing the call sites for property access.
+    "genai-pyo3==0.1.16",
     "pydantic>=2.0.0",
     "docker>=7.0.0",
+    # sourcehunt/artifact_store.py AES-GCM at-rest encryption (on by default
+    # via ArtifactPolicy.encryption_at_rest) — was only present transitively.
+    "cryptography>=42.0.0",
     # TUI
     "textual>=0.47.0",
     # Web UI
@@ -113,6 +120,7 @@ nightwing = [
     "py.typed",                              # PEP 561 — ship type info to consumers
     "core/config_data/*.yaml",
     "core/skills/vulnerabilities/*.md",
+    "ui/web/static/*",                       # web UI frontend (served by nightwing webui)
 ]
 
 [tool.pytest.ini_options]
@@ -214,6 +222,13 @@ ignore_missing_imports = true
 #                                    class attributes, implicit Optional
 #                                    on config/engine/logger/module_loader,
 #                                    yaml stub ignore)
+#   - nightwing.agent.runtime       (round 2 — gated for real: untyped defs
+#                                    annotated, thread-id narrowing, Any-
+#                                    returns cast)
+#   - nightwing.agent.protocols     (round 2 — LLMInvokable.ainvoke gained
+#                                    its actual on_text_delta parameter)
+#   - nightwing.providers.manager   (round 2 — provider-preset None/Sequence
+#                                    narrowing, set_route -> None)
 [[tool.mypy.overrides]]
 module = [
     "nightwing.findings.*",

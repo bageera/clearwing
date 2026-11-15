@@ -394,10 +394,15 @@ class ProviderManager:
             )
 
         elif provider in ("ollama", "ollama-cloud"):
+            preset_base_url = (preset or {}).get("default_base_url")
             base_url = (
                 config.base_url
                 if config and config.base_url
-                else preset.get("default_base_url", "http://localhost:11434")
+                else (
+                    preset_base_url
+                    if isinstance(preset_base_url, str)
+                    else "http://localhost:11434"
+                )
             )
             return ChatModel(
                 model_name=model,
@@ -447,10 +452,15 @@ class ProviderManager:
             )
 
         if provider in ("ollama", "ollama-cloud"):
+            preset_base_url = (preset or {}).get("default_base_url")
             base_url = (
                 config.base_url
                 if config and config.base_url
-                else preset.get("default_base_url", "http://localhost:11434")
+                else (
+                    preset_base_url
+                    if isinstance(preset_base_url, str)
+                    else "http://localhost:11434"
+                )
             )
             return AsyncLLMClient(
                 model_name=model,
@@ -479,7 +489,7 @@ class ProviderManager:
         """List all configured routes."""
         return list(self._routes.values())
 
-    def set_route(self, task: str, provider: str, model: str, reason: str = ""):
+    def set_route(self, task: str, provider: str, model: str, reason: str = "") -> None:
         """Update or add a route for a task type."""
         self._routes[task] = ModelRoute(task=task, provider=provider, model=model, reason=reason)
         # Invalidate cache for this route

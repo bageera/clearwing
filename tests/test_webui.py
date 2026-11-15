@@ -30,6 +30,28 @@ class TestHealthEndpoint:
         assert data["service"] == "nightwing"
 
 
+class TestOperatorSessionRegistryBounded:
+    def test_bound_sessions_leaves_room_for_one_insert(self):
+        from nightwing.ui.web.app import _bound_sessions
+
+        # start_operator binds BEFORE inserting, so bound() must leave cap-1
+        # entries and the post-insert total stays <= cap.
+        sessions = {"a": {"i": 1}, "b": {"i": 2}, "c": {"i": 3}}
+        _bound_sessions(sessions, cap=2)
+        assert list(sessions) == ["c"]
+
+        sessions = {"a": {}, "b": {}}
+        _bound_sessions(sessions, cap=3)
+        assert len(sessions) == 2  # 2 < cap → noop
+
+    def test_bound_sessions_noop_under_cap(self):
+        from nightwing.ui.web.app import _bound_sessions
+
+        sessions = {"a": {}}
+        _bound_sessions(sessions, cap=128)
+        assert list(sessions) == ["a"]
+
+
 class TestSessionEndpoints:
     def test_list_sessions_empty(self, client):
         with patch("nightwing.data.memory.SessionStore") as mock_store:

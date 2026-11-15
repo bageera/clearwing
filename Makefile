@@ -9,7 +9,7 @@ RUFF     := $(PY) -m ruff
 MYPY     := $(PY) -m mypy
 COVERAGE := $(PY) -m coverage
 
-MYPY_SCOPE := nightwing/findings nightwing/sourcehunt nightwing/capabilities.py nightwing/agent/tools nightwing/core
+MYPY_SCOPE := nightwing/findings nightwing/sourcehunt nightwing/capabilities.py nightwing/agent/tools nightwing/agent/runtime.py nightwing/agent/protocols.py nightwing/providers/manager.py nightwing/core
 
 help:
 	@echo "Nightwing developer commands:"
@@ -31,7 +31,7 @@ help:
 	@echo "  coverage-html   coverage html report (opens htmlcov/index.html)"
 
 install-dev:
-	uv pip install --python $(PY) -e '.[dev]'
+	UV_PROJECT_ENVIRONMENT=venv uv sync --frozen --extra dev
 
 lint:
 	$(RUFF) check nightwing/ tests/

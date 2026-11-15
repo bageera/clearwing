@@ -1,8 +1,8 @@
 # Web API — `/ws/agent` event schema
 
 The Nightwing web UI backend (`nightwing.ui.web.app`, started by
-`nightwing serve`) exposes a FastAPI server with a single real-time
-WebSocket endpoint. Commit `dd5f093` wired the in-process
+`nightwing webui`) exposes a FastAPI server with a single real-time
+WebSocket endpoint. The in-process
 [`EventBus`](architecture.md) into that WebSocket so external
 consumers (dashboards, CI tailers, custom TUIs) can follow campaign /
 sourcehunt / validator / disclosure / benchmark / eval progress
@@ -17,10 +17,10 @@ unless the underlying payload type is genuinely `T | None`.
 
 | | |
 |---|---|
-| URL | `ws://<host>:<port>/ws/agent` (default host/port: whatever `nightwing serve` binds to) |
+| URL | `ws://<host>:<port>/ws/agent` (default host/port: whatever `nightwing webui` binds to, `127.0.0.1:8899`) |
 | Subprotocol | none — plain JSON-text frames |
 | Auth | none at the transport layer; access control is the deployer's responsibility |
-| CORS | `allow_origins=["*"]` — the frontend is served from the same FastAPI app |
+| CORS | `allow_origins=["http://localhost:8899", "http://127.0.0.1:8899"]` — the frontend is served same-origin by the same FastAPI app; the allowlist exists for local dev origins only. Wildcard origins are rejected; the server never reflects an unlisted `Origin`. |
 
 ### Lifecycle
 

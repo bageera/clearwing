@@ -5,9 +5,9 @@ import asyncio
 import json
 import logging
 import re
-from collections.abc import Callable
+from collections.abc import AsyncIterator, Callable
 from dataclasses import dataclass, field
-from typing import Any, TypedDict
+from typing import Any, TypedDict, cast
 
 import networkx as nx
 
@@ -162,8 +162,11 @@ class NativeAgentGraph:
                 logger.warning("Failed to initialize KnowledgeGraph", exc_info=True)
 
     async def astream(
-        self, input_data: dict[str, Any] | Command, config: dict, stream_mode: str = "values"
-    ):
+        self,
+        input_data: dict[str, Any] | Command,
+        config: dict,
+        stream_mode: str = "values",
+    ) -> AsyncIterator[dict[str, Any]]:
         del stream_mode
         thread_id = self._thread_id(config)
         if isinstance(input_data, Command):
@@ -195,7 +198,7 @@ class NativeAgentGraph:
             tasks=[GraphTask(interrupts=[GraphInterrupt(value=pending.prompt)])],
         )
 
-    async def _aresume(self, thread_id: str, approved: bool):
+    async def _aresume(self, thread_id: str, approved: bool) -> AsyncIterator[dict[str, Any]]:
         pending = self._pending.get(thread_id)
         if pending is None:
             return
@@ -211,7 +214,7 @@ class NativeAgentGraph:
         async for event in self._arun_loop(thread_id):
             yield event
 
-    async def _arun_loop(self, thread_id: str):
+    async def _arun_loop(self, thread_id: str) -> AsyncIterator[dict[str, Any]]:
         state = self._get_or_create_state(thread_id)
         while True:
             assistant_event = await self._aassistant_step(state)
@@ -403,7 +406,9 @@ class NativeAgentGraph:
         return self._state.setdefault(thread_id, {"messages": []})
 
     def _thread_id(self, config: dict) -> str:
-        return config.get("configurable", {}).get("thread_id", "default")
+        configurable = config.get("configurable") or {}
+        thread_id = configurable.get("thread_id", "default")
+        return thread_id if isinstance(thread_id, str) else "default"
 
     def _find_thread_id_for_state(self, state: dict[str, Any]) -> str:
         for thread_id, existing_state in self._state.items():
@@ -885,7 +890,7 @@ def populate_knowledge_graph(
             populator(kg, data, target)
 
         kg.save()
-        return nx.node_link_data(kg._graph)
+        return cast(dict[str, Any], nx.node_link_data(kg._graph))
     except Exception:
         logger.debug("Knowledge graph population failed", exc_info=True)
         return {}

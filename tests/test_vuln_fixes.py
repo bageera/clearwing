@@ -27,7 +27,17 @@ class TestSessionIdTraversalGuard:
         store.BASE_DIR.mkdir(parents=True)
         # plant a victim file OUTSIDE the base dir
         victim = tmp_path / "evil.json"
-        victim.write_text(json.dumps({"session_id": "x", "target": "t", "model": "m", "status": "s", "start_time": "2025-01-01T00:00:00"}))
+        victim.write_text(
+            json.dumps(
+                {
+                    "session_id": "x",
+                    "target": "t",
+                    "model": "m",
+                    "status": "s",
+                    "start_time": "2025-01-01T00:00:00",
+                }
+            )
+        )
         with pytest.raises(ValueError):
             store.load("../evil")
 
@@ -54,5 +64,7 @@ class TestCorsLocked:
 
     def test_wildcard_gone(self):
         app = create_app()
-        cors = [m for m in app.user_middleware if hasattr(m, "kwargs") and "allow_origins" in m.kwargs]
+        cors = [
+            m for m in app.user_middleware if hasattr(m, "kwargs") and "allow_origins" in m.kwargs
+        ]
         assert cors and cors[0].kwargs["allow_origins"] != ["*"]

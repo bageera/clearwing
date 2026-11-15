@@ -13,6 +13,51 @@ The hand-curated pre-1.0 history has been archived to
 
 ---
 
+## Session: 2026-11-15 — vuln-fixes round 2: locked CI, undeclared deps, hardening sweep
+
+### Fixed: CI reproducibility (P1, P3)
+- All workflows now install from `uv.lock` via `uv sync --frozen` and run tools
+  through `uv run --no-sync` (ci.yml, release.yml, docs.yml); `make install-dev`
+  uses the same lock. Previously `uv pip install` resolved latest-at-job-time.
+- Live consequence found on this machine: unlocked resolution pulls
+  `genai-pyo3==0.7.4`, which turned `ChatResponse.first_text()`/`.tool_calls()`
+  into properties — 26 mypy call-site errors plus a real runtime
+  `TypeError` in every consumer (`llm/chat.py:218,256`, 26 sourcehunt sites).
+
+### Fixed: dependency declarations
+- `genai-pyo3` pinned `==0.1.16` (verified method API; 0.7.4 property API).
+- `cryptography` declared as a core dependency: `artifact_store.py` AES-GCM
+  at-rest encryption (default-on) imported it undeclared; the re-locked env
+  dropped it and artifact storage would ImportError at runtime.
+- `uv.lock` regenerated for both pins; `uv lock --check` passes.
+
+### Fixed: gates (P2, P4, P5)
+- Wheel/sdist now include `ui/web/static/*` (web UI frontend was missing from
+  packaged artifacts); build + twine check pass.
+- Removed the in-package `nightwing/tests/` tombstone stub (P4).
+- Pre-existing red gates on main repaired: `ruff format` (8 files, including
+  round-1 fix sites) and `mkdocs build --strict` — `docs/api.md` still
+  referenced `nightwing.agent.graph.detect_flags` after it moved to
+  `nightwing.agent.runtime`, and 3 griffe docstring-indent warnings in
+  `verifier.py` failed strict mode.
+- mypy typed-core gate now actually checks `agent/runtime.py`,
+  `agent/protocols.py`, `providers/manager.py` (11 untyped/narrowing errors
+  fixed: untyped defs annotated, provider preset None/Sequence narrowing,
+  `LLMInvokable.ainvoke` learned its real `on_text_delta` parameter).
+
+### Fixed: hardening + consistency (P6-P12)
+- `docs/web-api.md`: CORS row corrected to the locked allowlist; `nightwing
+  serve` → `nightwing webui`.
+- `run_in_pentest_container` approval default flipped to `True` (matches the
+  manager default; all 106 call sites pass the flag explicitly — audited).
+- Tool layer stops building shell fragments with repr(): `pm3 -c`,
+  `airbase-ng -e`, `eaphammer --essid` now use `shlex.quote`.
+- Web UI: uvicorn-ImportError message no longer references the nonexistent
+  `nightwing[web]` extra; operator-session registry bounded at 128 (FIFO).
+- New `nightwing containers cleanup|status` command (cleanup was unreachable).
+
+---
+
 ## Session: 2026-07-07 — Project Rename (Clearwing → Nightwing) + Wireless/RF/NFC Expansion
 
 ### Project Rename: Clearwing → Nightwing

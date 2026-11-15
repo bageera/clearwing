@@ -22,6 +22,17 @@ from nightwing.observability import MetricsCollector
 
 logger = logging.getLogger(__name__)
 
+# Bound the in-memory operator-session registry: POST /api/operate inserts one
+# entry per session and nothing evicts, so an unbounded map is a trivial local
+# DoS. FIFO eviction mirrors the insertion order of dict.
+OPERATOR_SESSION_CAP = 128
+
+
+def _bound_sessions(sessions: dict[str, dict[str, Any]], cap: int = OPERATOR_SESSION_CAP) -> None:
+    """Evict the oldest sessions (FIFO) while ``len(sessions) >= cap``."""
+    while len(sessions) >= cap:
+        sessions.pop(next(iter(sessions)))
+
 
 def _make_session_store():
     return memory_data.SessionStore()
@@ -157,6 +168,7 @@ def create_app():
             raise HTTPException(status_code=400, detail="target and goals are required")
 
         session_id = uuid.uuid4().hex[:8]
+        _bound_sessions(_sessions)
         _sessions[session_id] = {
             "status": "running",
             "target": target,
