@@ -20,7 +20,7 @@ from nightwing.agent.tools import get_all_tools
 
 # Locked baseline as of Phase 4 start. Update this only when deliberately
 # adding or removing a tool from the network-agent registry.
-EXPECTED_TOOL_COUNT = 285
+EXPECTED_TOOL_COUNT = 289
 
 
 EXPECTED_TOOL_NAMES: frozenset[str] = frozenset(

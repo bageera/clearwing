@@ -360,6 +360,12 @@ def get_all_tools() -> list[Any]:
         run_subfinder,
         run_waybackurls,
     )
+    from .scan.osint_rf_wifi_tools import (
+        adsb_lookup,
+        adsb_near,
+        wigle_bt_search,
+        wigle_wifi_search,
+    )
     from .scan.proxy_tools import (
         run_burp,
         run_burp_intruder,
@@ -572,6 +578,10 @@ def get_all_tools() -> list[Any]:
         run_gau,
         run_waybackurls,
         run_gowitness,
+        wigle_wifi_search,
+        wigle_bt_search,
+        adsb_near,
+        adsb_lookup,
         kali_setup,
         kali_execute,
         kali_install_tool,
